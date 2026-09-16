@@ -1,9 +1,9 @@
-import { ArrowRight, AtSign, CalendarDays, Flag, Hash, Hourglass, Plus, Repeat, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowRight, AtSign, CalendarDays, CornerDownRight, Flag, Hash, Hourglass, Plus, Repeat, Sparkles, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { recurrenceLabel } from '@/domain/recurrence';
 import { dueLabel, formatDuration } from '@/lib/dates';
 import { cn } from '@/lib/platform';
-import { findPerson, findProject } from '@/lib/voice/createFromDrafts';
+import { findPerson, findProject, findTaskByTitle } from '@/lib/voice/createFromDrafts';
 import type { VoiceTaskDraft } from '@/lib/voice/types';
 import { useWorkspace } from '@/store/workspace';
 import { Chip, type ChipSpec } from '@/components/tasks/parsedInput';
@@ -27,15 +27,20 @@ function DraftCard({
   onChange,
   onRemove,
   removable,
+  asStep,
+  onAsStep,
 }: {
   draft: VoiceTaskDraft;
   index: number;
   onChange: (d: VoiceTaskDraft) => void;
   onRemove: () => void;
   removable: boolean;
+  asStep: boolean;
+  onAsStep: (on: boolean) => void;
 }) {
   const fmt = useWorkspace((s) => s.user.preferences.timeFormat);
   const [newSub, setNewSub] = useState('');
+  const related = draft.relatedTo ? findTaskByTitle(draft.relatedTo) : undefined;
   const project = draft.project ? findProject(draft.project) : undefined;
   const person = draft.assignee ? findPerson(draft.assignee) : undefined;
 
@@ -110,7 +115,21 @@ function DraftCard({
       </div>
 
       <div className="pl-[30px]">
-        {chips.length > 0 && (
+        {related && (
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-meta text-ink-3">
+            <span className="inline-flex items-center gap-1.5">
+              <CornerDownRight className="size-3.5" />
+              {asStep ? 'Becomes a step of' : 'Related to'} <span className="font-medium text-ink-2">“{related.title}”</span>
+            </span>
+            <button
+              onClick={() => onAsStep(!asStep)}
+              className="rounded-[5px] px-1.5 py-0.5 font-medium text-accent-ink transition-colors hover:bg-accent-wash"
+            >
+              {asStep ? 'Keep as its own task' : 'Add as a step there'}
+            </button>
+          </p>
+        )}
+        {chips.length > 0 && !asStep && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {chips.map((c) => (
               <Chip key={c.id} spec={c} onDismiss={() => clear(c.field)} />
@@ -118,7 +137,7 @@ function DraftCard({
           </div>
         )}
 
-        {(draft.notes || draft.subtasks.length > 0) && (
+        {(draft.notes || draft.subtasks.length > 0) && !asStep && (
           <div className="mt-2.5 space-y-1.5">
             {draft.notes && (
               <AutoTextarea
@@ -148,7 +167,7 @@ function DraftCard({
           </div>
         )}
 
-        <div className="mt-2.5 flex items-center justify-between gap-3">
+        <div className={cn('mt-2.5 flex items-center justify-between gap-3', asStep && 'hidden')}>
           <span className="inline-flex items-center gap-1.5 text-meta text-ink-3">
             <ArrowRight className="size-3.5" />
             Goes to <span className="font-medium text-ink-2">{destination(draft)}</span>
@@ -179,6 +198,9 @@ function DraftCard({
 interface VoiceReviewProps {
   drafts: VoiceTaskDraft[];
   onChange: (drafts: VoiceTaskDraft[]) => void;
+  /** Indexes the user chose to file as a step on the related task. */
+  steps: Set<number>;
+  onSteps: (next: Set<number>) => void;
   transcript: string;
   source: 'claude' | 'local';
   notice?: string;
@@ -187,7 +209,7 @@ interface VoiceReviewProps {
   onDiscard: () => void;
 }
 
-export function VoiceReview({ drafts, onChange, transcript, source, notice, onAdd, onRetry, onDiscard }: VoiceReviewProps) {
+export function VoiceReview({ drafts, onChange, steps, onSteps, transcript, source, notice, onAdd, onRetry, onDiscard }: VoiceReviewProps) {
   const [showHeard, setShowHeard] = useState(false);
   const valid = drafts.filter((d) => d.title.trim());
 
@@ -223,6 +245,13 @@ export function VoiceReview({ drafts, onChange, transcript, source, notice, onAd
             index={i}
             draft={d}
             removable={drafts.length > 1}
+            asStep={steps.has(i)}
+            onAsStep={(on) => {
+              const next = new Set(steps);
+              if (on) next.add(i);
+              else next.delete(i);
+              onSteps(next);
+            }}
             onChange={(next) => onChange(drafts.map((x, j) => (j === i ? next : x)))}
             onRemove={() => onChange(drafts.filter((_, j) => j !== i))}
           />
@@ -243,7 +272,15 @@ export function VoiceReview({ drafts, onChange, transcript, source, notice, onAd
             onClick={onAdd}
             className="inline-flex h-9 items-center gap-2 rounded-[9px] bg-accent pr-2.5 pl-3.5 text-ui font-medium text-white transition-colors hover:bg-accent-hover"
           >
-            {valid.length === 1 ? 'Add task' : `Add ${valid.length} tasks`}
+            {steps.size === 0
+              ? valid.length === 1
+                ? 'Add task'
+                : `Add ${valid.length} tasks`
+              : steps.size === valid.length
+                ? steps.size === 1
+                  ? 'Add step'
+                  : `Add ${steps.size} steps`
+                : `Add ${valid.length} items`}
             <Kbd combo="enter" className="max-md:hidden [&_kbd]:bg-white/15 [&_kbd]:text-white [&_kbd]:shadow-none" />
           </button>
         )}

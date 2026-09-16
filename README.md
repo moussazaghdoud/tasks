@@ -36,6 +36,14 @@ the center of the bottom bar). `V` opens it from anywhere.
 2. **Hence analyzes the memo** and proposes clear tasks: an imperative title,
    the date and time, priority, project, the person you delegated to, steps and
    notes. If you listed several things, you get several tasks.
+
+   A rambling memo comes back short. The title is the action; the notes are a
+   two-sentence summary of what's worth keeping (the reason, the decision, the
+   numbers) — not a transcript. Thinking out loud ends as the conclusion you
+   reached. Your open tasks, projects and people are sent as context, so the
+   analysis uses your wording, fixes names the recognizer garbled, and
+   recognizes when a memo is about work already on your list — then it offers
+   **Add as a step there** instead of creating a near-duplicate.
 3. **Check and confirm.** Edit a title, remove a detected detail with ×, add a
    step, then press **Add task** (`Enter`). Each card shows where the task will
    land (Today, Friday, IPS, Inbox…). What you said is kept in the task's
@@ -50,7 +58,8 @@ Voice needs Chrome, Edge or Safari. Firefox can use *Type instead*.
 reaches the browser. Copy `.env.example` to `.env.local`, set
 `ANTHROPIC_API_KEY`, and restart `npm run dev`. Without a key, Hence falls back
 to on-device analysis, which handles English framing, dates, times, urgency and
-project names, but is far less clever. The review card shows which one was
+project names — but it doesn't summarize, doesn't read French, doesn't know
+delegation, and can't relate a memo to your existing tasks. The review card shows which one was
 used (*Claude* / *On-device*).
 
 > The route runs inside the Vite dev/preview server (`server/voice.ts`). To

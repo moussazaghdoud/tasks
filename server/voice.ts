@@ -26,10 +26,10 @@ const TASKS_SCHEMA = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['title', 'notes', 'dueDate', 'dueTime', 'priority', 'project', 'assignee', 'subtasks', 'recurrence', 'estimatedMinutes'],
+        required: ['title', 'notes', 'dueDate', 'dueTime', 'priority', 'project', 'assignee', 'subtasks', 'recurrence', 'estimatedMinutes', 'relatedTo'],
         properties: {
           title: { type: 'string', description: 'Short imperative task title, starting with a verb.' },
-          notes: { type: 'string', description: 'Useful context not in the title; empty string if none.' },
+          notes: { type: 'string', description: 'A tight summary of the context worth keeping; empty string if none.' },
           dueDate: nullable({ type: 'string', description: 'YYYY-MM-DD' }),
           dueTime: nullable({ type: 'string', description: 'HH:mm, 24-hour' }),
           priority: { type: 'string', enum: ['important', 'normal', 'low'] },
@@ -46,6 +46,7 @@ const TASKS_SCHEMA = {
             },
           }),
           estimatedMinutes: nullable({ type: 'integer' }),
+          relatedTo: nullable({ type: 'string', description: 'Exact title of an existing open task this memo is about.' }),
         },
       },
     },
@@ -57,10 +58,12 @@ const SYSTEM = `You turn a spoken voice memo into clear, actionable tasks for a 
 
 The transcript comes from speech recognition, so expect missing punctuation, hesitations and occasional misheard words. Infer the intended meaning; fix obvious recognition errors, especially in names that match the known people and projects.
 
+Think of it as taking a note for a colleague who has 10 seconds to read it: the action first, then only what they'd need to act well. A long, rambling memo should come back short and sharp, with nothing important lost.
+
 How to write each task:
-- One task per distinct action. Most memos are a single task. Split only when the speaker clearly lists separate things to do.
+- One task per distinct action. Most memos are a single task. Split only when the speaker clearly lists separate things to do. Prefer one task with steps over several near-duplicate tasks.
 - title: a short imperative sentence starting with a verb, at most about 70 characters, in the language the speaker used. Keep names, numbers and specifics. Drop filler, hesitation and framing such as "I need to", "remind me to", "don't forget", "euh", "il faut que".
-- notes: context the speaker gave that doesn't fit the title (why, details, constraints, who is involved). Empty string when there is none. Never repeat the title.
+- notes: a summary of what is worth keeping — the reason, the decision, constraints, numbers, names, what was ruled out. Write it in clean prose, at most two short sentences, not a transcript and never a repeat of the title. Empty string when the memo carried nothing beyond the action. Thinking out loud ("hmm, maybe, actually no") should end as the conclusion the speaker reached, not the deliberation.
 - dueDate: resolve relative dates ("tomorrow", "next Friday", "end of the month", "demain", "vendredi prochain") against the current date given below. Null when no date or deadline was expressed — never invent one.
 - dueTime: only when a time of day was said.
 - priority: "important" only when the speaker signals urgency or importance (urgent, ASAP, critical, top priority, "before the board", "c'est urgent"). "low" when they say it's minor or can wait. Otherwise "normal".
@@ -69,6 +72,9 @@ How to write each task:
 - subtasks: concrete steps the speaker enumerated. Do not invent steps.
 - recurrence: only when the speaker says it repeats.
 - estimatedMinutes: only when the speaker states how long it will take.
+- relatedTo: the exact title of an existing open task when the memo is plainly about that task rather than a new one — the speaker refers to it ("the board deck", "that contract"), or this would otherwise duplicate it. The user is then offered to file it as a step there. Null when it stands on its own.
+
+Read the memo against the lists below. Use the existing wording for people, projects and tasks the speaker is referring to, and fix names the recognizer garbled when a listed name is the obvious match.
 
 If the memo contains nothing actionable, return an empty tasks list.`;
 
@@ -77,6 +83,11 @@ function userPrompt(ctx: VoiceContext): string {
     ? ctx.projects.map((p) => `- ${p.name}${p.description ? ` — ${p.description}` : ''}`).join('\n')
     : '(none)';
   const people = ctx.people.length ? ctx.people.join(', ') : '(none)';
+  const open = ctx.openTasks?.length
+    ? ctx.openTasks
+        .map((t) => `- ${t.title}${t.project ? ` [${t.project}]` : ''}${t.due ? ` (due ${t.due})` : ''}`)
+        .join('\n')
+    : '(none)';
   return `Current date: ${ctx.weekday} ${ctx.today}, local time ${ctx.now} (${ctx.timeZone}).
 Speech recognition language: ${ctx.language}.
 
@@ -84,6 +95,9 @@ Existing projects:
 ${projects}
 
 Known people: ${people}
+
+Open tasks already on the list:
+${open}
 
 <voice_memo>
 ${ctx.transcript}
@@ -108,6 +122,7 @@ function sanitize(raw: VoiceTaskDraft): VoiceTaskDraft | null {
     subtasks: raw.subtasks.map((s) => s.trim()).filter(Boolean).slice(0, 20),
     recurrence: raw.recurrence ? { freq: raw.recurrence.freq, interval: Math.max(1, Math.min(52, raw.recurrence.interval)) } : null,
     estimatedMinutes: raw.estimatedMinutes && raw.estimatedMinutes > 0 && raw.estimatedMinutes <= 24 * 60 ? raw.estimatedMinutes : null,
+    relatedTo: raw.relatedTo?.trim() || null,
   };
 }
 
@@ -197,6 +212,7 @@ export async function voiceMiddleware(req: IncomingMessage, res: ServerResponse)
       ...ctx,
       projects: Array.isArray(ctx.projects) ? ctx.projects.slice(0, 50) : [],
       people: Array.isArray(ctx.people) ? ctx.people.slice(0, 100) : [],
+      openTasks: Array.isArray(ctx.openTasks) ? ctx.openTasks.slice(0, 60) : [],
     });
     send(res, 200, { ok: true, tasks, source: 'claude', ms: Date.now() - started });
   } catch (error) {

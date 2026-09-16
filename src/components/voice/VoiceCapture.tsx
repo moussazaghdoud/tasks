@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { markFresh } from '@/lib/fresh';
 import { cn, isModEvent, isTypingTarget } from '@/lib/platform';
 import { analyzeMemo } from '@/lib/voice/analyze';
-import { createFromDrafts } from '@/lib/voice/createFromDrafts';
+import { createFromDrafts, findTaskByTitle, type ConfirmedDraft } from '@/lib/voice/createFromDrafts';
 import { defaultSpeechLang, speechSupported, startLevelMeter, startSpeech, type SpeechErrorCode, type SpeechSession } from '@/lib/voice/speech';
 import type { VoiceTaskDraft } from '@/lib/voice/types';
 import { toast, useToasts } from '@/store/toast';
@@ -46,6 +46,7 @@ function VoiceBody({ onClose }: { onClose: () => void }) {
   const [typed, setTyped] = useState('');
   const [error, setError] = useState<SpeechErrorCode | null>(speechSupported() ? null : 'unsupported');
   const [drafts, setDrafts] = useState<VoiceTaskDraft[]>([]);
+  const [steps, setSteps] = useState<Set<number>>(() => new Set());
   const [transcript, setTranscript] = useState('');
   const [result, setResult] = useState<{ source: 'claude' | 'local'; notice?: string }>({ source: 'local' });
   const [session, setSession] = useState(0);
@@ -69,6 +70,7 @@ function VoiceBody({ onClose }: { onClose: () => void }) {
       setPhase('analyzing');
       const r = await analyzeMemo(clean, lang);
       setDrafts(r.tasks);
+      setSteps(new Set());
       setResult({ source: r.source, notice: r.notice });
       reviewShownAt.current = Date.now();
       setPhase('review');
@@ -146,16 +148,25 @@ function VoiceBody({ onClose }: { onClose: () => void }) {
   };
 
   const add = () => {
-    const valid = drafts.filter((d) => d.title.trim()).map((d) => ({ ...d, title: d.title.trim() }));
-    if (!valid.length) return;
-    const { tasks, undo } = createFromDrafts(valid, transcript);
+    const confirmed: ConfirmedDraft[] = drafts
+      .map((d, i) => ({ ...d, title: d.title.trim(), stepOf: steps.has(i) && d.relatedTo ? findTaskByTitle(d.relatedTo)?.id : undefined }))
+      .filter((d) => d.title);
+    if (!confirmed.length) return;
+    const { tasks, steps: stepCount, undo } = createFromDrafts(confirmed, transcript);
     markFresh(tasks.map((t) => t.id));
     onClose();
     const first = tasks[0];
-    toast(tasks.length === 1 ? `Added to ${destinationLabel(first)}` : `${tasks.length} tasks added`, {
-      detail: tasks.length === 1 ? first.title : tasks.map((t) => t.title).join(' · '),
+    const message = !tasks.length
+      ? stepCount === 1
+        ? 'Added as a step'
+        : `${stepCount} steps added`
+      : tasks.length === 1 && !stepCount
+        ? `Added to ${destinationLabel(first)}`
+        : `${tasks.length + stepCount} added`;
+    toast(message, {
+      detail: confirmed.map((d) => d.title).join(' · '),
       action: { label: 'Undo', run: undo },
-      secondary: tasks.length === 1 ? { label: 'Open', run: () => ui().openTask(first.id) } : undefined,
+      secondary: first ? { label: 'Open', run: () => ui().openTask(first.id) } : undefined,
     });
   };
 
@@ -211,6 +222,8 @@ function VoiceBody({ onClose }: { onClose: () => void }) {
       <VoiceReview
         drafts={drafts}
         onChange={setDrafts}
+        steps={steps}
+        onSteps={setSteps}
         transcript={transcript}
         source={result.source}
         notice={result.notice}

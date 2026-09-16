@@ -12,6 +12,7 @@ const ctx: VoiceContext = {
   language: 'en-US',
   projects: [{ name: 'IPS', description: 'Q4 business' }],
   people: ['Thierry Dubois', 'Claire Laurent'],
+  openTasks: [{ title: 'Prepare board presentation', project: 'IPS', due: 'Friday' }],
 };
 
 /** A client whose HTTP layer is a stub: records the request, returns `reply`. */
@@ -56,6 +57,9 @@ describe('analyzeTranscript', () => {
     expect(user).toContain('Tuesday 2026-09-15');
     expect(user).toContain('<voice_memo>');
     expect(user).toContain('Claire Laurent');
+    // The memo is read against what's already on the list.
+    expect(user).toContain('Open tasks already on the list');
+    expect(user).toContain('Prepare board presentation [IPS] (due Friday)');
   });
 
   it('returns sanitized drafts', async () => {
@@ -71,8 +75,9 @@ describe('analyzeTranscript', () => {
         subtasks: [' ', 'Check last proposal'],
         recurrence: null,
         estimatedMinutes: null,
+        relatedTo: ' Prepare board presentation ',
       },
-      { title: '  ', notes: '', dueDate: null, dueTime: null, priority: 'normal', project: null, assignee: null, subtasks: [], recurrence: null, estimatedMinutes: null },
+      { title: '  ', notes: '', dueDate: null, dueTime: null, priority: 'normal', project: null, assignee: null, subtasks: [], recurrence: null, estimatedMinutes: null, relatedTo: null },
     ];
     const { client } = stubClient({ body: message(JSON.stringify({ tasks })) });
     const drafts = await analyzeTranscript(ctx, client);
@@ -80,6 +85,7 @@ describe('analyzeTranscript', () => {
     expect(drafts[0].title).toBe('Call Thierry about the partner terms');
     expect(drafts[0].dueTime).toBeNull();
     expect(drafts[0].subtasks).toEqual(['Check last proposal']);
+    expect(drafts[0].relatedTo).toBe('Prepare board presentation');
   });
 
   it('reports a refusal instead of reading content', async () => {

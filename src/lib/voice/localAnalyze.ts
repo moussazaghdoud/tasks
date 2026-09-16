@@ -92,6 +92,7 @@ export function localAnalyze(transcript: string, ctx: { projects: NamedRef[]; pe
       subtasks: [],
       recurrence: r.recurrence ?? null,
       estimatedMinutes: r.estimatedMinutes ?? null,
+      relatedTo: null, // recognizing existing work needs Claude
     });
   }
   return drafts.slice(0, 10);

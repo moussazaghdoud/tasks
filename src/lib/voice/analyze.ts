@@ -1,5 +1,5 @@
 import { ME } from '@/domain/factories';
-import { todayKey } from '@/lib/dates';
+import { dueLabel, todayKey } from '@/lib/dates';
 import { ws } from '@/store/workspace';
 import { localAnalyze } from './localAnalyze';
 import type { VoiceApiResponse, VoiceContext, VoiceTaskDraft } from './types';
@@ -27,6 +27,16 @@ function buildContext(transcript: string, language: string): VoiceContext {
     people: Object.values(s.people)
       .filter((p) => p.id !== ME)
       .map((p) => p.name),
+    // What's already on the list, so a memo about existing work is recognized.
+    openTasks: Object.values(s.tasks)
+      .filter((t) => t.status !== 'done' && !t.archivedAt)
+      .sort((a, b) => (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999'))
+      .slice(0, 60)
+      .map((t) => ({
+        title: t.title,
+        project: t.projectId ? s.projects[t.projectId]?.name : undefined,
+        due: t.dueDate ? dueLabel(t.dueDate) : undefined,
+      })),
   };
 }
 

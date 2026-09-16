@@ -51,11 +51,32 @@ function toInput(d: VoiceTaskDraft, transcript: string): NewTaskInput {
   };
 }
 
-/** Create the confirmed drafts as real tasks. Returns the tasks and an undo. */
-export function createFromDrafts(drafts: VoiceTaskDraft[], transcript: string): { tasks: Task[]; undo: () => void } {
+/** Find an open task by the exact title Claude echoed back. */
+export function findTaskByTitle(title: string) {
+  const n = norm(title);
+  return Object.values(ws().tasks).find((t) => t.status !== 'done' && !t.archivedAt && norm(t.title) === n);
+}
+
+export interface ConfirmedDraft extends VoiceTaskDraft {
+  /** Add this to an existing task as a step instead of creating a task. */
+  stepOf?: ID;
+}
+
+/**
+ * Create the confirmed drafts. Drafts marked `stepOf` become steps on an
+ * existing task rather than new tasks. Returns everything plus one undo.
+ */
+export function createFromDrafts(drafts: ConfirmedDraft[], transcript: string): { tasks: Task[]; steps: number; undo: () => void } {
   let tasks: Task[] = [];
+  let steps = 0;
   const undo = ws().transact(() => {
-    tasks = ws().addTasks(drafts.map((d) => toInput(d, transcript)));
+    const fresh = drafts.filter((d) => !d.stepOf);
+    tasks = fresh.length ? ws().addTasks(fresh.map((d) => toInput(d, transcript))) : [];
+    for (const d of drafts) {
+      if (!d.stepOf) continue;
+      ws().addSubtask(d.stepOf, d.title);
+      steps++;
+    }
   });
-  return { tasks, undo };
+  return { tasks, steps, undo };
 }

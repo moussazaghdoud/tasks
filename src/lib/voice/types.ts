@@ -13,6 +13,8 @@ export interface VoiceTaskDraft {
   subtasks: string[];
   recurrence: { freq: 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'yearly'; interval: number } | null;
   estimatedMinutes: number | null;
+  /** Title of an existing task this memo is about, so it can become a step there instead. */
+  relatedTo: string | null;
 }
 
 export interface VoiceContext {
@@ -26,6 +28,8 @@ export interface VoiceContext {
   language: string;
   projects: Array<{ name: string; description?: string }>;
   people: string[];
+  /** What's already on the list, so the memo can be read in context. */
+  openTasks: Array<{ title: string; project?: string; due?: string }>;
 }
 
 export type VoiceApiResponse =
