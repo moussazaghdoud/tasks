@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { haptic } from '@/lib/native/bridge';
 
 const THRESHOLD = 76;
 
@@ -25,7 +26,12 @@ export function useSwipe({ onRight, onLeft, enabled }: { onRight: () => void; on
       if (Math.abs(x) > 8 && Math.abs(x) > Math.abs(y) * 1.4) s.locked = 'h';
       else if (Math.abs(y) > 8) s.locked = 'v';
     }
-    if (s.locked === 'h') setDx(Math.max(-140, Math.min(140, x)));
+    if (s.locked === 'h') {
+      const next = Math.max(-140, Math.min(140, x));
+      // A tick when the swipe passes the point where releasing would act.
+      if (Math.abs(next) > THRESHOLD !== Math.abs(dx) > THRESHOLD) haptic('light');
+      setDx(next);
+    }
   };
   const onTouchEnd = () => {
     const s = start.current;

@@ -95,7 +95,7 @@ export function MobileDrawer() {
   return (
     <FloatingPortal>
       <FloatingOverlay lockScroll className="z-[65] animate-fade bg-[rgb(40_36_30/0.22)] md:hidden" onClick={() => setOpen(false)}>
-        <div className="h-full w-[82%] max-w-[320px] animate-drawer bg-desk pb-safe shadow-float" onClick={(e) => e.stopPropagation()}>
+        <div className="h-full w-[82%] max-w-[320px] animate-drawer bg-desk pt-safe pb-safe shadow-float" onClick={(e) => e.stopPropagation()}>
           <Sidebar mobile />
         </div>
       </FloatingOverlay>

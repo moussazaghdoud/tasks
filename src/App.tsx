@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useWorkspace } from '@/store/workspace';
 import { useUi } from '@/store/ui';
 import { useGlobalShortcuts } from '@/hooks/useGlobalShortcuts';
+import { useNative } from '@/hooks/useNative';
 import { useReminders } from '@/hooks/useReminders';
 import { AppShell } from '@/components/shell/AppShell';
 import { CaptureSheet, MobileDrawer } from '@/components/shell/MobileNavigation';
@@ -38,6 +39,7 @@ export default function App() {
   }, [init]);
   useGlobalShortcuts();
   useReminders();
+  useNative();
 
   if (!ready) return <div className="h-dvh bg-desk" aria-busy="true" />;
 

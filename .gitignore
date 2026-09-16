@@ -1,6 +1,15 @@
 node_modules
 dist
 dist-server
+
+# Native build output (the iOS project itself is committed)
+build
+ios/App/build
+ios/App/App/public
+fastlane/report.xml
+fastlane/README.md
+*.ipa
+*.dSYM.zip
 *.local
 .env
 .env.*

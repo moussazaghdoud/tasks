@@ -1,0 +1,7 @@
+# Identity of the app. The bundle identifier must match capacitor.config.ts,
+# the Xcode project, and the app record in App Store Connect.
+app_identifier ENV['APP_IDENTIFIER'] || 'com.moussazaghdoud.hence'
+team_id ENV['APPLE_TEAM_ID']
+
+# Authentication uses the App Store Connect API key from CI secrets
+# (see fastlane/Fastfile), so no Apple ID password is ever needed.

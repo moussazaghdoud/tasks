@@ -1,5 +1,6 @@
 import { ME } from '@/domain/factories';
 import { dueLabel, todayKey } from '@/lib/dates';
+import { apiBase, isNative } from '@/lib/native/platform';
 import { ws } from '@/store/workspace';
 import { localAnalyze } from './localAnalyze';
 import type { VoiceApiResponse, VoiceContext, VoiceTaskDraft } from './types';
@@ -60,11 +61,19 @@ export async function analyzeMemo(transcript: string, language: string): Promise
   const text = transcript.trim();
   if (!text) return { tasks: [], source: 'local' };
   if (claudeUnavailable) return local(text, 'On-device analysis. Add a Claude API key for smarter results.');
+  if (isNative() && !apiBase()) {
+    claudeUnavailable = true;
+    return local(text, 'This build has no server configured, so analysis ran on your device.');
+  }
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return local(text, 'You’re offline, so this was analyzed on your device.');
+  }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30_000);
   try {
-    const res = await fetch('/api/voice', {
+    // Web: same origin. Native app: the deployed server (VITE_API_BASE_URL).
+    const res = await fetch(`${apiBase()}/api/voice`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(buildContext(text, language)),

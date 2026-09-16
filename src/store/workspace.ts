@@ -17,7 +17,7 @@ import type {
   UserPreferences,
   WorkspaceSnapshot,
 } from '@/domain/types';
-import { getRepository, type ChangeSet } from '@/data';
+import { getRepository, initRepository, type ChangeSet } from '@/data';
 import { buildDemoWorkspace, buildEmptyWorkspace } from '@/data/demo';
 import { dueLabel, formatTime, todayKey } from '@/lib/dates';
 import { createId, nowIso } from '@/lib/id';
@@ -165,6 +165,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => {
     views: {},
 
     init: async () => {
+      await initRepository();
       const repo = getRepository();
       let snap = await repo.load();
       if (!snap) {

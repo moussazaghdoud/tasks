@@ -152,7 +152,7 @@ function DragPreview({ id }: { id: ID }) {
 
 function MobileTopBar() {
   return (
-    <div className="sticky top-0 z-30 flex h-12 items-center justify-between bg-paper/90 px-4 backdrop-blur-md md:hidden">
+    <div className="sticky top-0 z-30 flex h-12 items-center justify-between bg-paper/90 px-4 pt-safe backdrop-blur-md md:hidden">
       <Wordmark />
       <button aria-label="Search or command" onClick={() => ui().openPalette()} className="grid size-9 place-items-center rounded-[9px] text-ink-2 hover:bg-wash-strong">
         <Command className="size-[18px]" />

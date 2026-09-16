@@ -226,7 +226,7 @@ export function FocusMode() {
     <FloatingPortal>
       <FloatingFocusManager context={context} initialFocus={-1}>
         <div ref={refs.setFloating} role="dialog" aria-label="Focus mode" className="fixed inset-0 z-[75] flex animate-fade flex-col overflow-y-auto bg-paper">
-          <div className="flex h-14 shrink-0 items-center justify-between px-5">
+          <div className="flex h-14 shrink-0 items-center justify-between px-5 pt-safe">
             <span className="flex items-center gap-2 text-meta font-medium text-ink-3">
               <span className="relative flex size-2">
                 <span className="absolute inset-0 animate-ping rounded-full bg-accent/40 [animation-duration:2.4s]" />

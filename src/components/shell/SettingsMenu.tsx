@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { ME } from '@/domain/factories';
 import type { WorkspaceSnapshot } from '@/domain/types';
 import { cn } from '@/lib/platform';
+import { confirmAction, exportFile } from '@/lib/native/bridge';
 import { ui } from '@/store/ui';
 import { useWorkspace, ws } from '@/store/workspace';
 import { toast } from '@/store/toast';
@@ -33,12 +34,8 @@ export function SettingsMenu({ collapsed }: { collapsed: boolean }) {
   const close = () => setAnchor(null);
 
   const exportData = () => {
-    const blob = new Blob([JSON.stringify(ws().exportSnapshot(), null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `hence-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    // A download in the browser, the share sheet in the app.
+    void exportFile(`hence-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(ws().exportSnapshot(), null, 2));
     close();
   };
 
@@ -115,11 +112,13 @@ export function SettingsMenu({ collapsed }: { collapsed: boolean }) {
           <button
             className={row}
             onClick={() => {
-              if (!window.confirm('Replace your workspace with the demo data? Export first if you want to keep your tasks.')) return;
-              void ws().resetToDemo();
-              close();
-              ui().navigate({ name: 'today' });
-              toast('Demo workspace restored');
+              void (async () => {
+                if (!(await confirmAction('Replace your workspace with the demo data? Export first if you want to keep your tasks.', 'Restore demo data'))) return;
+                await ws().resetToDemo();
+                close();
+                ui().navigate({ name: 'today' });
+                toast('Demo workspace restored');
+              })();
             }}
           >
             <RefreshCw className="size-4 text-ink-3" /> Restore demo data
@@ -127,10 +126,12 @@ export function SettingsMenu({ collapsed }: { collapsed: boolean }) {
           <button
             className={cn(row, 'hover:!bg-ember-soft hover:!text-ember')}
             onClick={() => {
-              if (!window.confirm('Start with an empty workspace? Your current tasks will be removed. Export first if you want to keep them.')) return;
-              void ws().clearAll();
-              close();
-              ui().navigate({ name: 'today' });
+              void (async () => {
+                if (!(await confirmAction('Start with an empty workspace? Your current tasks will be removed. Export first if you want to keep them.', 'Start empty'))) return;
+                await ws().clearAll();
+                close();
+                ui().navigate({ name: 'today' });
+              })();
             }}
           >
             <Trash2 className="size-4" /> Start empty

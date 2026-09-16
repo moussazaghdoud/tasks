@@ -197,7 +197,31 @@ function send(res: ServerResponse, status: number, body: VoiceApiResponse | { er
  * Analysis failures answer 200 with `ok: false` — they are expected states the
  * app handles (e.g. no key yet → on-device analysis), not transport errors.
  */
+/**
+ * The iOS app loads from capacitor://localhost, so its requests are
+ * cross-origin. Allow the native origins (and any extra ones configured);
+ * a browser on the same origin doesn't need this.
+ */
+const NATIVE_ORIGINS = ['capacitor://localhost', 'ionic://localhost', 'http://localhost'];
+
+function applyCors(req: IncomingMessage, res: ServerResponse): void {
+  const extra = (process.env.ALLOWED_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean);
+  const origin = req.headers.origin;
+  if (origin && [...NATIVE_ORIGINS, ...extra].includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Max-Age', '86400');
+  }
+}
+
 export async function voiceMiddleware(req: IncomingMessage, res: ServerResponse) {
+  applyCors(req, res);
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 204;
+    return res.end();
+  }
   if (req.method !== 'POST') return send(res, 405, { error: 'method_not_allowed' });
   let ctx: VoiceContext;
   try {

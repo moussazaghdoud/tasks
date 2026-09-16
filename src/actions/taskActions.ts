@@ -6,6 +6,9 @@
 import type { DateKey, ID, Priority, RecurrenceRule, Task, TimeKey } from '@/domain/types';
 import { describeNext } from '@/domain/recurrence';
 import { dueLabel, formatTime, todayKey } from '@/lib/dates';
+import { copyText, haptic } from '@/lib/native/bridge';
+import { ensureNotificationPermission } from '@/lib/native/notifications';
+import { isNative } from '@/lib/native/platform';
 import { toast } from '@/store/toast';
 import { ui } from '@/store/ui';
 import { ws } from '@/store/workspace';
@@ -40,6 +43,7 @@ export function registerCompletionAnimator(id: ID, fn: Animator) {
 export async function completeTasks(ids: ID[]) {
   const open = ids.filter((id) => ws().tasks[id] && ws().tasks[id].status !== 'done');
   if (!open.length) return;
+  haptic('success');
   await Promise.all(open.map((id) => animators.get(id)?.() ?? Promise.resolve()));
   let spawned: Task[] = [];
   const undo = ws().transact(() => {
@@ -97,11 +101,17 @@ export function assignTo(ids: ID[], personId: ID | null) {
 
 export function remind(ids: ID[], at: Date | null) {
   ws().setReminder(ids, at ? at.toISOString() : null);
-  if (at) {
-    toast('Reminder set', {
-      detail: at.toLocaleString(undefined, { weekday: 'long', hour: '2-digit', minute: '2-digit' }),
+  if (!at) return;
+  toast('Reminder set', {
+    detail: at.toLocaleString(undefined, { weekday: 'long', hour: '2-digit', minute: '2-digit' }),
+  });
+  if (isNative()) {
+    // iOS delivers this even when the app is closed, once permission is given.
+    void ensureNotificationPermission().then((granted) => {
+      if (!granted) toast('Notifications are off', { detail: 'Turn them on for Hence in iOS Settings to get reminders.' });
     });
-    if ('Notification' in window && Notification.permission === 'default') void Notification.requestPermission();
+  } else if ('Notification' in window && Notification.permission === 'default') {
+    void Notification.requestPermission();
   }
 }
 
@@ -134,13 +144,9 @@ export function duplicateTask(id: ID) {
 }
 
 export async function copyTaskLink(id: ID) {
-  const url = `${window.location.origin}${window.location.pathname}#/task/${id}`;
-  try {
-    await navigator.clipboard.writeText(url);
-    toast('Link copied');
-  } catch {
-    toast('Could not copy link', { detail: url });
-  }
+  const url = isNative() ? `hence://task/${id}` : `${window.location.origin}${window.location.pathname}#/task/${id}`;
+  if (await copyText(url)) toast('Link copied');
+  else toast('Could not copy link', { detail: url });
 }
 
 export function openDetail(id: ID, section?: 'notes' | 'subtask' | 'link' | 'title') {

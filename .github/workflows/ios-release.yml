@@ -1,0 +1,108 @@
+name: iOS release
+
+# Builds a signed .ipa on a macOS runner and uploads it to TestFlight.
+# Nothing here needs a Mac of your own: run it from the Actions tab, or push a
+# tag like v1.0.1.
+
+on:
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: What to run
+        type: choice
+        default: beta
+        options:
+          - beta # build, sign, upload to TestFlight
+          - bootstrap # one-off: register the App ID and create the app record
+      changelog:
+        description: What testers should know about this build
+        required: false
+        default: ''
+      marketing_version:
+        description: Version shown on the App Store (defaults to package.json)
+        required: false
+        default: ''
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: ios-release
+  cancel-in-progress: false
+
+jobs:
+  testflight:
+    name: Build, sign, upload to TestFlight
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the signing secrets are present
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: |
+          missing=""
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID MATCH_GIT_URL MATCH_PASSWORD; do
+            if [ -z "${!name}" ]; then missing="$missing $name"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing — see docs/ios-release.md"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Build the web app
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ vars.API_BASE_URL }}
+
+      - name: Copy the web app into the native project
+        run: npx cap sync ios
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+
+      - name: Build and upload
+        run: bundle exec fastlane ios "${LANE}"
+        env:
+          CI: true
+          LANE: ${{ inputs.lane || 'beta' }}
+          APP_NAME: Hence
+          APP_IDENTIFIER: ${{ vars.APP_IDENTIFIER || 'com.moussazaghdoud.hence' }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          # A unique, increasing build number: the run number never repeats.
+          BUILD_NUMBER: ${{ github.run_number }}
+          MARKETING_VERSION: ${{ inputs.marketing_version }}
+          CHANGELOG: ${{ inputs.changelog }}
+          FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: 120
+          FASTLANE_HIDE_CHANGELOG: true
+
+      - name: Keep the build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: |
+            build/*.ipa
+            build/*.dSYM.zip
+            fastlane/report.xml
+          retention-days: 14
+          if-no-files-found: ignore

@@ -174,7 +174,7 @@ export function TriageMode() {
     <FloatingPortal>
       <FloatingFocusManager context={context} initialFocus={-1}>
         <div ref={refs.setFloating} role="dialog" aria-label="Triage inbox" className="fixed inset-0 z-[75] flex animate-fade flex-col overflow-y-auto bg-paper">
-          <div className="flex h-14 shrink-0 items-center justify-between px-5">
+          <div className="flex h-14 shrink-0 items-center justify-between px-5 pt-safe">
             <span className="text-meta font-medium text-ink-3">Triage · Inbox</span>
             <button onClick={() => setTriage(false)} className="flex h-8 items-center gap-2 rounded-[8px] px-2.5 text-meta font-medium text-ink-3 transition-colors hover:bg-wash-strong hover:text-ink">
               <Kbd combo="esc" subtle /> Exit

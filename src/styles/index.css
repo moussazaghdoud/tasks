@@ -205,6 +205,14 @@
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }
+  /* In the native app the web view runs under the status bar and the notch. */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .px-safe {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
 
   /* Voice: rings follow the microphone level (--level, 0–1) and breathe when quiet. */
   .voice-orb {
