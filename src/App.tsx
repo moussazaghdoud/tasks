@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useWorkspace } from '@/store/workspace';
+import { useUi } from '@/store/ui';
 import { useGlobalShortcuts } from '@/hooks/useGlobalShortcuts';
 import { useReminders } from '@/hooks/useReminders';
 import { AppShell } from '@/components/shell/AppShell';
@@ -26,6 +27,14 @@ export default function App() {
 
   useEffect(() => {
     void init();
+    // Home-screen shortcut: /?capture=voice opens the microphone straight away.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('capture') === 'voice') {
+      params.delete('capture');
+      const rest = params.toString();
+      window.history.replaceState(null, '', `${window.location.pathname}${rest ? `?${rest}` : ''}${window.location.hash}`);
+      requestAnimationFrame(() => useUi.getState().setVoice(true));
+    }
   }, [init]);
   useGlobalShortcuts();
   useReminders();

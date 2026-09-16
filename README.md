@@ -68,6 +68,25 @@ used (*Claude* / *On-device*).
 > network you don't trust while a key is set: anyone who can reach it can spend
 > your credits.
 
+## Install on a phone
+
+The app is installable, so it runs from the home screen without browser
+chrome, and keeps working offline (your tasks are on the device anyway).
+
+- **iPhone / iPad:** open the deployed URL in **Safari** → **Share** →
+  **Add to Home Screen**.
+- **Android / desktop Chrome:** use the install icon in the address bar.
+
+The home-screen shortcut *Speak a task* (`/?capture=voice`) opens the
+microphone directly. Offline, everything works except the Claude analysis —
+voice memos fall back to on-device analysis until you're back online.
+
+> Installed on iOS, speech recognition depends on the iOS version: Safari has
+> supported it since 14.5, but it has been unreliable in home-screen apps. If
+> the microphone doesn't catch anything on your iPhone, use **Type instead** —
+> and see the App Store route below, which replaces it with Apple's own
+> speech engine.
+
 ## Deploying (Railway)
 
 `railway.json` and the `build` / `start` scripts are set up, so a deploy is:
