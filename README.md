@@ -11,8 +11,9 @@ later, only if you want to.
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # parser, recurrence, search
-npm run build      # typecheck + production build
+npm test           # parser, recurrence, search, voice, server route
+npm run build      # typecheck, app bundle (dist/), server bundle (dist-server/)
+npm start          # production server on PORT (default 3000)
 ```
 
 On first launch the app loads a realistic demo workspace (an executive's week
@@ -62,11 +63,36 @@ project names — but it doesn't summarize, doesn't read French, doesn't know
 delegation, and can't relate a memo to your existing tasks. The review card shows which one was
 used (*Claude* / *On-device*).
 
-> The route runs inside the Vite dev/preview server (`server/voice.ts`). To
-> deploy, expose the same `analyzeTranscript` function as a serverless
-> function on your host. Don't start the dev server with `--host` on a network
-> you don't trust while a key is set: anyone who can reach it can spend your
-> credits.
+> In development the route runs inside the Vite server; in production it is
+> served by `server/index.ts`. Don't start the dev server with `--host` on a
+> network you don't trust while a key is set: anyone who can reach it can spend
+> your credits.
+
+## Deploying (Railway)
+
+`railway.json` and the `build` / `start` scripts are set up, so a deploy is:
+
+1. **railway.com → New Project → Deploy from GitHub repo**, and pick this
+   repository. Railway reads `railway.json`: it builds with
+   `npm ci --include=dev && npm run build` and runs `npm start`.
+2. **Variables → New Variable**: `ANTHROPIC_API_KEY` = your key. Without it the
+   app still runs; voice memos just use the on-device analysis.
+3. **Settings → Networking → Generate Domain**, and open the URL.
+
+Optional variables: `VOICE_RATE_LIMIT` (analysis requests per IP per hour,
+default 60, `0` disables the limit), `PORT` and `HOST` (Railway sets `PORT`).
+`/healthz` is the health check and reports whether the key is set.
+
+What the server does: serves `dist/` (hashed assets cached for a year, gzipped,
+unknown paths fall back to the app) and handles `POST /api/voice`. The API key
+is only ever read server-side.
+
+**Two things to know before sharing the URL.** A deployed URL is public, so
+anyone who opens it can trigger analysis and spend your credits — that's what
+the per-IP hourly limit is for; keep the URL private, or leave the key unset
+until the app has real accounts. And tasks are still stored per browser
+(`localStorage`), so the deployment gives you the app everywhere, not your data
+everywhere. Shared data needs the repository swap described above.
 
 ### Capture
 - Type in **"What needs to be done?"** and press **Enter**. Press **Shift+Enter** to

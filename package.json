@@ -6,10 +6,15 @@
   "description": "Hence — write first, organize later, act fast.",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
+    "build": "tsc -b && vite build && npm run build:server",
+    "build:server": "vite build --ssr server/index.ts --outDir dist-server",
+    "start": "node dist-server/index.js",
+    "preview": "npm run build && npm start",
     "typecheck": "tsc -b",
     "test": "vitest run"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.126.0",
