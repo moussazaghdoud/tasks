@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { isNative } from '@/lib/native/platform';
 import { ui } from '@/store/ui';
 import { useWorkspace, ws } from '@/store/workspace';
 import { useToasts } from '@/store/toast';
@@ -10,7 +11,9 @@ import { useToasts } from '@/store/toast';
 export function useReminders() {
   const ready = useWorkspace((s) => s.ready);
   useEffect(() => {
-    if (!ready) return;
+    // In the native app iOS delivers reminders itself (see lib/native/
+    // notifications.ts), so polling here would announce them twice.
+    if (!ready || isNative()) return;
     const check = () => {
       const now = Date.now();
       for (const t of Object.values(ws().tasks)) {

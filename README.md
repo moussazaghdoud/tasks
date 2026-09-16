@@ -87,6 +87,32 @@ voice memos fall back to on-device analysis until you're back online.
 > and see the App Store route below, which replaces it with Apple's own
 > speech engine.
 
+## The iOS app
+
+The same code ships as a real iOS app through Capacitor. The native project
+lives in `ios/`, and **no Mac is needed**: a macOS runner on GitHub Actions
+builds, signs and uploads it. Full walkthrough in
+**[docs/ios-release.md](docs/ios-release.md)**.
+
+```bash
+npm run ios:sync    # build the web app and copy it into the native project
+```
+
+What changes inside the app, and why:
+
+| | Browser | iOS app |
+|---|---|---|
+| Speech | Web Speech API | Apple's `SFSpeechRecognizer`, through the Swift plugin in `ios/App/App/SpeechPlugin.swift` — WKWebView has no Web Speech API at all, and Apple's engine handles French properly |
+| Tasks | `localStorage` | Capacitor Preferences (iOS can evict web-view storage) |
+| Reminders | Only while a tab is open | iOS local notifications — they arrive with the app closed |
+| Analysis | Same-origin `/api/voice` | The deployed server, from `VITE_API_BASE_URL` |
+| Copy, export, confirm | Browser APIs | Clipboard, share sheet, native dialogs |
+| Extras | — | Haptics, status bar, splash, keyboard insets, `hence://` links, safe areas |
+
+Deliberately not implemented: push notifications (needs APNs plus a backend),
+camera and photo access (no feature needs it), and background processing —
+iOS doesn't grant it for this kind of work, and the app doesn't pretend it has it.
+
 ## Deploying (Railway)
 
 `railway.json` and the `build` / `start` scripts are set up, so a deploy is:

@@ -130,8 +130,10 @@ shown to users comes from `package.json` unless you type one in.
    that in five minutes of real use.
 2. In App Store Connect → your app → **App Store** tab, fill in: description,
    keywords, support URL, category (Productivity), and **screenshots** —
-   6.7" iPhone (1290×2796) is mandatory. Take them in TestFlight on your phone
-   (Volume Up + Side button).
+   6.7" iPhone (1290×2796) is mandatory. Six are ready in
+   [`docs/store/`](store/) at exactly that size, rendered from the app. Regenerate
+   or retake them on your phone once the Claude key is live, so the review card
+   shows the *Claude* badge rather than *On-device*.
 3. **App Privacy** — answer honestly for this app:
    - *Does the app collect data?* Yes.
    - **User Content**: the task text and voice transcripts you send to your

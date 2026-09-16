@@ -11,7 +11,8 @@
     "start": "node dist-server/index.js",
     "preview": "npm run build && npm start",
     "typecheck": "tsc -b",
-    "test": "vitest run"
+    "test": "vitest run",
+    "ios:sync": "npm run build && cap sync ios"
   },
   "engines": {
     "node": ">=22"

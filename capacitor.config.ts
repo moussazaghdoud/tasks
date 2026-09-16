@@ -34,6 +34,8 @@ const config: CapacitorConfig = {
     LocalNotifications: {
       smallIcon: 'ic_stat_icon',
       iconColor: '#1e676c',
+      // Show reminders even when the app is open, not only in the background.
+      presentationOptions: ['badge', 'sound', 'alert'],
     },
   },
 };
