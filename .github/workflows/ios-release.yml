@@ -14,6 +14,7 @@ on:
         options:
           - beta # build, sign, upload to TestFlight
           - bootstrap # one-off: register the App ID and create the app record
+          - check_auth # quick: is the App Store Connect key set up correctly?
       changelog:
         description: What testers should know about this build
         required: false
@@ -37,8 +38,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check the signing secrets are present
+      - name: Check the required secrets are present
         env:
+          LANE: ${{ inputs.lane || 'beta' }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
@@ -46,27 +48,36 @@ jobs:
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: |
+          # Signing certificates are only needed when we actually build.
+          required="ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID"
+          if [ "$LANE" = "beta" ]; then required="$required MATCH_GIT_URL MATCH_PASSWORD"; fi
           missing=""
-          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID MATCH_GIT_URL MATCH_PASSWORD; do
+          for name in $required; do
             if [ -z "${!name}" ]; then missing="$missing $name"; fi
           done
           if [ -n "$missing" ]; then
             echo "::error::Missing repository secrets:$missing — see docs/ios-release.md"
             exit 1
           fi
+          echo "Secrets present for the '$LANE' lane."
 
+      # check_auth only talks to Apple, so it skips the app build entirely.
       - uses: actions/setup-node@v4
+        if: inputs.lane != 'check_auth'
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+        if: inputs.lane != 'check_auth'
 
       - name: Build the web app
+        if: inputs.lane != 'check_auth'
         run: npm run build
         env:
           VITE_API_BASE_URL: ${{ vars.API_BASE_URL }}
 
       - name: Copy the web app into the native project
+        if: inputs.lane != 'check_auth'
         run: npx cap sync ios
 
       - uses: ruby/setup-ruby@v1
@@ -74,7 +85,7 @@ jobs:
           ruby-version: '3.3'
           bundler-cache: true
 
-      - name: Build and upload
+      - name: Run fastlane
         run: bundle exec fastlane ios "${LANE}"
         env:
           CI: true

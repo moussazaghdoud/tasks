@@ -35,6 +35,29 @@ platform :ios do
     setup_ci if ENV['CI']
   end
 
+  desc 'Check the App Store Connect key works (needs only the four Apple secrets)'
+  lane :check_auth do
+    require 'spaceship'
+    require 'base64'
+
+    token = Spaceship::ConnectAPI::Token.create(
+      key_id: ENV.fetch('ASC_KEY_ID'),
+      issuer_id: ENV.fetch('ASC_ISSUER_ID'),
+      key: Base64.decode64(ENV.fetch('ASC_KEY_P8'))
+    )
+    Spaceship::ConnectAPI.token = token
+
+    apps = Spaceship::ConnectAPI::App.all
+    UI.success('The App Store Connect key works.')
+    UI.message("Team: #{ENV.fetch('APPLE_TEAM_ID')}")
+    if apps.empty?
+      UI.message('No apps on the account yet — run the bootstrap lane next to create one.')
+    else
+      apps.each { |a| UI.message("Existing app: #{a.name} (#{a.bundle_id})") }
+    end
+    UI.message("This app's identifier will be: #{APP_IDENTIFIER}")
+  end
+
   desc 'Register the App ID and create the App Store Connect record (run once)'
   lane :bootstrap do
     produce(
