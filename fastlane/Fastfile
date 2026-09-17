@@ -17,6 +17,14 @@ def package_version
   JSON.parse(File.read(File.expand_path('../package.json', __dir__)))['version']
 end
 
+# An unset workflow input arrives as an empty string, not as nil — treat both
+# as "not provided", or an empty version reaches the build settings and Apple
+# rejects the upload for a missing CFBundleShortVersionString.
+def env_or(name, fallback)
+  value = ENV[name].to_s.strip
+  value.empty? ? fallback : value
+end
+
 # Write a note on the GitHub run's Summary page, when running in CI.
 def write_summary(markdown)
   path = ENV['GITHUB_STEP_SUMMARY']
@@ -94,7 +102,7 @@ platform :ios do
     # check_auth proved. Both steps are idempotent: re-running is harmless.
     connect_with_api_key
 
-    app_name = ENV['APP_NAME'] || 'Hence'
+    app_name = env_or('APP_NAME', 'Hence')
 
     bundle = Spaceship::ConnectAPI::BundleId.all.find { |b| b.identifier == APP_IDENTIFIER }
     if bundle
@@ -190,8 +198,10 @@ platform :ios do
 
     # Version comes from package.json; build number from the CI run, so every
     # upload is unique and traceable back to a commit.
-    version = ENV['MARKETING_VERSION'] || package_version
-    build_number = ENV['BUILD_NUMBER'] || Time.now.strftime('%Y%m%d%H%M')
+    version = env_or('MARKETING_VERSION', package_version)
+    build_number = env_or('BUILD_NUMBER', Time.now.strftime('%Y%m%d%H%M'))
+    UI.user_error!('No marketing version: set one in package.json or in the workflow input.') if version.empty?
+    UI.message("Building #{version} (#{build_number})")
 
     build_app(
       project: PROJECT,
@@ -210,7 +220,7 @@ platform :ios do
       api_key: key,
       app_identifier: APP_IDENTIFIER,
       skip_waiting_for_build_processing: true,
-      changelog: options[:changelog] || ENV['CHANGELOG'] || "Build #{build_number} from #{ENV['GITHUB_SHA'] || 'local'}",
+      changelog: options[:changelog] || env_or('CHANGELOG', "Build #{build_number} from #{env_or('GITHUB_SHA', 'local')[0, 7]}"),
       distribute_external: false
     )
 
