@@ -17,6 +17,14 @@ def package_version
   JSON.parse(File.read(File.expand_path('../package.json', __dir__)))['version']
 end
 
+# Write a note on the GitHub run's Summary page, when running in CI.
+def write_summary(markdown)
+  path = ENV['GITHUB_STEP_SUMMARY']
+  return if path.nil? || path.empty?
+
+  File.open(path, 'a') { |f| f.puts(markdown) }
+end
+
 # Authenticate Spaceship (the App Store Connect client) with the API key.
 # Used by the lanes that call the API directly rather than through an action.
 def connect_with_api_key
@@ -100,23 +108,32 @@ platform :ios do
       UI.success("Registered bundle ID #{APP_IDENTIFIER}")
     end
 
+    # The App Store Connect API cannot create apps — `POST /v1/apps` does not
+    # exist in the public API, for any key or role. The app record is made once
+    # in the browser; everything after that is automated.
     app = Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
     if app
-      UI.message("App already in App Store Connect: #{app.name}")
+      UI.success("App Store Connect record found: #{app.name} (#{app.bundle_id})")
+      UI.success('Nothing left to do — run the beta lane next.')
     else
-      Spaceship::ConnectAPI::App.create(
-        name: app_name,
-        version_string: package_version,
-        sku: ENV['APP_SKU'] || "hence-#{Time.now.strftime('%Y%m%d%H%M')}",
-        primary_locale: 'en-US',
-        bundle_id: APP_IDENTIFIER,
-        platforms: ['IOS'],
-        company_name: ENV['COMPANY_NAME'] || app_name
-      )
-      UI.success("Created the App Store Connect record for '#{app_name}'")
-    end
+      steps = <<~STEPS
+        The bundle ID is registered, but the app record does not exist yet.
+        Apple does not allow creating it through the API, so do this once:
 
-    UI.success("Ready: #{APP_IDENTIFIER}")
+          1. https://appstoreconnect.apple.com/apps  →  "+"  →  New App
+          2. Platform: iOS
+          3. Name: #{app_name}          (must be unique across the App Store)
+          4. Primary Language: English (U.S.)
+          5. Bundle ID: #{APP_IDENTIFIER}   (pick it from the list)
+          6. SKU: #{ENV['APP_SKU'] || 'hence-001'}   (any unique string, never shown to users)
+          7. User Access: Full Access  →  Create
+
+        Then run this lane again to confirm, or go straight to the beta lane.
+      STEPS
+      UI.important(steps)
+      write_summary("### One manual step\n\n```\n#{steps}```")
+      UI.user_error!('App Store Connect record missing — see the instructions above.')
+    end
   end
 
   desc 'Compile the app without signing — proves the native project builds'
@@ -134,6 +151,14 @@ platform :ios do
   desc 'Build a signed app and upload it to TestFlight'
   lane :beta do |options|
     key = asc_api_key
+
+    # Fail in seconds rather than after a 15-minute build and archive.
+    connect_with_api_key
+    unless Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
+        UI.user_error!("No App Store Connect record for #{APP_IDENTIFIER}. Create it once at " \
+                       'https://appstoreconnect.apple.com/apps (+ → New App), then run this again. ' \
+                       'Apple does not allow creating it through the API.')
+    end
 
     # Fetches the distribution certificate and profile, creating them on the
     # first run. Stored encrypted in the private certificates repository.

@@ -129,13 +129,25 @@ GitHub → this repo → **Settings → Secrets and variables → Actions**.
 | `API_BASE_URL` | Your Railway URL, e.g. `https://hence-production.up.railway.app` — the app calls it for voice analysis |
 | `APP_IDENTIFIER` | Optional. Defaults to `com.moussazaghdoud.hence` |
 
-### 6. Create the app record — from GitHub, not a Mac
-**Actions** → **iOS release** → **Run workflow** → set *What to run* to
-**bootstrap** → **Run workflow**.
+### 6. Register the App ID, then create the app record
 
-This registers the App ID with Apple and creates the app in App Store Connect.
-If the name `Hence` is taken, App Store Connect will say so — pick another
-display name and re-run.
+**Actions** → **iOS release** → **Run workflow** → *What to run*: **bootstrap**.
+This registers the App ID (`com.moussazaghdoud.hence`) with Apple.
+
+Then create the app record **once, in the browser** — Apple's API has no
+endpoint for creating apps, with any key or role, so this step cannot be
+automated:
+
+1. [appstoreconnect.apple.com/apps](https://appstoreconnect.apple.com/apps) → **+** → **New App**
+2. **Platform:** iOS
+3. **Name:** `Hence` — must be unique across the whole App Store
+4. **Primary Language:** English (U.S.)
+5. **Bundle ID:** pick `com.moussazaghdoud.hence` from the list
+6. **SKU:** any unique string, e.g. `hence-001` (never shown to users)
+7. **User Access:** Full Access → **Create**
+
+Everything after this is automated: run **bootstrap** again to confirm, or go
+straight to the release below.
 
 ---
 
