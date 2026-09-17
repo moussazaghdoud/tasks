@@ -52,6 +52,18 @@ Access** → **Integrations** → **App Store Connect API** → **Team Keys** �
 Also note your **Team ID**: [developer.apple.com/account](https://developer.apple.com/account)
 → Membership details.
 
+**If your Apple account is in French**, the same path reads:
+
+| English | French |
+|---|---|
+| Users and Access | **Utilisateurs et accès** |
+| Integrations (tab) | **Intégrations** |
+| App Store Connect API | **API App Store Connect** |
+| Team Keys | **Clés d'équipe** |
+| Access: App Manager | Accès : **Responsable d'app** |
+| Issuer ID | **ID d'émetteur** (above the table) |
+| Membership details → Team ID | **Adhésion** → **ID d'équipe** |
+
 ### 3. Create a private repository for the signing certificates
 GitHub → **New repository** → name it `hence-certificates` → **Private** → Create.
 It stays empty; `match` fills it with your encrypted certificate and profile.
