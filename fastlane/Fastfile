@@ -17,6 +17,19 @@ def package_version
   JSON.parse(File.read(File.expand_path('../package.json', __dir__)))['version']
 end
 
+# Authenticate Spaceship (the App Store Connect client) with the API key.
+# Used by the lanes that call the API directly rather than through an action.
+def connect_with_api_key
+  require 'spaceship'
+  require 'base64'
+
+  Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+    key_id: ENV.fetch('ASC_KEY_ID'),
+    issuer_id: ENV.fetch('ASC_ISSUER_ID'),
+    key: Base64.decode64(ENV.fetch('ASC_KEY_P8'))
+  )
+end
+
 def asc_api_key
   app_store_connect_api_key(
     key_id: ENV.fetch('ASC_KEY_ID'),
@@ -50,17 +63,9 @@ platform :ios do
     setup_ci if ENV['CI']
   end
 
-  desc 'Check the App Store Connect key works (needs only the four Apple secrets)'
+  desc 'Check the App Store Connect key works (needs only the three key secrets)'
   lane :check_auth do
-    require 'spaceship'
-    require 'base64'
-
-    token = Spaceship::ConnectAPI::Token.create(
-      key_id: ENV.fetch('ASC_KEY_ID'),
-      issuer_id: ENV.fetch('ASC_ISSUER_ID'),
-      key: Base64.decode64(ENV.fetch('ASC_KEY_P8'))
-    )
-    Spaceship::ConnectAPI.token = token
+    connect_with_api_key
 
     apps = Spaceship::ConnectAPI::App.all
     UI.success('The App Store Connect key works.')
@@ -76,18 +81,42 @@ platform :ios do
 
   desc 'Register the App ID and create the App Store Connect record (run once)'
   lane :bootstrap do
-    produce(
-      api_key: asc_api_key,
-      app_identifier: APP_IDENTIFIER,
-      app_name: ENV['APP_NAME'] || 'Hence',
-      language: 'English (U.S.)',
-      app_version: package_version,
-      sku: ENV['APP_SKU'] || "hence-#{Time.now.strftime('%Y%m%d%H%M')}",
-      company_name: ENV['COMPANY_NAME'] || ENV['APP_NAME'] || 'Hence',
-      skip_itc: false,
-      skip_devcenter: false
-    )
-    UI.success("App ID and App Store Connect record ready for #{APP_IDENTIFIER}.")
+    # `produce` still authenticates with an Apple ID, not an API key, so this
+    # talks to App Store Connect directly with the key — the same path
+    # check_auth proved. Both steps are idempotent: re-running is harmless.
+    connect_with_api_key
+
+    app_name = ENV['APP_NAME'] || 'Hence'
+
+    bundle = Spaceship::ConnectAPI::BundleId.all.find { |b| b.identifier == APP_IDENTIFIER }
+    if bundle
+      UI.message("Bundle ID already registered: #{APP_IDENTIFIER}")
+    else
+      Spaceship::ConnectAPI::BundleId.create(
+        name: app_name.gsub(/[^A-Za-z0-9 ]/, ''), # Apple rejects punctuation here
+        identifier: APP_IDENTIFIER,
+        platform: 'IOS'
+      )
+      UI.success("Registered bundle ID #{APP_IDENTIFIER}")
+    end
+
+    app = Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
+    if app
+      UI.message("App already in App Store Connect: #{app.name}")
+    else
+      Spaceship::ConnectAPI::App.create(
+        name: app_name,
+        version_string: package_version,
+        sku: ENV['APP_SKU'] || "hence-#{Time.now.strftime('%Y%m%d%H%M')}",
+        primary_locale: 'en-US',
+        bundle_id: APP_IDENTIFIER,
+        platforms: ['IOS'],
+        company_name: ENV['COMPANY_NAME'] || app_name
+      )
+      UI.success("Created the App Store Connect record for '#{app_name}'")
+    end
+
+    UI.success("Ready: #{APP_IDENTIFIER}")
   end
 
   desc 'Compile the app without signing — proves the native project builds'
