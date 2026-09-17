@@ -128,8 +128,16 @@ const server = createServer((req, res) => {
       if (info.isDirectory()) throw new Error('directory');
       await sendFile(req, res, path);
     } catch {
-      // Unknown path with no extension: let the single-page app route it.
-      if (!extname(path)) return sendFile(req, res, INDEX);
+      if (!extname(path)) {
+        // /privacy and /support are real pages (the App Store requires them).
+        try {
+          await stat(`${path}.html`);
+          return await sendFile(req, res, `${path}.html`);
+        } catch {
+          // Anything else: let the single-page app route it.
+        }
+        return sendFile(req, res, INDEX);
+      }
       res.statusCode = 404;
       res.end('Not found');
     }

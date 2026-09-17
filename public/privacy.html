@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hence — Privacy Policy</title>
+    <style>
+      :root { color-scheme: light; }
+      body {
+        margin: 0 auto; max-width: 42rem; padding: 3rem 1.25rem 5rem;
+        background: #f1efe9; color: #1d1c1a;
+        font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      h1 { font-size: 1.9rem; letter-spacing: -0.01em; margin: 0 0 0.25rem; }
+      h2 { font-size: 1.1rem; margin: 2.25rem 0 0.5rem; }
+      p, li { color: #35332e; }
+      .updated { color: #86817a; font-size: 0.9rem; margin: 0 0 2rem; }
+      a { color: #1e676c; }
+      code { background: #e7e3da; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+      footer { margin-top: 3rem; color: #86817a; font-size: 0.9rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Hence — last updated 17 September 2026</p>
+
+    <p>
+      Hence is a task manager. It has no accounts, no advertising, no analytics and no trackers.
+      This page explains exactly what happens to what you write or say.
+    </p>
+
+    <h2>What stays on your device</h2>
+    <p>
+      Your tasks, projects, notes, the people you add and your settings are stored on the device
+      you use — in the app's own storage on iOS, or in your browser's storage on the web. They are
+      not uploaded anywhere, and we cannot read them. Deleting the app (or “Start empty” in
+      Settings) deletes them. You can export a copy at any time from Settings → Export data.
+    </p>
+
+    <h2>Turning speech into text</h2>
+    <p>
+      When you use the microphone, your speech is transcribed by the operating system or browser
+      you are using, not by us:
+    </p>
+    <ul>
+      <li>In the iOS app: Apple's speech recognition. Apple may process the audio on its servers. See Apple's privacy policy.</li>
+      <li>In a browser: that browser's speech service (for example Google in Chrome, Apple in Safari).</li>
+    </ul>
+    <p>We do not record, store or transmit audio ourselves.</p>
+
+    <h2>Turning a memo into a task</h2>
+    <p>
+      To turn what you said into a clear task, the app sends the <em>text</em> of your memo to the
+      Hence server, which forwards it to <a href="https://www.anthropic.com/legal/privacy" rel="noreferrer">Anthropic</a>'s
+      API (the Claude model) and returns the result. To make the result fit your work, the request
+      also includes the names of your projects, the names of people you have added, and the titles
+      of your open tasks.
+    </p>
+    <ul>
+      <li>The Hence server does not store your memo or the result. It passes them through and keeps only anonymous error logs.</li>
+      <li>Anthropic processes the request to produce the answer. Inputs sent through their API are not used to train their models; they may be retained briefly for abuse monitoring under Anthropic's terms.</li>
+      <li>If no analysis service is configured, or you are offline, the memo is analysed on your device and nothing leaves it.</li>
+    </ul>
+
+    <h2>Reminders</h2>
+    <p>
+      Reminders are scheduled locally by your device and delivered by it. They are not sent through
+      any server and are not shared between devices.
+    </p>
+
+    <h2>What we never do</h2>
+    <ul>
+      <li>No account, so nothing is tied to your identity.</li>
+      <li>No advertising, no ad identifiers, no tracking across apps or websites.</li>
+      <li>No analytics SDKs, no behavioural profiling, no selling of data.</li>
+    </ul>
+
+    <h2>Children</h2>
+    <p>Hence is not directed at children and collects no information about them.</p>
+
+    <h2>Changes</h2>
+    <p>
+      If this policy changes, the date above changes with it, and the current version is always at
+      this address.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+      Questions, or a request to delete anything: <a href="mailto:REPLACE_WITH_YOUR_EMAIL">REPLACE_WITH_YOUR_EMAIL</a>.
+    </p>
+
+    <footer><a href="/">← Back to Hence</a></footer>
+  </body>
+</html>

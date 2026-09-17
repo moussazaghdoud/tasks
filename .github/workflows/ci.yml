@@ -28,6 +28,23 @@ jobs:
         env:
           VITE_API_BASE_URL: ${{ vars.API_BASE_URL }}
 
+  fastlane:
+    name: Release config is valid
+    # Catches a typo in the Fastfile in 40 seconds instead of halfway through a
+    # release build. Needs no secrets: it only parses the configuration.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - name: Parse the Fastfile and list the lanes
+        run: bundle exec fastlane lanes
+        env:
+          FASTLANE_SKIP_UPDATE_CHECK: true
+          FASTLANE_OPT_OUT_USAGE: true
+
   ios:
     name: iOS compiles (unsigned)
     # The native project only breaks when these change, and macOS minutes are

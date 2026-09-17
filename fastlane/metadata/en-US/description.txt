@@ -1,0 +1,19 @@
+Hence is a task manager built around one idea: write first, organize later, act fast.
+
+Tap the microphone and say what needs doing — "call Thierry tomorrow about the partner terms, it's urgent" — and Hence turns it into a clear task: a short title, the date and time, the priority, the project, the person you delegated it to. A rambling memo comes back short and sharp, with a two-sentence summary of what was worth keeping. You confirm before anything is created, and you can change any detail first.
+
+Prefer to type? The same understanding works when you write. "Board deck friday high priority" needs no forms, no menus, no date pickers.
+
+THE HOME SCREEN ANSWERS ONE QUESTION
+What now? A greeting, the microphone, and your next three tasks. Everything else waits behind More — the rest of the day, the week ahead, what you finished. No dashboard, no widgets, no badges.
+
+BUILT FOR REAL WORK
+• Today, Upcoming, Inbox, Important and Later — time first, folders second
+• Lightweight projects, notes, steps, links and recurring tasks
+• Reminders that arrive even when the app is closed
+• Focus mode: one task, its steps and a timer
+• Triage: sort a full inbox with one tap per task
+• Swipe to complete, drag to reorder, undo anything
+
+QUIET BY DESIGN
+No accounts. No advertising. No trackers or analytics. Your tasks stay on your device, and you can export them whenever you like.

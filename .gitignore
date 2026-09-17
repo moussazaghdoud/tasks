@@ -2,6 +2,16 @@ node_modules
 dist
 dist-server
 
+# Signing material must never be committed — it belongs in GitHub secrets and
+# in the private certificates repository.
+*.p8
+AuthKey_*
+*.p12
+*.cer
+*.certSigningRequest
+*.mobileprovision
+fastlane/*.keychain*
+
 # Native build output (the iOS project itself is committed)
 build
 ios/App/build
