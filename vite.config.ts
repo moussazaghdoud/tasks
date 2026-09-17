@@ -2,8 +2,11 @@ import { defineConfig } from 'vitest/config';
 import { loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 import { voiceMiddleware } from './server/voice.ts';
+
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
 
 /**
  * Serves POST /api/voice from the dev and preview servers. The Claude
@@ -31,6 +34,11 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss(), voiceApi()],
+    // So a running copy can say which build it is — the native app reports its
+    // own build number on top of this.
+    define: {
+      __APP_VERSION__: JSON.stringify(version),
+    },
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),

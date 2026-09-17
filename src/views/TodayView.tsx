@@ -4,6 +4,7 @@ import type { Task } from '@/domain/types';
 import { addDaysKey, greeting, longDate, toKey } from '@/lib/dates';
 import { cn } from '@/lib/platform';
 import { byDateThenPosition, byPosition, useLiveTasks } from '@/store/selectors';
+import { readVersion, WEB_VERSION } from '@/lib/version';
 import { toast } from '@/store/toast';
 import { ui, useUi } from '@/store/ui';
 import { useWorkspace, ws } from '@/store/workspace';
@@ -62,6 +63,12 @@ export function TodayView() {
     : restSoon.length
       ? `${restSoon.length} coming up`
       : '';
+
+  // The native app knows its build number; the web build only its version.
+  const [version, setVersion] = useState(WEB_VERSION);
+  useEffect(() => {
+    void readVersion().then(setVersion);
+  }, []);
 
   const moveOverdue = () => {
     const ids = overdue.map((t) => t.id);
@@ -159,6 +166,8 @@ export function TodayView() {
           </div>
         </div>
       )}
+
+      <p className="mt-12 text-center text-[11px] tabular-nums tracking-[0.03em] text-ink-4 max-md:mt-10">{version}</p>
     </div>
   );
 }
