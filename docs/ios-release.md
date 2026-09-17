@@ -37,9 +37,32 @@ Store.
 ## One-time setup (about 30 minutes, all in a browser)
 
 ### 1. Join the Apple Developer Program
-[developer.apple.com/programs](https://developer.apple.com/programs/) → Enroll.
-$99/year. Approval usually takes a few hours, sometimes a couple of days.
-Everything below waits on this.
+[developer.apple.com/programs](https://developer.apple.com/programs/) → **Enroll**.
+$99/year (about €99 + VAT in France), renewed automatically. Everything below
+waits on this — a free Apple account cannot use TestFlight or the App Store.
+
+Before you start:
+- Turn on **two-factor authentication** for the Apple ID you'll use. Enrollment
+  refuses to continue without it.
+- Use an Apple ID you will keep for years. The account owns the app, and moving
+  an app to another account later is a support request, not a setting.
+
+**Choose the entity type carefully — it's awkward to change:**
+
+| | Individual / Sole Proprietor | Organization |
+|---|---|---|
+| Seller name on the App Store | Your personal name | Your company name |
+| Needs | An ID document | A **D-U-N-S number** and proof the company exists |
+| Time | Usually 24–48 h | Often 1–3 weeks |
+
+Start as **Individual** unless the app must be published under a company name.
+
+The fastest route is the **Apple Developer app** on your iPhone: it verifies
+your identity with the camera and Face ID, and usually approves within a day.
+The web form works too, but asks for the same documents.
+
+You'll get an email when the account is active. Until then, nothing else in
+this guide can be done.
 
 ### 2. Create an App Store Connect API key
 [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → **Users and
