@@ -52,15 +52,31 @@ jobs:
           required="ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8"
           if [ "$LANE" != "check_auth" ]; then required="$required APPLE_TEAM_ID"; fi
           if [ "$LANE" = "beta" ]; then required="$required MATCH_GIT_URL MATCH_PASSWORD"; fi
+
+          # Report every secret, present or not, in the run summary — so a
+          # missing one is obvious without digging through the log.
+          echo "### Secrets for the \`$LANE\` lane" >> "$GITHUB_STEP_SUMMARY"
           missing=""
           for name in $required; do
-            if [ -z "${!name}" ]; then missing="$missing $name"; fi
+            if [ -z "${!name}" ]; then
+              missing="$missing $name"
+              echo "- ❌ \`$name\` — not found" >> "$GITHUB_STEP_SUMMARY"
+              echo "MISSING  $name"
+            else
+              echo "- ✅ \`$name\`" >> "$GITHUB_STEP_SUMMARY"
+              echo "present  $name"
+            fi
           done
+
           if [ -n "$missing" ]; then
+            {
+              echo ""
+              echo "Add them under **Settings → Secrets and variables → Actions → Secrets** (the *Secrets* tab, not *Variables*), as **repository** secrets. Names are case-sensitive."
+            } >> "$GITHUB_STEP_SUMMARY"
             echo "::error::Missing repository secrets:$missing — see docs/ios-release.md"
             exit 1
           fi
-          echo "Secrets present for the '$LANE' lane."
+          echo "All secrets present for the '$LANE' lane."
 
       # check_auth only talks to Apple, so it skips the app build entirely.
       - uses: actions/setup-node@v4
