@@ -136,9 +136,13 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
                 ])
                 if result.isFinal { self.teardown(notifyEnd: true) }
             }
-            if error != nil {
-                // A cancelled task after stop() is expected, not a failure.
-                if self.listening { self.notifyListeners("error", data: ["code": "recognition"]) }
+            if let error = error as NSError? {
+                // Ending the audio always finishes the task with an error, so
+                // most of these are ordinary end-of-recording noise rather than
+                // a failure worth showing the user.
+                if self.listening, let code = Self.reportableError(error) {
+                    self.notifyListeners("error", data: ["code": code])
+                }
                 self.teardown(notifyEnd: true)
             }
         }
@@ -162,6 +166,23 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
         audioEngine.inputNode.removeTap(onBus: 0)
         if audioEngine.isRunning { audioEngine.stop() }
         call.resolve()
+    }
+
+    /// Which recognition errors deserve a message, and which are just the
+    /// recogniser winding down. Returns nil when there is nothing to say.
+    private static func reportableError(_ error: NSError) -> String? {
+        // kAFAssistantErrorDomain is Apple's speech backend.
+        if error.domain == "kAFAssistantErrorDomain" {
+            switch error.code {
+            case 1110: return "nospeech"  // heard nothing at all
+            case 203: return "nospeech"   // "Retry" — an empty utterance
+            case 216, 301: return nil            // task cancelled by us
+            default: return "recognition"
+            }
+        }
+        // NSURLErrorDomain and friends: the transcription could not reach Apple.
+        if error.domain == NSURLErrorDomain { return "network" }
+        return "recognition"
     }
 
     private func teardown(notifyEnd: Bool) {

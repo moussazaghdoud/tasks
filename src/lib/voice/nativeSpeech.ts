@@ -28,6 +28,11 @@ const ERROR_MAP: Record<string, SpeechErrorCode> = {
   unavailable: 'unsupported',
   audio: 'audio-capture',
   recognition: 'other',
+  nospeech: 'no-speech',
+  network: 'network',
+  // Capacitor's own code when no native plugin answers — the Swift file is
+  // missing from the app target. Worth surfacing plainly rather than as noise.
+  UNIMPLEMENTED: 'unsupported',
 };
 
 /** Microphone level pushed by the plugin; the overlay subscribes to it. */
@@ -93,8 +98,9 @@ export function startNativeSpeech(lang: string, cb: SpeechCallbacks): SpeechSess
   })();
 
   return {
+    // Finishing normally: keep listening for the final transcript, and let the
+    // plugin decide which of the errors that follow are worth reporting.
     stop: () => {
-      stopped = false;
       void Speech.stop();
     },
     abort: () => {

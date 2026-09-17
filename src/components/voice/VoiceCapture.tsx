@@ -2,6 +2,7 @@ import { FloatingFocusManager, FloatingOverlay, FloatingPortal, useFloating } fr
 import { Keyboard, Mic, MicOff } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { markFresh } from '@/lib/fresh';
+import { isNative } from '@/lib/native/platform';
 import { cn, isModEvent, isTypingTarget } from '@/lib/platform';
 import { analyzeMemo } from '@/lib/voice/analyze';
 import { createFromDrafts, findTaskByTitle, type ConfirmedDraft } from '@/lib/voice/createFromDrafts';
@@ -27,6 +28,16 @@ const ERRORS: Record<SpeechErrorCode, { title: string; body: string }> = {
   unsupported: { title: 'Voice isn’t available in this browser.', body: 'Use Chrome, Edge or Safari for voice. You can type or paste your memo meanwhile.' },
   other: { title: 'Something interrupted the recording.', body: 'Try again, or type your memo instead.' },
 };
+
+/** Inside the app there is no address bar and no choice of browser. */
+const NATIVE_ERRORS: Partial<Record<SpeechErrorCode, { title: string; body: string }>> = {
+  'not-allowed': { title: 'Microphone access is blocked.', body: 'Open Settings → Hence and turn on Microphone and Speech Recognition, then try again.' },
+  'no-speech': { title: 'I didn’t catch anything.', body: 'Try again and start speaking right away, or type your memo instead.' },
+  network: { title: 'Transcription needs a connection.', body: 'Apple transcribes the audio online. Type your memo instead, or try again once you’re back on a network.' },
+  unsupported: { title: 'Voice isn’t available on this device.', body: 'Speech recognition is off or unsupported for this language. You can type your memo instead.' },
+};
+
+const errorText = (code: SpeechErrorCode) => (isNative() && NATIVE_ERRORS[code]) || ERRORS[code];
 
 const LANGS: Array<[string, string]> = [
   ['en-US', 'EN'],
@@ -298,7 +309,7 @@ function VoiceBody({ onClose }: { onClose: () => void }) {
   }
 
   if (phase === 'error' && error) {
-    const e = ERRORS[error];
+    const e = errorText(error);
     return (
       <div className="p-6">
         <div className="flex items-start gap-4">
