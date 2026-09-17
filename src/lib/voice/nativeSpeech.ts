@@ -30,9 +30,10 @@ const ERROR_MAP: Record<string, SpeechErrorCode> = {
   recognition: 'other',
   nospeech: 'no-speech',
   network: 'network',
-  // Capacitor's own code when no native plugin answers — the Swift file is
-  // missing from the app target. Worth surfacing plainly rather than as noise.
-  UNIMPLEMENTED: 'unsupported',
+  // Capacitor's own code when nothing answers on the native side. It means the
+  // build is wrong, not the device or the language, so keep it distinguishable
+  // — reading it as "unsupported" sends the next person hunting the wrong bug.
+  UNIMPLEMENTED: 'plugin-missing',
 };
 
 /** Microphone level pushed by the plugin; the overlay subscribes to it. */

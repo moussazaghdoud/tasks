@@ -1,4 +1,12 @@
-export type SpeechErrorCode = 'not-allowed' | 'no-speech' | 'audio-capture' | 'network' | 'unsupported' | 'other';
+export type SpeechErrorCode =
+  | 'not-allowed'
+  | 'no-speech'
+  | 'audio-capture'
+  | 'network'
+  | 'unsupported'
+  /** The native app was built without the speech plugin reaching the bridge. */
+  | 'plugin-missing'
+  | 'other';
 
 export interface SpeechCallbacks {
   /** Called on every update with the confirmed text and the in-flight guess. */

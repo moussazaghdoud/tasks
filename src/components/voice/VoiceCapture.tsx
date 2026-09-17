@@ -26,6 +26,7 @@ const ERRORS: Record<SpeechErrorCode, { title: string; body: string }> = {
   'audio-capture': { title: 'No microphone found.', body: 'Connect a microphone, or type your memo instead.' },
   network: { title: 'Voice recognition needs a connection.', body: 'Your browser transcribes speech online. Type your memo instead, or try again.' },
   unsupported: { title: 'Voice isn’t available in this browser.', body: 'Use Chrome, Edge or Safari for voice. You can type or paste your memo meanwhile.' },
+  'plugin-missing': { title: 'Voice is missing from this build.', body: 'This is a packaging fault, not your device. Type your memo instead and report the build number.' },
   other: { title: 'Something interrupted the recording.', body: 'Try again, or type your memo instead.' },
 };
 
