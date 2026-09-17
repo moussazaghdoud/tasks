@@ -49,7 +49,8 @@ platform :ios do
 
     apps = Spaceship::ConnectAPI::App.all
     UI.success('The App Store Connect key works.')
-    UI.message("Team: #{ENV.fetch('APPLE_TEAM_ID')}")
+    # The Team ID is only needed to sign a build, so don't block this check on it.
+    UI.message(ENV['APPLE_TEAM_ID'] ? "Team: #{ENV['APPLE_TEAM_ID']}" : 'APPLE_TEAM_ID not set yet — needed for the build lanes, not for this check.')
     if apps.empty?
       UI.message('No apps on the account yet — run the bootstrap lane next to create one.')
     else

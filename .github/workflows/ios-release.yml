@@ -48,8 +48,9 @@ jobs:
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: |
-          # Signing certificates are only needed when we actually build.
-          required="ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID"
+          # check_auth only proves the key works: no team, no certificates needed.
+          required="ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8"
+          if [ "$LANE" != "check_auth" ]; then required="$required APPLE_TEAM_ID"; fi
           if [ "$LANE" = "beta" ]; then required="$required MATCH_GIT_URL MATCH_PASSWORD"; fi
           missing=""
           for name in $required; do
