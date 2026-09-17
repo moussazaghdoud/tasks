@@ -29,6 +29,21 @@ def asc_api_key
 end
 
 platform :ios do
+  # Put the real reason on the run's Summary page, so a failure doesn't require
+  # digging through hundreds of log lines.
+  error do |lane, exception|
+    summary = ENV['GITHUB_STEP_SUMMARY']
+    next if summary.nil? || summary.empty?
+
+    File.open(summary, 'a') do |f|
+      f.puts "### fastlane failed in `#{lane}`"
+      f.puts ''
+      f.puts '```'
+      f.puts exception.message.to_s[0, 3000]
+      f.puts '```'
+    end
+  end
+
   before_all do
     # Creates a throw-away keychain on CI so imported certificates have
     # somewhere to live, and unlocks it for the build.
