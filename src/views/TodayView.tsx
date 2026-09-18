@@ -1,7 +1,7 @@
 import { ChevronDown, Crosshair, Keyboard, Sun } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Task } from '@/domain/types';
-import { addDaysKey, greeting, longDate, toKey } from '@/lib/dates';
+import { addDaysKey, greeting, toKey } from '@/lib/dates';
 import { cn } from '@/lib/platform';
 import { byDateThenPosition, byPosition, useLiveTasks } from '@/store/selectors';
 import { readVersion, WEB_VERSION } from '@/lib/version';
@@ -79,8 +79,7 @@ export function TodayView() {
   return (
     <div className={cn('flex flex-col', !expanded && 'justify-center min-h-[calc(100dvh-190px)] md:min-h-[calc(100dvh-124px)]')}>
       <header className="text-center">
-        <p className="label-caps !text-ink-4">{longDate(today)}</p>
-        <h1 className="mt-1.5 font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink max-md:text-[28px] max-md:leading-9">
+        <h1 className="font-serif text-[32px] leading-10 tracking-[-0.01em] text-ink max-md:text-[28px] max-md:leading-9">
           {greeting()}
           {name ? `, ${name.split(' ')[0]}` : ''}.
         </h1>
@@ -88,14 +87,17 @@ export function TodayView() {
 
       <div className="mt-8 flex flex-col items-center">
         <VoiceButton variant="hero" />
-        <p className="mt-3.5 text-ui text-ink-3">Speak a task</p>
+        {/* The microphone says what it does; only the alternative needs naming,
+            and on a phone the icon carries that too. */}
         {!typing && (
           <button
             onClick={() => setTyping(true)}
-            className="mt-1 inline-flex items-center gap-1.5 rounded-[7px] px-2 py-1 text-meta text-ink-4 transition-colors hover:bg-wash-strong hover:text-ink-2"
+            aria-label="Type a task"
+            className="mt-5 inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-ui text-ink-3 transition-colors hover:bg-wash-strong hover:text-ink max-md:mt-6"
           >
-            <Keyboard className="size-3.5" /> or type
-            <Kbd combo="n" subtle />
+            <Keyboard className="size-[18px]" />
+            <span className="max-md:sr-only">Type</span>
+            <Kbd combo="n" subtle className="max-md:hidden" />
           </button>
         )}
       </div>
@@ -115,9 +117,7 @@ export function TodayView() {
         {shown.length > 0 ? (
           <TaskList listId="today" tasks={shown} ctx={{ impliedDate: today, quiet: true }} />
         ) : (
-          <p className="text-center text-ui text-ink-3">
-            {completed.length ? 'Everything planned for today is done.' : 'Nothing planned. Say what needs doing.'}
-          </p>
+          <p className="text-center text-ui text-ink-3">{completed.length ? 'All done for today.' : 'Nothing planned.'}</p>
         )}
       </div>
 
@@ -126,17 +126,16 @@ export function TodayView() {
           <button
             onClick={() => setExpanded((e) => !e)}
             aria-expanded={expanded}
-            className="inline-flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-ui font-medium text-ink-3 transition-colors hover:bg-wash-strong hover:text-ink"
+            className="inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-ui font-medium text-ink-3 transition-colors hover:bg-wash-strong hover:text-ink"
           >
-            {expanded ? 'Show less' : 'More'}
-            {!expanded && moreLabel && <span className="text-ink-4">· {moreLabel}</span>}
+            {expanded ? 'Less' : moreLabel || 'More'}
             <ChevronDown className={cn('size-4 transition-transform duration-200', expanded && 'rotate-180')} />
           </button>
         )}
         {expanded && open.length > 0 && (
           <button
             onClick={() => ui().startFocus((open.find((t) => t.priority === 'important') ?? open[0]).id)}
-            className="inline-flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-ui font-medium text-ink-3 transition-colors hover:bg-wash-strong hover:text-ink"
+            className="inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-ui font-medium text-ink-3 transition-colors hover:bg-wash-strong hover:text-ink"
           >
             <Crosshair className="size-4" /> Focus
           </button>

@@ -7,10 +7,19 @@ interface TaskCheckboxProps {
   label: string;
   muted?: boolean;
   className?: string;
+  /** Enlarge the tap area on phones without redrawing the circle any larger. */
+  touch?: boolean;
 }
 
+/** The square you can hit, per drawn size. The circle itself never changes. */
+const HIT: Record<number, string> = {
+  15: 'size-[23px]',
+  18: 'size-[26px]',
+  20: 'size-[28px]',
+};
+
 /** Circle that draws its check. The only color it ever takes is the accent. */
-export function TaskCheckbox({ checked, onToggle, size = 18, label, muted, className }: TaskCheckboxProps) {
+export function TaskCheckbox({ checked, onToggle, size = 18, label, muted, className, touch }: TaskCheckboxProps) {
   return (
     <button
       type="button"
@@ -24,8 +33,14 @@ export function TaskCheckbox({ checked, onToggle, size = 18, label, muted, class
       onPointerDown={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
-      className={cn('group/check relative grid shrink-0 place-items-center rounded-full outline-offset-1', className)}
-      style={{ width: size + 8, height: size + 8 }}
+      className={cn(
+        'group/check relative grid shrink-0 place-items-center rounded-full outline-offset-1',
+        HIT[size] ?? 'size-[26px]',
+        // Full height, but not full width: a 44px-wide target would take the
+        // space the title needs, and in a list it is the vertical span you miss.
+        touch && 'max-md:h-11 max-md:w-9',
+        className,
+      )}
     >
       <svg width={size} height={size} viewBox="0 0 18 18" aria-hidden className="overflow-visible">
         <circle

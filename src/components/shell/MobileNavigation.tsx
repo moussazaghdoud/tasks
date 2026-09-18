@@ -80,8 +80,7 @@ export function CaptureSheet() {
       <FloatingOverlay lockScroll className="z-[70] flex animate-fade flex-col justify-end bg-[rgb(40_36_30/0.22)]" onClick={() => setCapture(false)}>
         <div className="animate-sheet-up rounded-t-[18px] bg-desk px-3 pt-2 pb-[max(12px,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
           <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-line-strong" />
-          <TaskComposer variant="sheet" autoFocus defaults={ctx.defaults} isVisibleHere={ctx.isVisibleHere} />
-          <p className="px-2 pt-2 text-meta text-ink-3">Try “Call Thierry tomorrow 3pm #ips”. Paste a list to add many.</p>
+          <TaskComposer variant="sheet" autoFocus defaults={ctx.defaults} isVisibleHere={ctx.isVisibleHere} placeholder="Call Thierry tomorrow 3pm #ips" />
         </div>
       </FloatingOverlay>
     </FloatingPortal>

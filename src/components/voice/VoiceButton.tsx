@@ -40,11 +40,11 @@ export function VoiceButton({ variant = 'floating' }: { variant?: 'floating' | '
         aria-label="Speak a task"
         aria-keyshortcuts="V"
         className={cn(
-          'voice-fab group/hero grid size-[88px] touch-none place-items-center rounded-full bg-accent text-white select-none',
+          'voice-fab group/hero grid size-[88px] touch-none place-items-center rounded-full bg-accent text-white select-none max-md:size-[100px]',
           'transition-[transform,background-color] duration-200 hover:scale-[1.04] hover:bg-accent-hover active:scale-[0.97]',
         )}
       >
-        <Mic className="size-9 transition-transform duration-200 group-hover/hero:scale-105" strokeWidth={1.9} />
+        <Mic className="size-9 transition-transform duration-200 group-hover/hero:scale-105 max-md:size-10" strokeWidth={1.9} />
       </button>
     );
   }
@@ -56,9 +56,9 @@ export function VoiceButton({ variant = 'floating' }: { variant?: 'floating' | '
         onPointerUp={onPointerUp}
         onContextMenu={(e) => e.preventDefault()}
         aria-label="Speak a task"
-        className="voice-fab grid size-[52px] touch-none place-items-center rounded-full bg-accent text-white transition-transform select-none active:scale-95"
+        className="voice-fab grid size-[56px] touch-none place-items-center rounded-full bg-accent text-white transition-transform select-none active:scale-95"
       >
-        <Mic className="size-6" strokeWidth={2.1} />
+        <Mic className="size-[26px]" strokeWidth={2.1} />
       </button>
     );
   }

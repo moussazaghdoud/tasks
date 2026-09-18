@@ -162,7 +162,7 @@ function TaskRowImpl({ task, ctx, listId, index, sortable = true, groupDate }: T
             onTouchCancel={swipe.handlers.onTouchCancel}
             style={{ transform: swipe.dx ? `translateX(${swipe.dx}px)` : undefined, touchAction: 'pan-y' }}
             className={cn(
-              'group/row relative flex h-10 cursor-default items-center gap-1 rounded-row pr-2 pl-1 outline-none select-none max-md:h-12',
+              'group/row relative flex h-10 cursor-default items-center gap-1 rounded-row pr-2 pl-1 outline-none select-none max-md:h-14 max-md:gap-1.5',
               'transition-[background-color,box-shadow] duration-100',
               swipe.dx !== 0 ? 'bg-paper' : '',
               isSelected
@@ -179,7 +179,7 @@ function TaskRowImpl({ task, ctx, listId, index, sortable = true, groupDate }: T
             {important && (
               <span aria-label="Important" className="absolute top-1/2 -left-[11px] h-3.5 w-[3px] -translate-y-1/2 rounded-full bg-ember max-md:left-[1px] max-md:h-4" />
             )}
-            <TaskCheckbox checked={checked} onToggle={() => toggleComplete(task.id)} label={task.title} muted={task.priority === 'low'} />
+            <TaskCheckbox touch checked={checked} onToggle={() => toggleComplete(task.id)} label={task.title} muted={task.priority === 'low'} />
 
             {isEditing ? (
               <InlineTitleEditor task={task} />
