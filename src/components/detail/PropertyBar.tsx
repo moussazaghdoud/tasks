@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, Ellipsis, Flag, Hourglass, Inbox, Moon, Repeat, UserPlus } from 'lucide-react';
+import { Ellipsis } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ME } from '@/domain/factories';
 import type { Task } from '@/domain/types';
@@ -8,13 +8,18 @@ import { cn } from '@/lib/platform';
 import { anchorFromElement, ui, type PickerKind } from '@/store/ui';
 import { useWorkspace } from '@/store/workspace';
 import { useToday } from '@/hooks/useToday';
-import { Avatar } from '@/components/ui/Avatar';
-import { ProjectGlyph } from '@/components/ui/ProjectGlyph';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { whenLabel } from '@/components/pickers/DatePicker';
 
+/**
+ * One fact about the task, and a way to change it.
+ *
+ * Only properties that have a value appear. An empty "Remind", "Assign" and
+ * "Schedule" sitting on every task is scaffolding: it fills the panel with
+ * things you are not doing. Setting them from scratch is what the "…" menu is
+ * for, which carries every one of these pickers.
+ */
 function Prop({
-  icon,
   label,
   set,
   kind,
@@ -23,7 +28,6 @@ function Prop({
   shortcut,
   hint,
 }: {
-  icon: ReactNode;
   label: ReactNode;
   set: boolean;
   kind: PickerKind;
@@ -32,17 +36,16 @@ function Prop({
   shortcut?: string;
   hint: string;
 }) {
+  if (!set) return null;
   return (
     <Tooltip label={hint} shortcut={shortcut}>
       <button
         onClick={(e) => ui().openPicker({ kind, taskIds: [task.id], anchor: anchorFromElement(e.currentTarget) })}
         className={cn(
-          'inline-flex h-7 max-w-full items-center gap-1.5 rounded-[7px] px-2 text-[12.5px] font-medium transition-colors',
-          set ? 'bg-wash-strong text-ink-2 hover:bg-sunk hover:text-ink' : 'text-ink-3 hover:bg-wash-strong hover:text-ink-2',
-          tone === 'ember' && set && 'text-ember hover:text-ember',
+          'inline-flex h-8 max-w-full items-center rounded-[8px] bg-wash-strong px-2.5 text-[12.5px] font-medium text-ink-2 transition-colors hover:bg-sunk hover:text-ink max-md:h-9',
+          tone === 'ember' && 'text-ember hover:text-ember',
         )}
       >
-        <span className="flex shrink-0 items-center">{icon}</span>
         <span className="truncate">{label}</span>
       </button>
     </Tooltip>
@@ -64,8 +67,8 @@ export function PropertyBar({ task }: { task: Task }) {
         task={task}
         kind="date"
         set={!!task.dueDate || task.deferred}
-        icon={task.deferred && !task.dueDate ? <Moon className="size-3.5" /> : <CalendarDays className={cn('size-3.5', overdue && 'text-ember')} />}
-        label={task.dueDate ? <span className={cn(overdue && 'text-ember')}>{whenLabel(task.dueDate, task.dueTime, fmt)}</span> : task.deferred ? 'Later' : 'Schedule'}
+        tone={overdue ? 'ember' : undefined}
+        label={task.dueDate ? whenLabel(task.dueDate, task.dueTime, fmt) : 'Later'}
         hint="Schedule"
         shortcut="d"
       />
@@ -73,8 +76,7 @@ export function PropertyBar({ task }: { task: Task }) {
         task={task}
         kind="remind"
         set={!!reminder}
-        icon={<Bell className="size-3.5" />}
-        label={reminder ? reminder.toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' }) : 'Remind'}
+        label={reminder ? reminder.toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
         hint="Remind me"
         shortcut="r"
       />
@@ -83,40 +85,19 @@ export function PropertyBar({ task }: { task: Task }) {
         kind="priority"
         set={task.priority !== 'normal'}
         tone={task.priority === 'important' ? 'ember' : undefined}
-        icon={<Flag className="size-3.5" fill={task.priority === 'important' ? 'currentColor' : 'none'} />}
-        label={task.priority === 'important' ? 'Important' : task.priority === 'low' ? 'Low' : 'Priority'}
+        label={task.priority === 'important' ? 'Important' : 'Low'}
         hint="Priority"
         shortcut="p"
       />
-      <Prop
-        task={task}
-        kind="project"
-        set={!!project}
-        icon={project ? <ProjectGlyph project={project} size={13} /> : <Inbox className="size-3.5" />}
-        label={project ? project.name : 'Project'}
-        hint="Move to project"
-        shortcut="m"
-      />
-      <Prop
-        task={task}
-        kind="assign"
-        set={!!assignee}
-        icon={assignee ? <Avatar person={assignee} size={16} /> : <UserPlus className="size-3.5" />}
-        label={assignee ? assignee.name : 'Assign'}
-        hint="Assign"
-        shortcut="a"
-      />
-      {task.recurrence && (
-        <Prop task={task} kind="repeat" set icon={<Repeat className="size-3.5" />} label={recurrenceLabel(task.recurrence, task.dueDate)} hint="Repeat" />
-      )}
-      {task.estimatedMinutes && (
-        <Prop task={task} kind="estimate" set icon={<Hourglass className="size-3.5" />} label={formatDuration(task.estimatedMinutes)} hint="Estimate" />
-      )}
+      <Prop task={task} kind="project" set={!!project} label={project?.name ?? ''} hint="Move to project" shortcut="m" />
+      <Prop task={task} kind="assign" set={!!assignee} label={assignee?.name ?? ''} hint="Assign" shortcut="a" />
+      {task.recurrence && <Prop task={task} kind="repeat" set label={recurrenceLabel(task.recurrence, task.dueDate)} hint="Repeat" />}
+      {!!task.estimatedMinutes && <Prop task={task} kind="estimate" set label={formatDuration(task.estimatedMinutes)} hint="Estimate" />}
       <Tooltip label="More" shortcut=".">
         <button
           aria-label="More actions"
           onClick={(e) => ui().openPicker({ kind: 'actions', taskIds: [task.id], anchor: anchorFromElement(e.currentTarget) })}
-          className="grid size-7 place-items-center rounded-[7px] text-ink-3 transition-colors hover:bg-wash-strong hover:text-ink-2"
+          className="grid size-8 place-items-center rounded-[8px] text-ink-3 transition-colors hover:bg-wash-strong hover:text-ink-2 max-md:size-9"
         >
           <Ellipsis className="size-4" />
         </button>
