@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useWorkspace } from '@/store/workspace';
 import { useUi } from '@/store/ui';
 import { useGlobalShortcuts } from '@/hooks/useGlobalShortcuts';
+import { useIsMobile } from '@/hooks/useMediaQuery';
+import { MobileApp } from '@/mobile/MobileApp';
 import { useNative } from '@/hooks/useNative';
 import { useReminders } from '@/hooks/useReminders';
 import { AppShell } from '@/components/shell/AppShell';
@@ -25,6 +27,7 @@ if (import.meta.env.DEV) {
 export default function App() {
   const ready = useWorkspace((s) => s.ready);
   const init = useWorkspace((s) => s.init);
+  const mobile = useIsMobile();
 
   useEffect(() => {
     void init();
@@ -42,6 +45,18 @@ export default function App() {
   useNative();
 
   if (!ready) return <div className="h-dvh bg-desk" aria-busy="true" />;
+
+  // A phone gets its own application rather than the desktop one folded up:
+  // different hierarchy, different primary action, different interactions.
+  // Only the store, the voice pipeline and the native bridge are shared.
+  if (mobile) {
+    return (
+      <>
+        <MobileApp />
+        <Toaster />
+      </>
+    );
+  }
 
   return (
     <>
