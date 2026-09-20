@@ -1,7 +1,7 @@
 import { Search, Settings2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Space, Task } from '@/domain/types';
-import { todayKey } from '@/lib/dates';
+import { isOnDay, todayKey } from '@/lib/dates';
 import { cn } from '@/lib/platform';
 import { useWorkspace, ws } from '@/store/workspace';
 import { toast } from '@/store/toast';
@@ -65,7 +65,7 @@ export function MobileApp() {
           return rank(a) - rank(b) || b.createdAt.localeCompare(a.createdAt);
         }),
       doneToday: all
-        .filter((t) => t.status === 'done' && t.completedAt?.slice(0, 10) === today && matches(t))
+        .filter((t) => t.status === 'done' && !!t.completedAt && isOnDay(t.completedAt, today) && matches(t))
         .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? '')),
     };
   }, [tasks, query, space]);

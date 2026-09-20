@@ -6,6 +6,7 @@
  * the app's job; acting belongs to the tools you already use.
  */
 import type { Task } from '@/domain/types';
+import { todayKey } from '@/lib/dates';
 import { exportFile } from '@/lib/native/bridge';
 import { isNative } from '@/lib/native/platform';
 import { ws } from '@/store/workspace';
@@ -43,7 +44,7 @@ const esc = (s: string) => s.replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n');
  * nothing is written to a calendar behind the person's back.
  */
 export async function addToCalendar(task: Task): Promise<void> {
-  const date = task.dueDate ?? new Date().toISOString().slice(0, 10);
+  const date = task.dueDate ?? todayKey();
   const allDay = !task.dueTime;
   let when: string;
   if (allDay) {

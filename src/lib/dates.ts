@@ -24,6 +24,18 @@ export function todayKey(now = new Date()): DateKey {
   return toKey(now);
 }
 
+/**
+ * Did this timestamp fall on the given local day?
+ *
+ * Timestamps are stored in UTC, so the first ten characters of one are a UTC
+ * date, not the day the person experienced. East of Greenwich those disagree
+ * for the first hours after midnight — long enough for a task completed at
+ * half past midnight to look like yesterday.
+ */
+export function isOnDay(iso: string, key: DateKey): boolean {
+  return toKey(new Date(iso)) === key;
+}
+
 export function addDaysKey(key: DateKey, n: number): DateKey {
   return toKey(addDays(fromKey(key), n));
 }
