@@ -36,6 +36,26 @@
 				<string>hence</string>
 			</array>
 		</dict>
+		<dict>
+			<!-- Microsoft sign-in returns here. The scheme is fixed by Entra:
+			     msauth.<bundle id>, which is what the iOS platform option in the
+			     app registration generates. -->
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>msauth.$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>msauth.com.moussazaghdoud.hence</string>
+			</array>
+		</dict>
+	</array>
+	<!-- Lets the app hand sign-in to the Microsoft Authenticator when it is
+	     installed, instead of falling back to a web sign-in every time. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>msauthv2</string>
+		<string>msauthv3</string>
 	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Hence uses the microphone so you can speak a task instead of typing it.</string>
