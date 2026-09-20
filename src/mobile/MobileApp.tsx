@@ -3,7 +3,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Space, Task } from '@/domain/types';
 import { todayKey } from '@/lib/dates';
 import { cn } from '@/lib/platform';
-import { useWorkspace } from '@/store/workspace';
+import { useWorkspace, ws } from '@/store/workspace';
+import { toast } from '@/store/toast';
+import { haptic } from '@/lib/native/bridge';
 import { CaptureBar } from './CaptureBar';
 import { greetingIn, t, useLang } from './i18n';
 import { SettingsSheet } from './SettingsSheet';
@@ -146,13 +148,29 @@ export function MobileApp() {
 
             {doneToday.length > 0 && (
               <div className={cn(open.length > 0 && 'mt-6')}>
-                <button
-                  onClick={() => setShowDone((v) => !v)}
-                  aria-expanded={showDone}
-                  className="h-11 px-2 text-[13px] font-medium tracking-[0.03em] text-ink-4 transition-colors active:text-ink-3"
-                >
-                  {t('done_today', { n: doneToday.length })}
-                </button>
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => setShowDone((v) => !v)}
+                    aria-expanded={showDone}
+                    className="h-11 px-2 text-[13px] font-medium tracking-[0.03em] text-ink-4 transition-colors active:text-ink-3"
+                  >
+                    {t('done_today', { n: doneToday.length })}
+                  </button>
+                  {/* Clearing finished thoughts is a sweep, not a selection:
+                      you are never picking which of them to keep. One tap does
+                      it, and the undo covers the misfire. */}
+                  <button
+                    onClick={() => {
+                      const ids = doneToday.map((task) => task.id);
+                      const undo = ws().transact(() => ws().remove(ids));
+                      haptic('medium');
+                      toast(t('deleted_many', { n: ids.length }), { action: { label: t('undo'), run: undo } });
+                    }}
+                    className="h-11 px-2 text-[13px] font-medium tracking-[0.03em] text-ink-4 transition-colors active:text-ember"
+                  >
+                    {t('clear_done')}
+                  </button>
+                </div>
                 {showDone && (
                   <ul className="animate-fade">
                     {doneToday.map((t) => (
