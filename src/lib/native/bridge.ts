@@ -84,7 +84,12 @@ export async function initNative(onResume: () => void, onDeepLink: (url: string)
   try {
     if (isIOS()) {
       await StatusBar.setStyle({ style: Style.Dark }); // light text on our graphite background
-      await Keyboard.setResizeMode({ mode: KeyboardResize.Body });
+      // Native, not Body: the whole web view shrinks when the keyboard opens,
+      // so anything anchored to the bottom — the capture bar, every sheet —
+      // rises above it. With Body only the document shrank, and `position:
+      // fixed` still measured the full window, which put the text field the
+      // keyboard had just been opened for underneath the keyboard.
+      await Keyboard.setResizeMode({ mode: KeyboardResize.Native });
       await Keyboard.setScroll({ isDisabled: true });
     }
   } catch {

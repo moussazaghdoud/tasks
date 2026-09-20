@@ -24,6 +24,7 @@ export function Sheet({
   label: string;
 }) {
   const [dy, setDy] = useState(0);
+  const [keyboard, setKeyboard] = useState(0);
   const dragging = useRef(false);
   const start = useRef(0);
 
@@ -32,6 +33,28 @@ export function Sheet({
       setDy(0);
       haptic('light');
     }
+  }, [open]);
+
+  /**
+   * Lift the sheet clear of the on-screen keyboard.
+   *
+   * In the native app the web view itself shrinks, so this measures zero and
+   * costs nothing. In a browser or an installed PWA nothing resizes, and
+   * without this the field you opened the keyboard to type into sits behind
+   * it — which is exactly the bug this fixes.
+   */
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!open || !vv) return;
+    const update = () => setKeyboard(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+      setKeyboard(0);
+    };
   }, [open]);
 
   if (!open) return null;
@@ -51,6 +74,7 @@ export function Sheet({
           style={{
             transform: dy ? `translateY(${dy}px)` : undefined,
             transition: dragging.current ? 'none' : 'transform 240ms var(--ease-out)',
+            paddingBottom: keyboard ? keyboard + 14 : undefined,
           }}
           className="animate-sheet-up rounded-t-[28px] border-t border-line bg-raised pb-[max(14px,env(safe-area-inset-bottom))] font-display shadow-float"
         >

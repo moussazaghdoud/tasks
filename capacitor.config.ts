@@ -27,8 +27,9 @@ const config: CapacitorConfig = {
       showSpinner: false,
     },
     Keyboard: {
-      // The app manages its own layout; resizing the body keeps the composer visible.
-      resize: 'body' as never,
+      // Resize the web view itself, so bottom-anchored sheets sit on top of
+      // the keyboard instead of behind it.
+      resize: 'native' as never,
       resizeOnFullScreen: true,
     },
     LocalNotifications: {
