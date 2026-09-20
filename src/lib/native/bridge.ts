@@ -39,9 +39,19 @@ export async function copyText(text: string): Promise<boolean> {
 
 // ---- confirmation -----------------------------------------------------------
 
-export async function confirmAction(message: string, title = 'Are you sure?'): Promise<boolean> {
+export async function confirmAction(
+  message: string,
+  title = 'Are you sure?',
+  /** Button wording, so the dialog can speak the language the app is set to. */
+  labels: { ok?: string; cancel?: string } = {},
+): Promise<boolean> {
   if (!isNative()) return window.confirm(message);
-  const { value } = await Dialog.confirm({ title, message, okButtonTitle: 'Continue', cancelButtonTitle: 'Cancel' });
+  const { value } = await Dialog.confirm({
+    title,
+    message,
+    okButtonTitle: labels.ok ?? 'Continue',
+    cancelButtonTitle: labels.cancel ?? 'Cancel',
+  });
   return value;
 }
 

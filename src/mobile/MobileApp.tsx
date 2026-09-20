@@ -5,7 +5,7 @@ import { todayKey } from '@/lib/dates';
 import { cn } from '@/lib/platform';
 import { useWorkspace, ws } from '@/store/workspace';
 import { toast } from '@/store/toast';
-import { haptic } from '@/lib/native/bridge';
+import { confirmAction, haptic } from '@/lib/native/bridge';
 import { CaptureBar } from './CaptureBar';
 import { greetingIn, t, useLang } from './i18n';
 import { SettingsSheet } from './SettingsSheet';
@@ -160,8 +160,13 @@ export function MobileApp() {
                       you are never picking which of them to keep. One tap does
                       it, and the undo covers the misfire. */}
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       const ids = doneToday.map((task) => task.id);
+                      const ok = await confirmAction(t('clear_confirm_body', { n: ids.length }), t('clear_confirm_title'), {
+                        ok: t('act_delete'),
+                        cancel: t('cancel'),
+                      });
+                      if (!ok) return;
                       const undo = ws().transact(() => ws().remove(ids));
                       haptic('medium');
                       toast(t('deleted_many', { n: ids.length }), { action: { label: t('undo'), run: undo } });
