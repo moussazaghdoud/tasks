@@ -39,10 +39,14 @@ export function MobileApp() {
     const q = query?.trim().toLowerCase();
     const matches = (t: Task) => !q || t.title.toLowerCase().includes(q) || t.notes.toLowerCase().includes(q);
     return {
-      // Newest thought first: what you just said is what you are thinking about.
+      // Important first, then newest: what you just said is what you are
+      // thinking about, unless you have said something matters more.
       open: all
         .filter((t) => t.status !== 'done' && matches(t))
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+        .sort((a, b) => {
+          const rank = (t: Task) => (t.priority === 'important' ? 0 : 1);
+          return rank(a) - rank(b) || b.createdAt.localeCompare(a.createdAt);
+        }),
       doneToday: all
         .filter((t) => t.status === 'done' && t.completedAt?.slice(0, 10) === today && matches(t))
         .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? '')),

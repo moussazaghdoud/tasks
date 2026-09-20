@@ -1,4 +1,4 @@
-import { Bell, BellOff, CalendarPlus, Check, Mail, RotateCcw, Share2, Trash2 } from 'lucide-react';
+import { Bell, BellOff, CalendarPlus, Check, Flag, Mail, RotateCcw, Share2, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { relativeTime } from '@/lib/dates';
 import { haptic } from '@/lib/native/bridge';
@@ -24,6 +24,7 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
 
   if (!task) return null;
   const done = task.status === 'done';
+  const important = task.priority === 'important';
 
   const act = (fn: () => void | Promise<void>) => () => {
     onClose();
@@ -45,6 +46,16 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
           <SheetAction icon={Check} label="Done" tone="accent" onClick={act(() => toggleComplete(task.id))} />
         )}
 
+        <SheetAction
+          icon={Flag}
+          label={important ? 'Not important' : 'Important'}
+          tone={important ? undefined : 'danger'}
+          onClick={act(() => {
+            ws().toggleImportant([task.id]);
+            haptic('medium');
+            toast(important ? 'No longer important' : 'Marked important');
+          })}
+        />
         <SheetAction
           icon={task.reminderAt ? BellOff : Bell}
           label={task.reminderAt ? 'Change reminder' : 'Remind me'}

@@ -30,6 +30,7 @@ function reminderLabel(iso: string): string {
  */
 export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Task; onOpen: () => void }) {
   const done = task.status === 'done';
+  const important = task.priority === 'important';
   const [completing, setCompleting] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [enter] = useState(() => isFresh(task.id));
@@ -76,7 +77,11 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           onTouchCancel={swipe.handlers.onTouchCancel}
           style={{ transform: swipe.dx ? `translateX(${swipe.dx}px)` : undefined, touchAction: 'pan-y' }}
           className={cn(
-            'flex items-start gap-3.5 rounded-[15px] border border-line bg-sunk px-4 py-3.5',
+            'flex items-start gap-3.5 rounded-[15px] border px-4 py-3.5 transition-colors duration-200',
+            // Important thoughts carry the red themselves rather than wearing a
+            // badge: the card, its edge and the words all shift together, so it
+            // reads from across the room without adding anything to the row.
+            important && !checked ? 'border-ember/45 bg-ember-soft' : 'border-line bg-sunk',
             checked && 'opacity-55',
             enter && 'animate-enter',
           )}
@@ -91,7 +96,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
             <span
               className={cn(
                 'grid size-[19px] place-items-center rounded-full border-[1.5px] transition-colors duration-200',
-                checked ? 'border-accent bg-accent' : 'border-line-strong',
+                checked ? 'border-accent bg-accent' : important ? 'border-ember/70' : 'border-line-strong',
               )}
             >
               <Check
@@ -105,7 +110,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
             <span
               className={cn(
                 'block text-[15px] leading-[21px] tracking-[-0.01em] transition-colors duration-200',
-                checked ? 'text-ink-3 line-through' : 'text-ink',
+                checked ? 'text-ink-3 line-through' : important ? 'font-medium text-ember' : 'text-ink',
               )}
             >
               {task.title}
