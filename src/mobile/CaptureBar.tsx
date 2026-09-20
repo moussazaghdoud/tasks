@@ -92,11 +92,24 @@ export function CaptureBar() {
           })
         : [];
 
+      // The analyser sometimes finds nothing actionable — a half sentence, a
+      // language it was not expecting, pure thinking aloud. Throwing the words
+      // away is the one thing this app must never do, so keep them verbatim
+      // and let the person decide. A messy line beats a lost thought.
       if (!drafts.length) {
-        setPhase('idle');
-        setTranscript('');
-        toast(t('captured_nothing'));
-        return;
+        drafts.push({
+          title: said.length > 160 ? `${said.slice(0, 159)}…` : said,
+          notes: '',
+          dueDate: null,
+          dueTime: null,
+          priority: 'normal',
+          project: null,
+          assignee: null,
+          subtasks: [],
+          recurrence: null,
+          estimatedMinutes: null,
+          relatedTo: null,
+        });
       }
 
       // Read at the moment of capture, not when this component mounted: the

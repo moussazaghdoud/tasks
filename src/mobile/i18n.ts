@@ -82,7 +82,6 @@ const EN = {
   captured: 'Captured',
   captured_many: '{n} captured',
   captured_step: 'Added as a step',
-  captured_nothing: 'Nothing to capture',
   on_device_suffix: 'on-device',
 
   err_not_allowed: 'Allow the microphone in Settings to speak your thoughts.',
@@ -154,7 +153,6 @@ const FR: Record<Key, string> = {
   captured: 'Noté',
   captured_many: '{n} notées',
   captured_step: 'Ajouté comme étape',
-  captured_nothing: 'Rien à noter',
   on_device_suffix: 'sur l’appareil',
 
   err_not_allowed: 'Autorisez le micro dans Réglages pour dicter vos pensées.',
