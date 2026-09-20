@@ -83,7 +83,7 @@ export async function initNative(onResume: () => void, onDeepLink: (url: string)
 
   try {
     if (isIOS()) {
-      await StatusBar.setStyle({ style: Style.Light }); // dark text on our light background
+      await StatusBar.setStyle({ style: Style.Dark }); // light text on our graphite background
       await Keyboard.setResizeMode({ mode: KeyboardResize.Body });
       await Keyboard.setScroll({ isDisabled: true });
     }

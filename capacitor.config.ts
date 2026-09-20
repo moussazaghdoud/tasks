@@ -15,15 +15,15 @@ const config: CapacitorConfig = {
   ios: {
     // Let the web layer handle the safe areas itself (env(safe-area-inset-*)).
     contentInset: 'never',
-    // Match the app's paper background so rubber-band scrolling doesn't flash white.
-    backgroundColor: '#f1efe9',
+    // Match the app's graphite background so rubber-band scrolling doesn't flash white.
+    backgroundColor: '#0b0d10',
     limitsNavigationsToAppBoundDomains: false,
   },
   plugins: {
     SplashScreen: {
       launchShowDuration: 600,
       launchAutoHide: true,
-      backgroundColor: '#f1efe9',
+      backgroundColor: '#0b0d10',
       showSpinner: false,
     },
     Keyboard: {

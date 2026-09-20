@@ -1,5 +1,5 @@
 import { Search, X } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Task } from '@/domain/types';
 import { greeting, todayKey } from '@/lib/dates';
 import { cn } from '@/lib/platform';
@@ -24,6 +24,15 @@ export function MobileApp() {
   const [showDone, setShowDone] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  // Premium Dark is the phone's theme. It goes on <html> rather than this
+  // element so sheets and toasts — which portal to the end of <body> — are
+  // painted from the same tokens.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute('data-theme', 'dark');
+    return () => root.removeAttribute('data-theme');
+  }, []);
+
   const { open, doneToday } = useMemo(() => {
     const all = Object.values(tasks).filter((t) => !t.archivedAt);
     const today = todayKey();
@@ -43,9 +52,9 @@ export function MobileApp() {
   const searching = query !== null;
 
   return (
-    <div className="flex h-dvh flex-col bg-paper">
-      <header className="sticky top-0 z-30 shrink-0 bg-paper/92 pt-safe backdrop-blur-md">
-        <div className="flex h-14 items-center gap-2 px-5">
+    <div className="flex h-dvh flex-col bg-paper font-display">
+      <header className="sticky top-0 z-30 shrink-0 bg-paper/88 pt-safe backdrop-blur-xl">
+        <div className="flex min-h-[74px] items-center gap-2 px-[22px] pt-2 pb-3">
           {searching ? (
             <>
               <Search className="size-[18px] shrink-0 text-ink-3" />
@@ -67,14 +76,22 @@ export function MobileApp() {
             </>
           ) : (
             <>
-              <h1 className="flex-1 truncate font-serif text-[26px] leading-8 tracking-[-0.01em] text-ink">
-                {greeting()}
-                {name ? `, ${name.split(' ')[0]}` : ''}
-              </h1>
+              {/* The greeting is the quiet line; the count is the headline,
+                  because the number of things you are carrying is the thing
+                  you actually want to know. */}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[14px] leading-5 font-medium tracking-[0.01em] text-ink-3">
+                  {greeting()}
+                  {name ? `, ${name.split(' ')[0]}` : ''}
+                </p>
+                <h1 className="mt-[3px] text-[26px] leading-8 font-bold tracking-[-0.03em] text-ink">
+                  {open.length === 0 ? 'Nothing kept' : `${open.length} thought${open.length === 1 ? '' : 's'}`}
+                </h1>
+              </div>
               <button
                 onClick={() => setQuery('')}
                 aria-label="Search"
-                className="-mr-2 grid size-11 place-items-center rounded-full text-ink-3 active:bg-wash-strong"
+                className="-mr-1.5 grid size-11 shrink-0 place-items-center rounded-full text-ink-3 transition-colors active:bg-wash-strong"
               >
                 <Search className="size-[20px]" strokeWidth={1.8} />
               </button>
@@ -83,7 +100,7 @@ export function MobileApp() {
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[168px]">
+      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 pb-[184px]">
         {open.length === 0 && doneToday.length === 0 ? (
           <Empty searching={searching} />
         ) : (
@@ -101,7 +118,7 @@ export function MobileApp() {
                 <button
                   onClick={() => setShowDone((v) => !v)}
                   aria-expanded={showDone}
-                  className="h-11 text-[14px] text-ink-4 transition-colors active:text-ink-3"
+                  className="h-11 px-2 text-[13px] font-medium tracking-[0.03em] text-ink-4 transition-colors active:text-ink-3"
                 >
                   {doneToday.length} done today
                 </button>
@@ -132,11 +149,11 @@ export function MobileApp() {
  */
 function Empty({ searching }: { searching: boolean }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center pb-24">
-      <p className="font-serif text-[24px] tracking-[-0.01em] text-ink-3">
+    <div className="flex h-full flex-col items-center justify-center pb-28">
+      <p className="text-[21px] font-semibold tracking-[-0.025em] text-ink-2">
         {searching ? 'Nothing found.' : 'What’s on your mind?'}
       </p>
-      {!searching && <p className="mt-2 text-[15px] text-ink-4">Tap and speak.</p>}
+      {!searching && <p className="mt-2.5 text-[14px] text-ink-4">Tap the orb and speak.</p>}
     </div>
   );
 }

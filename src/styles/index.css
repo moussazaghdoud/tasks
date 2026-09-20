@@ -5,9 +5,12 @@
    ------------------------------------------------------------------------ */
 @theme {
   --font-sans: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* The phone's voice: geometric, slightly wide, reads well at a glance. */
+  --font-display: 'Sora Variable', 'Sora', ui-sans-serif, system-ui, sans-serif;
   --font-serif: 'Instrument Serif', 'Iowan Old Style', 'Georgia', serif;
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
 
+  /* Light — the desktop app. Paper on a desk. */
   --color-desk: #f1efe9;
   --color-paper: #faf9f6;
   --color-raised: #fefdfb;
@@ -114,6 +117,55 @@
     from { opacity: 0; transform: translateY(10px) scale(0.98); }
     to { opacity: 1; transform: none; }
   }
+}
+
+/* ------------------------------------------------------------------------
+   Premium Dark — the phone.
+
+   Redefining the same tokens rather than adding a second set means every
+   component already written against them switches over untouched. It is set
+   on <html> by the mobile app so that sheets and toasts, which render into
+   portals at the end of <body>, inherit it as well.
+   ------------------------------------------------------------------------ */
+:root[data-theme='dark'] {
+  --color-desk: #07090b;
+  --color-paper: #0b0d10;
+  --color-raised: #171b21;
+  --color-sunk: #12161b;
+  --color-wash: rgb(233 239 243 / 0.05);
+  --color-wash-strong: rgb(233 239 243 / 0.09);
+  --color-line: #232931;
+  --color-line-strong: #333b45;
+
+  --color-ink: #e9eff3;
+  --color-ink-2: #a9b6c0;
+  --color-ink-3: #6f7d88;
+  --color-ink-4: #55616b;
+
+  /* Mint reads as a signal on graphite the way teal never could. Anything
+     sitting on top of it takes --color-accent-ink, not white. */
+  --color-accent: #4fe3c1;
+  --color-accent-hover: #3fd3b1;
+  --color-accent-soft: #143029;
+  --color-accent-wash: #0f2420;
+  --color-accent-ink: #06211c;
+
+  --color-ember: #ff8a6b;
+  --color-ember-soft: #38211b;
+
+  --shadow-float: 0 0 0 1px rgb(255 255 255 / 0.06), 0 30px 70px -20px rgb(0 0 0 / 0.8);
+  --shadow-sheet: 0 0 0 1px rgb(255 255 255 / 0.05), 0 10px 30px -14px rgb(0 0 0 / 0.7);
+
+  color-scheme: dark;
+}
+
+/* The capture orb: lit from within, the one bright object on the screen. */
+:root[data-theme='dark'] .capture-orb {
+  background: radial-gradient(circle at 34% 28%, #7ff3d9, var(--color-accent) 58%, #22b394);
+  box-shadow:
+    0 0 0 1px rgb(79 227 193 / 0.3),
+    0 0 42px -6px rgb(79 227 193 / 0.55),
+    0 14px 30px -12px rgb(0 0 0 / 0.8);
 }
 
 @layer base {

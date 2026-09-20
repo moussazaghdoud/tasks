@@ -184,9 +184,9 @@ export function CaptureBar() {
 
       <div className="fixed inset-x-0 bottom-0 z-50">
         {busy ? (
-          <div className="animate-sheet-up rounded-t-[28px] bg-raised px-5 pt-5 pb-[max(18px,env(safe-area-inset-bottom))] shadow-float">
+          <div className="animate-sheet-up rounded-t-[28px] border-t border-line bg-raised px-5 pt-5 pb-[max(18px,env(safe-area-inset-bottom))] shadow-float">
             <div className="flex items-start justify-between">
-              <p className="pt-1 text-[13px] font-medium tracking-[0.06em] text-ink-4 uppercase">
+              <p className="pt-1 text-[11px] font-semibold tracking-[0.16em] text-accent uppercase">
                 {phase === 'listening' ? 'Listening' : 'One moment'}
               </p>
               <button
@@ -217,22 +217,24 @@ export function CaptureBar() {
             {phase === 'listening' && (
               <button
                 onClick={finish}
-                className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[17px] font-medium text-white transition-transform active:scale-[0.985]"
+                className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-accent-ink transition-transform active:scale-[0.985]"
               >
                 Done
               </button>
             )}
           </div>
         ) : (
-          <div className="flex items-end justify-center gap-6 px-6 pb-[max(14px,env(safe-area-inset-bottom))]">
-            {/* A spacer keeps the microphone centred with one control beside it. */}
+          <div className="relative flex items-end justify-center gap-6 px-6 pb-[max(16px,env(safe-area-inset-bottom))]">
+            {/* Thoughts fade out under the orb rather than colliding with it. */}
+            <div className="pointer-events-none absolute inset-x-0 -top-14 bottom-0 -z-10 bg-gradient-to-t from-paper via-paper to-transparent" />
+            {/* A spacer keeps the orb centred with one control beside it. */}
             <span className="size-12" aria-hidden />
             <button
               onPointerDown={start}
               aria-label="Capture a thought"
-              className="voice-fab grid size-[68px] touch-none place-items-center rounded-full bg-accent text-white transition-transform duration-150 select-none active:scale-95"
+              className="capture-orb grid size-[70px] touch-none place-items-center rounded-full text-accent-ink transition-transform duration-150 select-none active:scale-95"
             >
-              <Mic className="size-7" strokeWidth={1.9} />
+              <Mic className="size-7" strokeWidth={2} />
             </button>
             <button
               onClick={() => setTyping(true)}
@@ -302,7 +304,7 @@ function TypeSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () => 
         <button
           onClick={submit}
           disabled={!text.trim()}
-          className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[17px] font-medium text-white transition-opacity disabled:opacity-30"
+          className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-accent-ink transition-opacity disabled:opacity-30"
         >
           Capture
         </button>

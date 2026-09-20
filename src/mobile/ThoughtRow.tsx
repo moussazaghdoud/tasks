@@ -55,17 +55,17 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
 
   return (
     <div className="collapse-row" data-collapsed={collapsed}>
-      <div className="relative">
+      <div className="relative mb-2">
         {/* What the swipe is about to do, revealed underneath the row. */}
         {swipe.dx !== 0 && (
           <div
             className={cn(
-              'absolute inset-0 flex items-center rounded-[14px] px-6 text-white',
-              swipe.dx > 0 ? 'justify-start' : 'justify-end',
-              swipe.dx > 0 ? (swipe.armed ? 'bg-accent' : 'bg-accent/45') : swipe.armed ? 'bg-ink-2' : 'bg-ink-3/50',
+              'absolute inset-0 flex items-center rounded-[15px] px-6',
+              swipe.dx > 0 ? 'justify-start text-accent-ink' : 'justify-end text-ink',
+              swipe.dx > 0 ? (swipe.armed ? 'bg-accent' : 'bg-accent/40') : swipe.armed ? 'bg-line-strong' : 'bg-line',
             )}
           >
-            {swipe.dx > 0 ? <Check className="size-[22px]" /> : <Ellipsis className="size-[22px]" />}
+            {swipe.dx > 0 ? <Check className="size-[22px]" strokeWidth={2.4} /> : <Ellipsis className="size-[22px]" />}
           </div>
         )}
 
@@ -75,24 +75,28 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           onTouchEnd={swipe.handlers.onTouchEnd}
           onTouchCancel={swipe.handlers.onTouchCancel}
           style={{ transform: swipe.dx ? `translateX(${swipe.dx}px)` : undefined, touchAction: 'pan-y' }}
-          className={cn('flex items-start gap-3.5 rounded-[14px] py-3.5', swipe.dx !== 0 && 'bg-paper', enter && 'animate-enter')}
+          className={cn(
+            'flex items-start gap-3.5 rounded-[15px] border border-line bg-sunk px-4 py-3.5',
+            checked && 'opacity-55',
+            enter && 'animate-enter',
+          )}
         >
           <button
             onClick={() => toggleComplete(task.id)}
             role="checkbox"
             aria-checked={checked}
             aria-label={checked ? `Reopen ${task.title}` : `Complete ${task.title}`}
-            className="-my-1.5 -ml-1 grid h-11 w-10 shrink-0 place-items-center rounded-full"
+            className="-my-2 -ml-1.5 grid h-11 w-9 shrink-0 place-items-center rounded-full"
           >
             <span
               className={cn(
-                'grid size-[23px] place-items-center rounded-full border-[1.5px] transition-colors duration-200',
-                checked ? 'border-accent bg-accent' : 'border-ink-4',
+                'grid size-[19px] place-items-center rounded-full border-[1.5px] transition-colors duration-200',
+                checked ? 'border-accent bg-accent' : 'border-line-strong',
               )}
             >
               <Check
-                className={cn('size-[13px] text-white transition-opacity duration-150', checked ? 'opacity-100' : 'opacity-0')}
-                strokeWidth={3}
+                className={cn('size-[11px] text-accent-ink transition-opacity duration-150', checked ? 'opacity-100' : 'opacity-0')}
+                strokeWidth={3.2}
               />
             </span>
           </button>
@@ -100,15 +104,20 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           <button onClick={onOpen} className="min-w-0 flex-1 text-left">
             <span
               className={cn(
-                'block text-[17px] leading-[25px] tracking-[-0.011em] transition-colors duration-200',
-                checked ? 'text-ink-4 line-through' : 'text-ink',
+                'block text-[15px] leading-[21px] tracking-[-0.01em] transition-colors duration-200',
+                checked ? 'text-ink-3 line-through' : 'text-ink',
               )}
             >
               {task.title}
             </span>
             {task.reminderAt && !done && (
-              <span className={cn('mt-1 flex items-center gap-1.5 text-[13px]', overdue ? 'text-ember' : 'text-ink-3')}>
-                <Bell className="size-3.5" strokeWidth={1.9} />
+              <span
+                className={cn(
+                  'mt-1.5 flex items-center gap-1.5 text-[11px] font-medium tracking-[0.045em] uppercase',
+                  overdue ? 'text-ember' : 'text-accent',
+                )}
+              >
+                <Bell className="size-3" strokeWidth={2.1} />
                 {reminderLabel(task.reminderAt)}
               </span>
             )}

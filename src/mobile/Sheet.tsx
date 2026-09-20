@@ -52,7 +52,7 @@ export function Sheet({
             transform: dy ? `translateY(${dy}px)` : undefined,
             transition: dragging.current ? 'none' : 'transform 240ms var(--ease-out)',
           }}
-          className="animate-sheet-up rounded-t-[28px] bg-raised pb-[max(14px,env(safe-area-inset-bottom))] shadow-float"
+          className="animate-sheet-up rounded-t-[28px] border-t border-line bg-raised pb-[max(14px,env(safe-area-inset-bottom))] font-display shadow-float"
         >
           {/* The grab area is the whole top strip, not just the bar you can see. */}
           <div

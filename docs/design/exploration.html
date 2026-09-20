@@ -1,0 +1,1136 @@
+<title>Ten Ways to Listen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Sora:wght@400;600;700&display=swap">
+
+<style>
+  /* ============================================================
+     THE STUDIO — gallery chrome.
+     Deliberately single-theme and near-monochrome: the ten
+     concepts supply every colour on this page, so the wall they
+     hang on must not compete with them.
+     ============================================================ */
+  :root {
+    --studio:      #131417;
+    --studio-2:    #1a1c20;
+    --studio-3:    #23262b;
+    --wall:        #0e0f11;
+    --chalk:       #f2f0ec;
+    --chalk-2:     #a8a69f;
+    --chalk-3:     #6d6b66;
+    --rule:        #2c2f35;
+    --amber:       #e0a04a;
+
+    --sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    --display: "Bricolage Grotesque", var(--sans);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--wall);
+    color: var(--chalk);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    padding-inline: 24px;
+  }
+  @media (max-width: 520px) { body { padding-inline: 16px; } }
+
+  .wrap { max-width: 1320px; margin: 0 auto; }
+
+  /* ---------- masthead ---------- */
+  .masthead { padding-block: 64px 40px; border-bottom: 1px solid var(--rule); }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--chalk-3);
+    margin: 0 0 20px;
+  }
+  .masthead h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(38px, 7vw, 76px);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .masthead p {
+    margin: 18px 0 0;
+    max-width: 52ch;
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--chalk-2);
+  }
+
+  /* ---------- shortlist ---------- */
+  .shortlist {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-block: 14px;
+    background: color-mix(in srgb, var(--wall) 88%, transparent);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--rule);
+  }
+  .shortlist h2 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--chalk-3);
+    margin: 0;
+  }
+  .shortlist ol { display: flex; gap: 8px; flex-wrap: wrap; list-style: none; margin: 0; padding: 0; }
+  .shortlist li {
+    font-size: 13px;
+    font-weight: 500;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amber) 16%, transparent);
+    color: var(--amber);
+    border: 1px solid color-mix(in srgb, var(--amber) 34%, transparent);
+  }
+  .shortlist .none { font-size: 13px; color: var(--chalk-3); }
+
+  /* ---------- gallery grid ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 30px;
+    padding-block: 40px 96px;
+  }
+  @media (min-width: 1180px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .concept {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background: var(--studio);
+    border: 1px solid var(--rule);
+    border-radius: 20px;
+    padding: 24px 24px 26px;
+  }
+
+  .concept-head { display: flex; align-items: flex-start; gap: 14px; }
+  .num {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--chalk-3);
+    padding-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .concept-head h3 {
+    flex: 1;
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 21px;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+  }
+  .heart {
+    flex-shrink: 0;
+    width: 38px; height: 38px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--rule);
+    background: var(--studio-2);
+    color: var(--chalk-3);
+    cursor: pointer;
+    transition: color .18s, border-color .18s, background .18s, transform .18s;
+  }
+  .heart:hover { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, transparent); }
+  .heart[aria-pressed="true"] {
+    color: var(--amber);
+    background: color-mix(in srgb, var(--amber) 15%, transparent);
+    border-color: color-mix(in srgb, var(--amber) 45%, transparent);
+  }
+  .heart:active { transform: scale(0.92); }
+  .heart svg { width: 17px; height: 17px; }
+
+  .philosophy {
+    margin: -6px 0 0;
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: var(--chalk-2);
+    font-style: italic;
+    text-wrap: pretty;
+  }
+
+  .stage {
+    display: grid;
+    place-items: center;
+    padding: 26px 0 10px;
+    background: radial-gradient(120% 80% at 50% 0%, var(--studio-2) 0%, var(--studio) 70%);
+    border-radius: 14px;
+    cursor: zoom-in;
+  }
+
+  .meta { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .swatches { display: flex; gap: 7px; }
+  .swatch { width: 15px; height: 15px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14); }
+  .keywords { font-family: var(--mono); font-size: 11.5px; color: var(--chalk-3); letter-spacing: 0.02em; }
+
+  /* ============================================================
+     THE PHONE — one shell, ten interiors.
+     Each concept sets its own custom properties; the shared
+     component classes read from them, and each concept is then
+     free to restructure its own list, header and capture control.
+     ============================================================ */
+  .phone {
+    --w: 318px;
+    --h: 674px;
+    position: relative;
+    width: var(--w);
+    height: var(--h);
+    border-radius: 44px;
+    padding: 5px;
+    background: linear-gradient(160deg, #3a3d44, #16181c 42%, #2c2f35);
+    box-shadow: 0 34px 60px -28px rgb(0 0 0 / 0.85), 0 0 0 1px rgb(255 255 255 / 0.05);
+    flex-shrink: 0;
+  }
+  .screen {
+    position: relative;
+    height: 100%;
+    border-radius: 39px;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    display: flex;
+    flex-direction: column;
+    isolation: isolate;
+  }
+
+  /* status bar */
+  .status {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 26px 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+  .status .bars { display: flex; align-items: flex-end; gap: 2px; height: 10px; }
+  .status .bars i { width: 3px; border-radius: 1px; background: currentColor; display: block; }
+  .status .bars i:nth-child(1) { height: 4px; }
+  .status .bars i:nth-child(2) { height: 6px; }
+  .status .bars i:nth-child(3) { height: 8px; }
+  .status .bars i:nth-child(4) { height: 10px; opacity: 0.35; }
+  .status .batt { width: 22px; height: 11px; border-radius: 3px; border: 1.2px solid currentColor; position: relative; opacity: 0.9; }
+  .status .batt::after { content: ""; position: absolute; inset: 2px; right: 7px; background: currentColor; border-radius: 1px; }
+  .status .right { display: flex; align-items: center; gap: 5px; }
+
+  .body { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+
+  /* the eight thoughts, identical in every concept */
+  .list { list-style: none; margin: 0; padding: 0; }
+  .t { cursor: pointer; }
+  .t.done .t-text { text-decoration: line-through; opacity: 0.4; }
+  .t-check { cursor: pointer; flex-shrink: 0; }
+
+  /* home indicator */
+  .home-bar {
+    position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%);
+    width: 118px; height: 4.5px; border-radius: 3px;
+    background: var(--ink); opacity: 0.22; z-index: 6;
+  }
+
+  /* ---------- shared overlays ---------- */
+  .scrim {
+    position: absolute; inset: 0; z-index: 7;
+    background: rgb(10 10 12 / 0.34);
+    opacity: 0; pointer-events: none;
+    transition: opacity .24s ease;
+  }
+  .phone.sheet-open .scrim, .phone.listening .scrim { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 8;
+    background: var(--sheet-bg, var(--surface, #fff));
+    border-radius: 26px 26px 39px 39px;
+    padding: 10px 0 26px;
+    transform: translateY(102%);
+    transition: transform .34s cubic-bezier(0.22, 1, 0.3, 1);
+    box-shadow: 0 -18px 44px -20px rgb(0 0 0 / 0.42);
+  }
+  .phone.sheet-open .sheet { transform: translateY(0); }
+  .grabber { width: 38px; height: 4.5px; border-radius: 3px; background: var(--ink); opacity: 0.18; margin: 4px auto 14px; }
+  .sheet-title {
+    margin: 0 24px 4px;
+    font-size: 17px; font-weight: 600; line-height: 1.32;
+    letter-spacing: -0.015em;
+  }
+  .sheet-sub { margin: 0 24px 12px; font-size: 12.5px; color: var(--ink-3); }
+  .sheet-acts { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+  .act {
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 24px; height: 50px;
+    font-size: 15.5px; color: var(--ink);
+    background: none; border: 0; font-family: inherit;
+    text-align: left; cursor: pointer;
+    transition: background .15s;
+  }
+  .act:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  .act svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--ink-3); }
+  .act.primary { color: var(--accent); font-weight: 600; }
+  .act.primary svg { color: var(--accent); }
+
+  /* listening surface */
+  .voice {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 9;
+    background: var(--voice-bg, var(--surface, #fff));
+    border-radius: 28px 28px 39px 39px;
+    padding: 18px 22px 30px;
+    transform: translateY(102%);
+    transition: transform .34s cubic-bezier(0.22, 1, 0.3, 1);
+  }
+  .phone.listening .voice { transform: translateY(0); }
+  .voice-label {
+    font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; margin: 0 0 10px;
+  }
+  .voice-text {
+    margin: 0; min-height: 62px;
+    font-size: 19px; line-height: 1.42; letter-spacing: -0.012em;
+    color: var(--ink);
+  }
+  .caret { display: inline-block; width: 2px; height: 0.95em; background: var(--accent); vertical-align: -0.12em; animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .wave { display: flex; align-items: center; justify-content: center; gap: 3px; height: 38px; margin: 14px 0 4px; }
+  .wave i {
+    display: block; width: 3px; border-radius: 2px; background: var(--accent);
+    height: 5px; transform-origin: center;
+    animation: bounce 900ms ease-in-out infinite;
+  }
+  @keyframes bounce { 0%, 100% { height: 5px; opacity: .45; } 50% { height: var(--peak, 20px); opacity: 1; } }
+  .voice-done {
+    width: 100%; height: 48px; margin-top: 12px;
+    border: 0; border-radius: 15px;
+    background: var(--accent); color: var(--on-accent, #fff);
+    font-family: inherit; font-size: 15.5px; font-weight: 600;
+    cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wave i, .caret { animation: none; }
+    .sheet, .voice, .scrim { transition-duration: .01ms; }
+  }
+
+  /* newly captured item */
+  @keyframes land { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+  .t.fresh { animation: land .4s cubic-bezier(0.2, 0.9, 0.3, 1); }
+
+  /* ---------- enlarge modal ---------- */
+  .modal {
+    position: fixed; inset: 0; z-index: 90;
+    display: none; place-items: center;
+    background: rgb(6 6 8 / 0.82);
+    backdrop-filter: blur(6px);
+    padding: 20px;
+  }
+  .modal.open { display: grid; }
+  .modal-inner { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .modal-name { font-family: var(--display); font-weight: 700; font-size: 19px; letter-spacing: -0.01em; }
+  .modal-close {
+    position: fixed; top: 20px; right: 22px;
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--studio-2); border: 1px solid var(--rule); color: var(--chalk);
+    cursor: pointer; font-size: 19px; line-height: 1;
+  }
+
+  /* ============================================================
+     01 — REFINED iOS
+     ============================================================ */
+  .phone[data-c="1"] {
+    --bg: #f6f4ef; --surface: #fffefb; --ink: #16191a; --ink-2: #4c504f; --ink-3: #8f8c84;
+    --line: #e5e1d8; --accent: #0e5f5b; --on-accent: #fff;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  }
+  [data-c="1"] .hd { padding: 16px 22px 10px; }
+  [data-c="1"] .hd h2 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.028em; }
+  [data-c="1"] .hd p { margin: 3px 0 0; font-size: 13.5px; color: var(--ink-3); }
+  [data-c="1"] .group {
+    margin: 12px 14px 0; background: var(--surface); border-radius: 17px;
+    box-shadow: 0 1px 2px rgb(20 24 26 / 0.05), 0 0 0 0.5px rgb(20 24 26 / 0.06);
+    overflow: hidden;
+  }
+  [data-c="1"] .t { display: flex; gap: 12px; padding: 12px 15px; align-items: flex-start; }
+  [data-c="1"] .t + .t { box-shadow: inset 0 0.5px 0 var(--line); }
+  [data-c="1"] .t-check { width: 21px; height: 21px; border-radius: 50%; border: 1.6px solid #c4c0b6; margin-top: 1px; }
+  [data-c="1"] .t.done .t-check { background: var(--accent); border-color: var(--accent); }
+  [data-c="1"] .t-text { font-size: 15.5px; line-height: 1.33; letter-spacing: -0.014em; }
+  [data-c="1"] .t-meta { font-size: 12px; color: var(--accent); margin-top: 3px; font-weight: 500; }
+  [data-c="1"] .cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 0 0 26px; display: grid; place-items: center; }
+  [data-c="1"] .cap::before {
+    content: ""; position: absolute; inset: -46px 0 0; z-index: -1;
+    background: linear-gradient(to top, var(--bg) 58%, transparent);
+  }
+  [data-c="1"] .mic {
+    width: 62px; height: 62px; border-radius: 50%; border: 0;
+    background: var(--accent); color: #fff; cursor: pointer;
+    box-shadow: 0 10px 24px -8px rgb(14 95 91 / 0.75);
+    display: grid; place-items: center;
+    transition: transform .16s;
+  }
+  [data-c="1"] .mic:active { transform: scale(0.93); }
+
+  /* ============================================================
+     02 — MODERN PRODUCTIVITY
+     ============================================================ */
+  .phone[data-c="2"] {
+    --bg: #ffffff; --surface: #ffffff; --ink: #0d1220; --ink-2: #414a5e; --ink-3: #79839a;
+    --line: #e8ecf2; --accent: #2244e8; --on-accent: #fff;
+    --font: "IBM Plex Sans", sans-serif;
+  }
+  [data-c="2"] .hd { padding: 14px 20px 12px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
+  [data-c="2"] .hd h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+  [data-c="2"] .count { font-size: 12px; font-weight: 600; color: var(--accent); background: #eef1fe; padding: 3px 9px; border-radius: 6px; }
+  [data-c="2"] .sect {
+    padding: 16px 20px 6px; font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-3);
+  }
+  [data-c="2"] .t { display: flex; gap: 13px; padding: 11px 20px; align-items: flex-start; border-left: 2px solid transparent; }
+  [data-c="2"] .t:hover { background: #f7f9fc; border-left-color: var(--accent); }
+  [data-c="2"] .t-check { width: 17px; height: 17px; border-radius: 5px; border: 1.6px solid #c3cbd9; margin-top: 2px; }
+  [data-c="2"] .t.done .t-check { background: var(--accent); border-color: var(--accent); }
+  [data-c="2"] .t-text { font-size: 14.5px; line-height: 1.38; }
+  [data-c="2"] .t-meta { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  [data-c="2"] .nav {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 5;
+    height: 76px; border-top: 1px solid var(--line); background: #fff;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 26px 18px;
+  }
+  [data-c="2"] .nav span { font-size: 11px; font-weight: 600; color: var(--ink-3); padding-top: 14px; }
+  [data-c="2"] .nav span.on { color: var(--accent); }
+  [data-c="2"] .nav span:last-child { text-align: right; }
+  [data-c="2"] .mic {
+    width: 54px; height: 54px; border-radius: 17px; border: 0; margin-top: 10px;
+    background: var(--accent); color: #fff; cursor: pointer;
+    box-shadow: 0 8px 18px -6px rgb(34 68 232 / 0.6);
+    display: grid; place-items: center; transition: transform .16s;
+  }
+  [data-c="2"] .mic:active { transform: scale(0.93); }
+
+  /* ============================================================
+     03 — PREMIUM DARK
+     ============================================================ */
+  .phone[data-c="3"] {
+    --bg: #0b0d10; --surface: #171b21; --sheet-bg: #171b21; --voice-bg: #171b21;
+    --ink: #e9eff3; --ink-2: #a9b6c0; --ink-3: #6f7d88;
+    --line: #232931; --accent: #4fe3c1; --on-accent: #06211c;
+    --font: "Sora", sans-serif;
+  }
+  [data-c="3"] .hd { padding: 18px 22px 14px; }
+  [data-c="3"] .hd h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: 0.02em; color: var(--ink-3); }
+  [data-c="3"] .hd strong { display: block; margin-top: 6px; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: var(--ink); }
+  [data-c="3"] .t {
+    margin: 0 14px 8px; padding: 14px 16px; border-radius: 15px;
+    background: #12161b; border: 1px solid var(--line);
+    display: flex; gap: 13px; align-items: flex-start;
+  }
+  [data-c="3"] .t-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #3c454f; margin-top: 2px; }
+  [data-c="3"] .t.done .t-check { background: var(--accent); border-color: var(--accent); }
+  [data-c="3"] .t-text { font-size: 14.5px; line-height: 1.4; letter-spacing: -0.01em; }
+  [data-c="3"] .t-meta { font-size: 11px; color: var(--accent); margin-top: 5px; letter-spacing: 0.04em; }
+  [data-c="3"] .cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 0 0 28px; display: grid; place-items: center; }
+  [data-c="3"] .cap::before { content: ""; position: absolute; inset: -60px 0 0; z-index: -1; background: linear-gradient(to top, var(--bg) 55%, transparent); }
+  [data-c="3"] .mic {
+    width: 70px; height: 70px; border-radius: 50%; border: 0; cursor: pointer;
+    background: radial-gradient(circle at 34% 28%, #7ff3d9, var(--accent) 58%, #22b394);
+    color: #06211c; display: grid; place-items: center;
+    box-shadow: 0 0 0 1px rgb(79 227 193 / 0.3), 0 0 38px -6px rgb(79 227 193 / 0.55);
+    transition: transform .16s;
+  }
+  [data-c="3"] .mic:active { transform: scale(0.93); }
+
+  /* ============================================================
+     04 — WARM INTELLIGENCE  (stone · moss · ochre)
+     ============================================================ */
+  .phone[data-c="4"] {
+    --bg: #f0ebe1; --surface: #faf7f1; --ink: #23261d; --ink-2: #4f5445;
+    --ink-3: #8a8b77; --line: #ddd7c9; --accent: #4c5a3a; --ochre: #c08a2e; --on-accent: #f6f4ea;
+    --font: "Newsreader", Georgia, serif;
+  }
+  [data-c="4"] .hd { padding: 20px 24px 6px; }
+  [data-c="4"] .hd h2 { margin: 0; font-size: 27px; font-weight: 500; letter-spacing: -0.015em; font-style: italic; }
+  [data-c="4"] .hd p { margin: 4px 0 0; font-family: "IBM Plex Sans", sans-serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); }
+  [data-c="4"] .t { display: flex; gap: 14px; padding: 13px 24px; align-items: flex-start; }
+  [data-c="4"] .t + .t { border-top: 1px solid var(--line); }
+  [data-c="4"] .t-check {
+    width: 9px; height: 9px; border-radius: 50%; margin-top: 8px;
+    border: 1.5px solid #b3ad9c; background: transparent;
+  }
+  [data-c="4"] .t.done .t-check { background: var(--accent); border-color: var(--accent); }
+  [data-c="4"] .t-text { font-size: 17px; line-height: 1.34; letter-spacing: -0.008em; }
+  [data-c="4"] .t-meta { font-family: "IBM Plex Sans", sans-serif; font-size: 11px; color: var(--ochre); margin-top: 4px; letter-spacing: 0.04em; }
+  [data-c="4"] .cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 0 22px 26px; }
+  [data-c="4"] .cap::before { content: ""; position: absolute; inset: -46px 0 0; z-index: -1; background: linear-gradient(to top, var(--bg) 58%, transparent); }
+  [data-c="4"] .mic {
+    width: 100%; height: 58px; border-radius: 29px; border: 1px solid #d5cdba; cursor: pointer;
+    background: var(--surface); color: var(--accent);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-family: "IBM Plex Sans", sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.06em;
+    box-shadow: 0 8px 20px -12px rgb(35 38 29 / 0.4);
+    transition: transform .16s;
+  }
+  [data-c="4"] .mic:active { transform: scale(0.98); }
+
+  /* ============================================================
+     05 — AI NATIVE
+     ============================================================ */
+  .phone[data-c="5"] {
+    --bg: #fafafc; --surface: #ffffff; --ink: #0f1116; --ink-2: #454a57; --ink-3: #868c9c;
+    --line: #ebecf1; --accent: #3d5afe; --cyan: #00c2d1; --on-accent: #fff;
+    --font: "IBM Plex Sans", sans-serif;
+  }
+  [data-c="5"] .hd { padding: 18px 22px 4px; }
+  [data-c="5"] .hd h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.024em; }
+  [data-c="5"] .hd p { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-3); }
+  [data-c="5"] .t { display: flex; gap: 12px; padding: 13px 22px; align-items: flex-start; position: relative; }
+  [data-c="5"] .t-check { width: 18px; height: 18px; border-radius: 50%; border: 1.6px solid #ccd0da; margin-top: 1px; }
+  [data-c="5"] .t.done .t-check { background: var(--accent); border-color: var(--accent); }
+  [data-c="5"] .t-text { font-size: 15px; line-height: 1.37; letter-spacing: -0.012em; }
+  [data-c="5"] .spark { position: absolute; right: 20px; top: 15px; width: 13px; height: 13px; color: var(--cyan); opacity: 0.85; }
+  [data-c="5"] .cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 0 18px 24px; }
+  [data-c="5"] .cap::before { content: ""; position: absolute; inset: -50px 0 0; z-index: -1; background: linear-gradient(to top, var(--bg) 60%, transparent); }
+  [data-c="5"] .mic {
+    width: 100%; height: 56px; border-radius: 18px; border: 0; cursor: pointer;
+    background: #0f1116; color: #fff;
+    display: flex; align-items: center; gap: 12px; padding: 0 18px;
+    font-family: inherit; font-size: 14px; letter-spacing: -0.005em;
+    position: relative; overflow: hidden;
+    transition: transform .16s;
+  }
+  [data-c="5"] .mic::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(105deg, transparent 32%, rgb(61 90 254 / 0.55) 50%, rgb(0 194 209 / 0.5) 62%, transparent 78%);
+    animation: sweep 4.2s ease-in-out infinite;
+  }
+  @keyframes sweep { 0%, 100% { transform: translateX(-38%); } 50% { transform: translateX(38%); } }
+  @media (prefers-reduced-motion: reduce) { [data-c="5"] .mic::after { animation: none; } }
+  [data-c="5"] .mic span { position: relative; z-index: 1; }
+  [data-c="5"] .mic:active { transform: scale(0.985); }
+
+  /* ============================================================
+     06 — EDITORIAL
+     ============================================================ */
+  .phone[data-c="6"] {
+    --bg: #fffdf8; --surface: #fffdf8; --ink: #121110; --ink-2: #48463f; --ink-3: #938f84;
+    --line: #e4dfd2; --accent: #c8341f; --on-accent: #fff;
+    --font: "Instrument Serif", Georgia, serif;
+  }
+  [data-c="6"] .hd { padding: 22px 22px 12px; border-bottom: 2px solid var(--ink); margin: 0 22px; }
+  [data-c="6"] .hd h2 { margin: 0; font-size: 40px; line-height: 0.92; letter-spacing: -0.02em; }
+  [data-c="6"] .hd p {
+    margin: 8px 0 0; font-family: "IBM Plex Mono", monospace; font-size: 9.5px;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-3);
+  }
+  [data-c="6"] .t { display: flex; gap: 14px; padding: 14px 22px; align-items: baseline; }
+  [data-c="6"] .t + .t { border-top: 1px solid var(--line); }
+  [data-c="6"] .t-check {
+    width: 20px; font-family: "IBM Plex Mono", monospace; font-size: 10px;
+    color: var(--ink-3); flex-shrink: 0; font-variant-numeric: tabular-nums;
+  }
+  [data-c="6"] .t.done .t-check { color: var(--accent); }
+  [data-c="6"] .t-text { font-size: 19px; line-height: 1.24; letter-spacing: -0.005em; }
+  [data-c="6"] .t-meta { font-family: "IBM Plex Mono", monospace; font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-top: 6px; }
+  [data-c="6"] .cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 0 22px 26px; }
+  [data-c="6"] .cap::before { content: ""; position: absolute; inset: -44px 0 0; z-index: -1; background: linear-gradient(to top, var(--bg) 60%, transparent); }
+  [data-c="6"] .mic {
+    width: 100%; height: 54px; border: 1.5px solid var(--ink); border-radius: 0; cursor: pointer;
+    background: var(--ink); color: var(--bg);
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform .16s;
+  }
+  [data-c="6"] .mic:active { transform: scale(0.98); }
+
+  /* ============================================================
+     07 — SOFT DEPTH
+     ============================================================ */
+  .phone[data-c="7"] {
+    --bg: #e9edf1; --surface: #ffffff; --ink: #1f2a33; --ink-2: #4a5763; --ink-3: #8593a0;
+    --line: #dde4ea; --accent: #2f7fa8; --on-accent: #fff;
+    --font: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+  [data-c="7"] .screen::before {
+    content: ""; position: absolute; inset: 0; z-index: 0;
+    background: radial-gradient(90% 55% at 12% 0%, #f6f9fb, transparent 62%),
+                radial-gradient(80% 48% at 96% 22%, #dfe9f0, transparent 58%);
+  }
+  [data-c="7"] .hd { padding: 16px 22px 10px; position: relative; z-index: 1; }
+  [data-c="7"] .hd h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.026em; }
+  [data-c="7"] .stack { position: relative; z-index: 1; padding: 0 12px; }
+  [data-c="7"] .t {
+    display: flex; gap: 12px; align-items: flex-start;
+    margin-bottom: 8px; padding: 13px 15px; border-radius: 16px;
+    background: rgb(255 255 255 / 0.72);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 1px 1px rgb(31 42 51 / 0.04), 0 6px 16px -10px rgb(31 42 51 / 0.28), inset 0 0 0 0.5px rgb(255 255 255 / 0.9);
+  }
+  [data-c="7"] .t-check { width: 19px; height: 19px; border-radius: 50%; border: 1.6px solid #b6c2cc; margin-top: 1px; }
+  [data-c="7"] .t.done .t-check { background: var(--accent); border-color: var(--accent); }
+  [data-c="7"] .t-text { font-size: 15px; line-height: 1.35; letter-spacing: -0.013em; }
+  [data-c="7"] .cap { position: absolute; left: 12px; right: 12px; bottom: 24px; z-index: 5; }
+  [data-c="7"] .mic {
+    width: 100%; height: 60px; border-radius: 22px; border: 0; cursor: pointer;
+    background: rgb(255 255 255 / 0.78); backdrop-filter: blur(18px);
+    box-shadow: 0 2px 3px rgb(31 42 51 / 0.05), 0 16px 32px -16px rgb(31 42 51 / 0.42), inset 0 0 0 0.5px rgb(255 255 255 / 0.95);
+    display: flex; align-items: center; justify-content: center; gap: 11px;
+    font-family: inherit; font-size: 15px; font-weight: 500; color: var(--ink);
+    transition: transform .16s;
+  }
+  [data-c="7"] .mic i { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; color: #fff; }
+  [data-c="7"] .mic:active { transform: scale(0.98); }
+
+  /* ============================================================
+     08 — BOLD MOBILE
+     ============================================================ */
+  .phone[data-c="8"] {
+    --bg: #ffffff; --surface: #ffffff; --ink: #0f1012; --ink-2: #3d4046; --ink-3: #7c8089;
+    --line: #ededf0; --accent: #007f5f; --lime: #22e08a; --on-accent: #fff;
+    --font: "Bricolage Grotesque", sans-serif;
+  }
+  [data-c="8"] .hd { padding: 18px 20px 14px; }
+  [data-c="8"] .hd h2 { margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -0.042em; line-height: 0.98; }
+  [data-c="8"] .hd h2 em { font-style: normal; color: var(--accent); }
+  [data-c="8"] .t { display: flex; gap: 14px; padding: 15px 20px; align-items: flex-start; }
+  [data-c="8"] .t + .t { border-top: 1px solid var(--line); }
+  [data-c="8"] .t-check { width: 22px; height: 22px; border-radius: 7px; border: 2px solid #d6d8dd; margin-top: 1px; }
+  [data-c="8"] .t.done .t-check { background: var(--accent); border-color: var(--accent); }
+  [data-c="8"] .t-text { font-size: 16px; font-weight: 500; line-height: 1.3; letter-spacing: -0.022em; }
+  [data-c="8"] .cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 0 16px 24px; }
+  [data-c="8"] .cap::before { content: ""; position: absolute; inset: -46px 0 0; z-index: -1; background: linear-gradient(to top, #fff 58%, transparent); }
+  [data-c="8"] .mic {
+    width: 100%; height: 64px; border-radius: 20px; border: 0; cursor: pointer;
+    background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    font-family: inherit; font-size: 17px; font-weight: 700; letter-spacing: -0.02em;
+    box-shadow: 0 12px 26px -12px rgb(0 127 95 / 0.8);
+    transition: transform .16s;
+  }
+  [data-c="8"] .mic:active { transform: scale(0.97); }
+
+  /* ============================================================
+     09 — EXECUTIVE
+     ============================================================ */
+  .phone[data-c="9"] {
+    --bg: #ece9e2; --surface: #f7f5f0; --ink: #101f35; --ink-2: #3c4a5e; --ink-3: #7b7f87;
+    --line: #d8d3c8; --accent: #101f35; --brass: #a8873f; --on-accent: #f7f5f0;
+    --font: "IBM Plex Sans", sans-serif;
+  }
+  [data-c="9"] .hd { padding: 20px 22px 12px; display: flex; align-items: baseline; justify-content: space-between; }
+  [data-c="9"] .hd h2 { margin: 0; font-family: "Instrument Serif", Georgia, serif; font-size: 30px; letter-spacing: -0.01em; }
+  [data-c="9"] .hd span { font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); font-weight: 600; }
+  [data-c="9"] .sect {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 22px 8px; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.17em; text-transform: uppercase; color: var(--ink-3);
+  }
+  [data-c="9"] .sect::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  [data-c="9"] .t { display: flex; gap: 13px; padding: 11px 22px; align-items: flex-start; }
+  [data-c="9"] .t-check { width: 17px; height: 17px; border: 1.4px solid #aeb3bb; border-radius: 3px; margin-top: 2px; }
+  [data-c="9"] .t.done .t-check { background: var(--accent); border-color: var(--accent); }
+  [data-c="9"] .t-text { font-size: 14.5px; line-height: 1.36; letter-spacing: -0.008em; }
+  [data-c="9"] .t-meta { font-size: 11px; color: var(--brass); margin-top: 3px; letter-spacing: 0.05em; font-weight: 500; }
+  [data-c="9"] .cap {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 5;
+    background: var(--surface); border-top: 1px solid var(--line);
+    padding: 12px 22px 26px; display: flex; align-items: center; gap: 14px;
+  }
+  [data-c="9"] .mic {
+    width: 50px; height: 50px; border-radius: 50%; border: 0; cursor: pointer;
+    background: var(--accent); color: var(--surface);
+    display: grid; place-items: center; flex-shrink: 0;
+    transition: transform .16s;
+  }
+  [data-c="9"] .mic:active { transform: scale(0.93); }
+  [data-c="9"] .cap p { margin: 0; font-size: 13px; color: var(--ink-3); }
+  [data-c="9"] .cap p b { display: block; color: var(--ink); font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+
+  /* ============================================================
+     10 — THE THREAD
+     Recency is the design: each thought hangs off a single
+     vertical line, and its node fades as the thought ages.
+     ============================================================ */
+  .phone[data-c="10"] {
+    --bg: #f5f3ee; --surface: #fffefc; --ink: #1b2233; --ink-2: #454e63; --ink-3: #8b8f9c;
+    --line: #e2ded4; --accent: #3a4cb8; --on-accent: #fff;
+    --font: "Newsreader", Georgia, serif;
+  }
+  [data-c="10"] .hd { padding: 18px 24px 4px; }
+  [data-c="10"] .hd h2 { margin: 0; font-size: 26px; font-weight: 500; letter-spacing: -0.016em; }
+  [data-c="10"] .hd p {
+    margin: 5px 0 0; font-family: "IBM Plex Mono", monospace; font-size: 9.5px;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-3);
+  }
+  [data-c="10"] .thread { position: relative; padding: 14px 0 0 44px; }
+  [data-c="10"] .thread::before {
+    content: ""; position: absolute; left: 27px; top: 0; bottom: 0; width: 1px;
+    background: linear-gradient(to bottom, var(--accent) 0%, color-mix(in srgb, var(--accent) 22%, transparent) 42%, var(--line) 100%);
+  }
+  [data-c="10"] .marker {
+    font-family: "IBM Plex Mono", monospace; font-size: 9px; letter-spacing: 0.17em;
+    text-transform: uppercase; color: var(--ink-3); margin: 10px 0 8px -20px;
+  }
+  [data-c="10"] .marker:first-child { margin-top: 0; }
+  [data-c="10"] .t { position: relative; padding: 9px 22px 9px 0; }
+  [data-c="10"] .t-check {
+    position: absolute; left: -21px; top: 15px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 0 3.5px var(--bg);
+  }
+  [data-c="10"] .t.done .t-check { background: var(--ink-3); }
+  [data-c="10"] .t-text { font-size: 16.5px; line-height: 1.33; letter-spacing: -0.008em; }
+  [data-c="10"] .t-meta {
+    font-family: "IBM Plex Mono", monospace; font-size: 9px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent); margin-top: 5px;
+  }
+  [data-c="10"] .cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 0 20px 24px; }
+  [data-c="10"] .cap::before { content: ""; position: absolute; inset: -48px 0 0; z-index: -1; background: linear-gradient(to top, var(--bg) 58%, transparent); }
+  [data-c="10"] .mic {
+    width: 100%; height: 56px; border-radius: 16px; border: 0; cursor: pointer;
+    background: var(--ink); color: var(--surface);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    position: relative; overflow: hidden;
+    transition: transform .16s;
+  }
+  [data-c="10"] .mic .pulse { display: flex; align-items: center; gap: 2.5px; height: 14px; }
+  [data-c="10"] .mic .pulse i {
+    width: 2px; border-radius: 1px; background: var(--accent); display: block;
+    animation: bounce 1400ms ease-in-out infinite;
+  }
+  [data-c="10"] .mic:active { transform: scale(0.98); }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <p class="eyebrow">Voice capture — design exploration</p>
+    <h1>Ten ways to<br>listen.</h1>
+    <p>Ten visual directions for the same product. Same eight captured thoughts in every one, so what you are comparing is the design. Tap a microphone, tap a thought, tick something off — each concept is live.</p>
+  </header>
+
+  <div class="shortlist">
+    <h2>My shortlist</h2>
+    <ol id="shortlist-items"></ol>
+    <span class="none" id="shortlist-empty">Nothing yet — tap a heart to add a direction.</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="modal" id="modal">
+  <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
+  <div class="modal-inner">
+    <div class="modal-name" id="modal-name"></div>
+    <div id="modal-slot"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* The same eight thoughts everywhere. Comparing design means holding
+     content still. */
+  var THOUGHTS = [
+    { t: "Ask Thierry for an intro to the Bosch contact", when: "2 min ago",  tag: "Rainbow" },
+    { t: "Check airline miles balance",                   when: "22 min ago" },
+    { t: "Customer advisory board for Rainbow?",          when: "1 h ago",    tag: "Rainbow" },
+    { t: "Finalize Q4 business review",                   when: "3 h ago",    tag: "IPS" },
+    { t: "Follow up with Thierry on partner terms",       when: "5 h ago",    remind: "Tomorrow 09:00" },
+    { t: "Sign off travel policy update",                 when: "Yesterday" },
+    { t: "Review September sales numbers",                when: "Yesterday",  tag: "IPS" },
+    { t: "Book India travel",                             when: "2 d ago",    remind: "Fri 08:00" }
+  ];
+
+  var SPOKEN = "Ask Yann about the China timeline";
+
+  var ICON = {
+    mic:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    bell:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/></svg>',
+    mail:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>',
+    cal:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m8 8 4-4 4 4"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>',
+    spark: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 13.8 9 21 11l-7.2 2L12 20l-1.8-7L3 11l7.2-2z"/></svg>',
+    heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5.2 5.2 0 0 0-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21.5l8.8-8.5a5.2 5.2 0 0 0 0-7.4z"/></svg>',
+    heartOn: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.8 5.6a5.2 5.2 0 0 0-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21.5l8.8-8.5a5.2 5.2 0 0 0 0-7.4z"/></svg>'
+  };
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  /* One row, however each concept wants to draw it. `meta` decides which
+     concepts are allowed to say anything beyond the sentence itself. */
+  function row(th, i, opts) {
+    opts = opts || {};
+    var meta = "";
+    if (opts.meta === "remind" && th.remind) meta = '<div class="t-meta">' + esc(th.remind) + "</div>";
+    if (opts.meta === "when") meta = '<div class="t-meta">' + esc(th.when) + "</div>";
+    if (opts.meta === "tag" && th.tag) meta = '<div class="t-meta">' + esc(th.tag) + "</div>";
+    if (opts.meta === "mixed") {
+      if (th.remind) meta = '<div class="t-meta">' + esc(th.remind) + "</div>";
+      else if (th.tag) meta = '<div class="t-meta">' + esc(th.tag) + "</div>";
+    }
+    var check = opts.check === "index"
+      ? '<div class="t-check">' + String(i + 1).padStart(2, "0") + "</div>"
+      : '<div class="t-check"></div>';
+    return '<li class="t" data-i="' + i + '">' + check +
+      '<div class="t-body"><div class="t-text">' + esc(th.t) + "</div>" + meta + "</div>" +
+      (opts.spark ? '<span class="spark">' + ICON.spark + "</span>" : "") +
+      "</li>";
+  }
+
+  function rows(n, opts) {
+    return THOUGHTS.slice(0, n).map(function (th, i) { return row(th, i, opts); }).join("");
+  }
+
+  var CONCEPTS = [
+    {
+      n: 1, name: "Refined iOS",
+      philosophy: "Everything Apple would do, done quietly — warm paper, one deep teal, nothing raised that needn't be.",
+      keywords: "Native · Warm · Restrained · Familiar",
+      palette: ["#f6f4ef", "#fffefb", "#0e5f5b", "#16191a", "#e5e1d8"],
+      render: function () {
+        return '<div class="hd"><h2>Today</h2><p>8 thoughts kept</p></div>' +
+          '<div class="group"><ul class="list">' + rows(6, { meta: "remind" }) + "</ul></div>" +
+          '<div class="cap"><button class="mic" aria-label="Capture">' + ICON.mic + "</button></div>";
+      }
+    },
+    {
+      n: 2, name: "Modern Productivity",
+      philosophy: "Structure you can scan: a crisp grid, cobalt for state only, and a capture key docked between two destinations.",
+      keywords: "Crisp · Systematic · Cobalt · Legible",
+      palette: ["#ffffff", "#2244e8", "#0d1220", "#eef1fe", "#e8ecf2"],
+      render: function () {
+        return '<div class="hd"><h2>Captured</h2><span class="count">8 open</span></div>' +
+          '<div class="sect">Just now</div><ul class="list">' + rows(3, { meta: "when" }) + "</ul>" +
+          '<div class="sect">Earlier today</div><ul class="list">' +
+          THOUGHTS.slice(3, 6).map(function (th, i) { return row(th, i + 3, { meta: "when" }); }).join("") + "</ul>" +
+          '<div class="nav"><span class="on">Today</span>' +
+          '<button class="mic" aria-label="Capture">' + ICON.mic + "</button>" +
+          "<span>Done</span></div>";
+      }
+    },
+    {
+      n: 3, name: "Premium Dark",
+      philosophy: "A night-time instrument: graphite surfaces, a single mint signal, and a voice orb that looks powered on.",
+      keywords: "Nocturnal · Technical · Luminous · Sharp",
+      palette: ["#0b0d10", "#171b21", "#4fe3c1", "#e9eff3", "#232931"],
+      render: function () {
+        return '<div class="hd"><h2>Good evening</h2><strong>8 thoughts</strong></div>' +
+          '<ul class="list">' + rows(5, { meta: "mixed" }) + "</ul>" +
+          '<div class="cap"><button class="mic" aria-label="Capture">' + ICON.mic + "</button></div>";
+      }
+    },
+    {
+      n: 4, name: "Warm Intelligence",
+      philosophy: "Stone, moss and ochre with a reading serif — a companion that keeps your thoughts rather than an app that tracks them.",
+      keywords: "Human · Bookish · Earthy · Trusted",
+      palette: ["#f0ebe1", "#4c5a3a", "#c08a2e", "#23261d", "#ddd7c9"],
+      render: function () {
+        return '<div class="hd"><h2>Good evening, Moussa</h2><p>Eight things kept for you</p></div>' +
+          '<ul class="list">' + rows(6, { meta: "mixed" }) + "</ul>" +
+          '<div class="cap"><button class="mic">' + ICON.mic + " Hold to speak</button></div>";
+      }
+    },
+    {
+      n: 5, name: "AI Native",
+      philosophy: "The intelligence lives in one surface — a dark capture bar with light moving through it — and nowhere else.",
+      keywords: "Modern · Quiet AI · Precise · Cool",
+      palette: ["#fafafc", "#0f1116", "#3d5afe", "#00c2d1", "#ebecf1"],
+      render: function () {
+        return '<div class="hd"><h2>Your mind, today</h2><p>8 captured · 3 ready to act on</p></div>' +
+          '<ul class="list">' + rows(6, { meta: "remind", spark: true }) + "</ul>" +
+          '<div class="cap"><button class="mic">' + ICON.mic + "<span>Speak a thought…</span></button></div>";
+      }
+    },
+    {
+      n: 6, name: "Editorial",
+      philosophy: "Your thoughts set like a page of print: a rule, numerals in the margin, and one vermilion mark for anything promised.",
+      keywords: "Typographic · Printed · Confident · Rare",
+      palette: ["#fffdf8", "#121110", "#c8341f", "#e4dfd2", "#938f84"],
+      render: function () {
+        return '<div class="hd"><h2>Kept</h2><p>Thursday · Eight entries</p></div>' +
+          '<ul class="list">' + rows(5, { meta: "remind", check: "index" }) + "</ul>" +
+          '<div class="cap"><button class="mic">' + ICON.mic + " Speak</button></div>";
+      }
+    },
+    {
+      n: 7, name: "Soft Depth",
+      philosophy: "Thoughts float on frosted panes above a cool light source — depth you feel rather than notice.",
+      keywords: "Layered · Tactile · Airy · Refined",
+      palette: ["#e9edf1", "#ffffff", "#2f7fa8", "#1f2a33", "#dde4ea"],
+      render: function () {
+        return '<div class="hd"><h2>Today</h2></div>' +
+          '<div class="stack"><ul class="list">' + rows(5, {}) + "</ul></div>" +
+          '<div class="cap"><button class="mic"><i>' + ICON.mic + "</i> Capture a thought</button></div>";
+      }
+    },
+    {
+      n: 8, name: "Bold Mobile",
+      philosophy: "No hedging: heavy type, a full-width emerald capture bar, and targets you can hit without looking.",
+      keywords: "Confident · Large · Emerald · Direct",
+      palette: ["#ffffff", "#007f5f", "#22e08a", "#0f1012", "#ededf0"],
+      render: function () {
+        return '<div class="hd"><h2>Eight things<br><em>on your mind.</em></h2></div>' +
+          '<ul class="list">' + rows(5, {}) + "</ul>" +
+          '<div class="cap"><button class="mic">' + ICON.mic + " Speak</button></div>";
+      }
+    },
+    {
+      n: 9, name: "Executive",
+      philosophy: "Navy, stone and a thread of brass, grouped by when it landed — built for someone who captures forty thoughts a day.",
+      keywords: "Mature · Precise · Premium · Calm",
+      palette: ["#ece9e2", "#101f35", "#a8873f", "#f7f5f0", "#d8d3c8"],
+      render: function () {
+        return '<div class="hd"><h2>Thursday</h2><span>8 kept</span></div>' +
+          '<div class="sect">This morning</div><ul class="list">' + rows(3, { meta: "tag" }) + "</ul>" +
+          '<div class="sect">Earlier</div><ul class="list">' +
+          THOUGHTS.slice(3, 6).map(function (th, i) { return row(th, i + 3, { meta: "tag" }); }).join("") + "</ul>" +
+          '<div class="cap"><button class="mic" aria-label="Capture">' + ICON.mic + "</button>" +
+          "<p><b>Speak a thought</b>Held until you act on it</p></div>";
+      }
+    },
+    {
+      n: 10, name: "The Thread",
+      philosophy: "One continuous line down the day: each thought is a node on it, and the thread fades as thoughts age — recency you read without a timestamp.",
+      keywords: "Distinctive · Temporal · Ink · Alive",
+      palette: ["#f5f3ee", "#3a4cb8", "#1b2233", "#fffefc", "#e2ded4"],
+      render: function () {
+        var bars = "";
+        for (var i = 0; i < 7; i++) {
+          bars += '<i style="--peak:' + (5 + ((i * 5) % 12)) + "px;animation-delay:" + (i * 90) + 'ms"></i>';
+        }
+        return '<div class="hd"><h2>Thursday evening</h2><p>The thread · 8 kept</p></div>' +
+          '<div class="thread">' +
+          '<div class="marker">Just now</div><ul class="list">' + rows(2, { meta: "tag" }) + "</ul>" +
+          '<div class="marker">This afternoon</div><ul class="list">' +
+          THOUGHTS.slice(2, 5).map(function (th, i) { return row(th, i + 2, { meta: "remind" }); }).join("") + "</ul>" +
+          '<div class="marker">Yesterday</div><ul class="list">' +
+          THOUGHTS.slice(5, 7).map(function (th, i) { return row(th, i + 5, {}); }).join("") + "</ul>" +
+          "</div>" +
+          '<div class="cap"><button class="mic"><span class="pulse">' + bars + "</span> Speak</button></div>";
+      }
+    }
+  ];
+
+  /* ---------- build a phone ---------- */
+  function waveBars() {
+    var out = "";
+    for (var i = 0; i < 26; i++) {
+      out += '<i style="--peak:' + (8 + Math.round(Math.abs(Math.sin(i * 1.7)) * 26)) + "px;animation-delay:" + (i * 45) + 'ms"></i>';
+    }
+    return out;
+  }
+
+  function phone(c) {
+    return '<div class="phone" data-c="' + c.n + '">' +
+      '<div class="screen">' +
+        '<div class="status"><span>9:41</span><span class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span class="batt"></span></span></div>' +
+        '<div class="body">' + c.render() + "</div>" +
+        '<div class="scrim" data-close="1"></div>' +
+        '<div class="sheet">' +
+          '<div class="grabber"></div>' +
+          '<p class="sheet-title"></p>' +
+          '<p class="sheet-sub"></p>' +
+          '<div class="sheet-acts">' +
+            '<button class="act primary" data-act="done">' + ICON.check + " Done</button>" +
+            '<button class="act" data-act="remind">' + ICON.bell + " Remind me</button>" +
+            '<button class="act" data-act="mail">' + ICON.mail + " Turn into email</button>" +
+            '<button class="act" data-act="cal">' + ICON.cal + " Add to calendar</button>" +
+            '<button class="act" data-act="share">' + ICON.share + " Share</button>" +
+          "</div>" +
+        "</div>" +
+        '<div class="voice">' +
+          '<p class="voice-label">Listening</p>' +
+          '<p class="voice-text"></p>' +
+          '<div class="wave">' + waveBars() + "</div>" +
+          '<button class="voice-done">Done</button>' +
+        "</div>" +
+        '<div class="home-bar"></div>' +
+      "</div></div>";
+  }
+
+  /* ---------- render gallery ---------- */
+  var grid = document.getElementById("grid");
+  grid.innerHTML = CONCEPTS.map(function (c) {
+    return '<section class="concept" data-concept="' + c.n + '">' +
+      '<div class="concept-head">' +
+        '<span class="num">' + String(c.n).padStart(2, "0") + "</span>" +
+        "<h3>" + esc(c.name) + "</h3>" +
+        '<button class="heart" aria-pressed="false" aria-label="Shortlist ' + esc(c.name) + '">' + ICON.heart + "</button>" +
+      "</div>" +
+      '<p class="philosophy">' + esc(c.philosophy) + "</p>" +
+      '<div class="stage">' + phone(c) + "</div>" +
+      '<div class="meta">' +
+        '<div class="swatches">' + c.palette.map(function (p) {
+          return '<span class="swatch" style="background:' + p + '" title="' + p + '"></span>';
+        }).join("") + "</div>" +
+        '<div class="keywords">' + esc(c.keywords) + "</div>" +
+      "</div>" +
+    "</section>";
+  }).join("");
+
+  /* ---------- interactions ---------- */
+  var typing = null;
+
+  function openSheet(ph, li) {
+    var text = li.querySelector(".t-text").textContent;
+    ph.querySelector(".sheet-title").textContent = text;
+    ph.querySelector(".sheet-sub").textContent = "Captured " + (THOUGHTS[+li.dataset.i] || THOUGHTS[0]).when;
+    ph.dataset.target = li.dataset.i;
+    ph.classList.remove("listening");
+    ph.classList.add("sheet-open");
+  }
+
+  function closeAll(ph) {
+    ph.classList.remove("sheet-open", "listening");
+    if (typing) { clearInterval(typing); typing = null; }
+  }
+
+  function startVoice(ph) {
+    ph.classList.remove("sheet-open");
+    ph.classList.add("listening");
+    var out = ph.querySelector(".voice-text");
+    var i = 0;
+    out.innerHTML = '<span class="caret"></span>';
+    if (typing) clearInterval(typing);
+    typing = setInterval(function () {
+      i++;
+      out.innerHTML = esc(SPOKEN.slice(0, i)) + '<span class="caret"></span>';
+      if (i >= SPOKEN.length) { clearInterval(typing); typing = null; }
+    }, 42);
+  }
+
+  function capture(ph) {
+    var list = ph.querySelector(".list");
+    if (list) {
+      var li = document.createElement("li");
+      li.className = "t fresh";
+      li.dataset.i = "0";
+      var isIndexed = !!ph.querySelector(".t-check") && ph.querySelector(".t-check").textContent.trim().length === 2;
+      li.innerHTML = (isIndexed ? '<div class="t-check">00</div>' : '<div class="t-check"></div>') +
+        '<div class="t-body"><div class="t-text">' + esc(SPOKEN) + "</div></div>";
+      list.insertBefore(li, list.firstChild);
+    }
+    closeAll(ph);
+  }
+
+  document.addEventListener("click", function (e) {
+    var ph = e.target.closest(".phone");
+
+    /* shortlist */
+    var heart = e.target.closest(".heart");
+    if (heart) {
+      var on = heart.getAttribute("aria-pressed") === "true";
+      heart.setAttribute("aria-pressed", on ? "false" : "true");
+      heart.innerHTML = on ? ICON.heart : ICON.heartOn;
+      saveShortlist();
+      return;
+    }
+
+    if (ph) {
+      e.stopPropagation();
+      if (e.target.closest(".mic")) { startVoice(ph); return; }
+      if (e.target.closest(".voice-done")) { capture(ph); return; }
+      if (e.target.closest("[data-close]")) { closeAll(ph); return; }
+
+      var check = e.target.closest(".t-check");
+      if (check) {
+        check.closest(".t").classList.toggle("done");
+        return;
+      }
+      var li = e.target.closest(".t");
+      if (li) { openSheet(ph, li); return; }
+
+      var act = e.target.closest(".act");
+      if (act) {
+        if (act.dataset.act === "done") {
+          var t = ph.querySelector('.t[data-i="' + ph.dataset.target + '"]');
+          if (t) t.classList.add("done");
+        }
+        closeAll(ph);
+        return;
+      }
+      return;
+    }
+
+    /* enlarge */
+    var stage = e.target.closest(".stage");
+    if (stage) {
+      var section = stage.closest(".concept");
+      var c = CONCEPTS[+section.dataset.concept - 1];
+      document.getElementById("modal-name").textContent = String(c.n).padStart(2, "0") + " — " + c.name;
+      var slot = document.getElementById("modal-slot");
+      slot.innerHTML = phone(c);
+      document.getElementById("modal").classList.add("open");
+    }
+  });
+
+  document.getElementById("modal-close").addEventListener("click", function () {
+    document.getElementById("modal").classList.remove("open");
+    document.getElementById("modal-slot").innerHTML = "";
+  });
+  document.getElementById("modal").addEventListener("click", function (e) {
+    if (e.target.id === "modal") {
+      this.classList.remove("open");
+      document.getElementById("modal-slot").innerHTML = "";
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      document.getElementById("modal").classList.remove("open");
+      document.getElementById("modal-slot").innerHTML = "";
+      document.querySelectorAll(".phone").forEach(closeAll);
+    }
+  });
+
+  /* ---------- shortlist persistence ---------- */
+  var KEY = "hence-design-shortlist";
+
+  function saveShortlist() {
+    var picked = [];
+    document.querySelectorAll('.concept .heart[aria-pressed="true"]').forEach(function (h) {
+      picked.push(+h.closest(".concept").dataset.concept);
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(picked)); } catch (err) { /* private mode */ }
+    paintShortlist(picked);
+  }
+
+  function paintShortlist(picked) {
+    var ol = document.getElementById("shortlist-items");
+    var empty = document.getElementById("shortlist-empty");
+    ol.innerHTML = picked.sort(function (a, b) { return a - b; }).map(function (n) {
+      var c = CONCEPTS[n - 1];
+      return "<li>" + String(n).padStart(2, "0") + " " + esc(c.name) + "</li>";
+    }).join("");
+    empty.style.display = picked.length ? "none" : "";
+  }
+
+  (function restore() {
+    var picked = [];
+    try { picked = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (err) { picked = []; }
+    picked.forEach(function (n) {
+      var h = document.querySelector('.concept[data-concept="' + n + '"] .heart');
+      if (h) { h.setAttribute("aria-pressed", "true"); h.innerHTML = ICON.heartOn; }
+    });
+    paintShortlist(picked);
+  })();
+})();
+</script>
