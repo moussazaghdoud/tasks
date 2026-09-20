@@ -1,4 +1,4 @@
-import { Bell, BellOff, CalendarPlus, Check, Flag, Mail, RotateCcw, Share2, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, Bell, BellOff, CalendarPlus, Check, Flag, Mail, RotateCcw, Share2, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { relativeTime } from '@/lib/dates';
 import { haptic } from '@/lib/native/bridge';
@@ -6,7 +6,9 @@ import { ensureNotificationPermission } from '@/lib/native/notifications';
 import { toggleComplete } from '@/actions/taskActions';
 import { toast } from '@/store/toast';
 import { useWorkspace, ws } from '@/store/workspace';
+import type { Space } from '@/domain/types';
 import { Sheet, SheetAction, SheetDivider } from './Sheet';
+import { spaceOf } from './space';
 import { addToCalendar, openEmail, reminderChoices, setReminder, shareThought } from './thoughtActions';
 
 /**
@@ -61,6 +63,16 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
           label={task.reminderAt ? 'Change reminder' : 'Remind me'}
           detail={task.reminderAt ? new Date(task.reminderAt).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' }) : undefined}
           onClick={() => setRemindOpen(true)}
+        />
+        <SheetAction
+          icon={ArrowLeftRight}
+          label={spaceOf(task) === 'business' ? 'Move to Private' : 'Move to Business'}
+          onClick={act(() => {
+            const to: Space = spaceOf(task) === 'business' ? 'private' : 'business';
+            const undo = ws().transact(() => ws().updateTask(task.id, { space: to }));
+            haptic('medium');
+            toast(`Moved to ${to === 'private' ? 'Private' : 'Business'}`, { action: { label: 'Undo', run: undo } });
+          })}
         />
         <SheetAction icon={Mail} label="Turn into email" onClick={act(() => openEmail(task))} />
         <SheetAction icon={CalendarPlus} label="Add to calendar" onClick={act(() => addToCalendar(task))} />

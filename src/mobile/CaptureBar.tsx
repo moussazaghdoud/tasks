@@ -8,6 +8,7 @@ import { createFromDrafts, findTaskByTitle, type ConfirmedDraft } from '@/lib/vo
 import { defaultSpeechLang, startLevelMeter, startSpeech, type SpeechErrorCode, type SpeechSession } from '@/lib/voice/speech';
 import { toast } from '@/store/toast';
 import { ui, useUi } from '@/store/ui';
+import { currentSpace, spaceOf } from './space';
 import { Sheet } from './Sheet';
 import { Waveform } from './Waveform';
 
@@ -71,8 +72,10 @@ export function CaptureBar() {
         ? tasks.map((d) => {
             // If the memo is plainly about something already on the list, it
             // belongs there as a step — intelligence that costs no interaction.
+            // Only within this half, though: quietly filing a private thought
+            // onto a work task would be the worst kind of helpful.
             const related = d.relatedTo ? findTaskByTitle(d.relatedTo) : undefined;
-            return related ? { ...d, stepOf: related.id } : d;
+            return related && spaceOf(related) === currentSpace() ? { ...d, stepOf: related.id } : d;
           })
         : [];
 
@@ -83,7 +86,9 @@ export function CaptureBar() {
         return;
       }
 
-      const { tasks: made, steps, undo } = createFromDrafts(drafts, said);
+      // Read at the moment of capture, not when this component mounted: the
+      // thought belongs to whichever half was open when it was spoken.
+      const { tasks: made, steps, undo } = createFromDrafts(drafts, said, currentSpace());
       markFresh(made.map((t) => t.id));
       haptic('success');
       setPhase('idle');

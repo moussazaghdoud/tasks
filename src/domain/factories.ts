@@ -9,6 +9,7 @@ export function createTask(fields: Partial<Task> & { title: string }): Task {
   const base: Task = {
     id: createId('t_'),
     workspaceId: DEFAULT_WORKSPACE,
+    space: 'business',
     title: fields.title,
     notes: '',
     status: 'open',

@@ -1,10 +1,12 @@
 import { Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Task } from '@/domain/types';
+import type { Space, Task } from '@/domain/types';
 import { greeting, todayKey } from '@/lib/dates';
 import { cn } from '@/lib/platform';
 import { useWorkspace } from '@/store/workspace';
 import { CaptureBar } from './CaptureBar';
+import { spaceOf, useSpace } from './space';
+import { SpaceTabs } from './SpaceTabs';
 import { ThoughtRow } from './ThoughtRow';
 import { ThoughtSheet } from './ThoughtSheet';
 
@@ -23,6 +25,7 @@ export function MobileApp() {
   const [query, setQuery] = useState<string | null>(null);
   const [showDone, setShowDone] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const space = useSpace();
 
   // Premium Dark is the phone's theme. It goes on <html> rather than this
   // element so sheets and toasts — which portal to the end of <body> — are
@@ -33,12 +36,19 @@ export function MobileApp() {
     return () => root.removeAttribute('data-theme');
   }, []);
 
-  const { open, doneToday } = useMemo(() => {
-    const all = Object.values(tasks).filter((t) => !t.archivedAt);
+  const { open, doneToday, counts } = useMemo(() => {
+    const live = Object.values(tasks).filter((t) => !t.archivedAt);
     const today = todayKey();
     const q = query?.trim().toLowerCase();
     const matches = (t: Task) => !q || t.title.toLowerCase().includes(q) || t.notes.toLowerCase().includes(q);
+    // Both halves are counted before filtering, so the other tab can say how
+    // much is waiting over there without you having to look.
+    const counts: Record<Space, number> = { business: 0, private: 0 };
+    for (const t of live) if (t.status !== 'done') counts[spaceOf(t)]++;
+
+    const all = live.filter((t) => spaceOf(t) === space);
     return {
+      counts,
       // Important first, then newest: what you just said is what you are
       // thinking about, unless you have said something matters more.
       open: all
@@ -51,7 +61,7 @@ export function MobileApp() {
         .filter((t) => t.status === 'done' && t.completedAt?.slice(0, 10) === today && matches(t))
         .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? '')),
     };
-  }, [tasks, query]);
+  }, [tasks, query, space]);
 
   const searching = query !== null;
 
@@ -102,6 +112,11 @@ export function MobileApp() {
             </>
           )}
         </div>
+        {!searching && (
+          <div className="px-[22px] pb-3">
+            <SpaceTabs active={space} counts={counts} />
+          </div>
+        )}
       </header>
 
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 pb-[184px]">

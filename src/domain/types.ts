@@ -66,9 +66,18 @@ export interface RecurrenceRule {
   interval: number;
 }
 
+/**
+ * The two halves of a life. A thought is captured into one of them and stays
+ * there — this is a property of the thought, not a filter over a view, so it
+ * survives a reload and follows the task everywhere.
+ */
+export type Space = 'business' | 'private';
+
 export interface Task {
   id: ID;
   workspaceId: ID;
+  /** Older tasks predate spaces; absent is read as `business`. */
+  space?: Space;
   title: string;
   notes: string;
   status: TaskStatus;

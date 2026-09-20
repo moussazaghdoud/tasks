@@ -1,5 +1,5 @@
 import { activity, ME } from '@/domain/factories';
-import type { ID, Task } from '@/domain/types';
+import type { ID, Space, Task } from '@/domain/types';
 import { createId, nowIso } from '@/lib/id';
 import { ACCENTS } from '@/components/ui/ProjectGlyph';
 import { ws, type NewTaskInput } from '@/store/workspace';
@@ -21,7 +21,7 @@ export function findPerson(name: string) {
   return people.find((p) => norm(p.name) === n) ?? people.find((p) => norm(p.name).split(/\s+/)[0] === n.split(/\s+/)[0]);
 }
 
-function toInput(d: VoiceTaskDraft, transcript: string): NewTaskInput {
+function toInput(d: VoiceTaskDraft, transcript: string, space: Space): NewTaskInput {
   const state = ws();
   let projectId: ID | null = null;
   if (d.project) {
@@ -36,6 +36,7 @@ function toInput(d: VoiceTaskDraft, transcript: string): NewTaskInput {
   const now = nowIso();
   const heard = transcript.length > 280 ? `${transcript.slice(0, 278)}…` : transcript;
   return {
+    space,
     title: d.title,
     notes: d.notes,
     dueDate: d.dueDate,
@@ -66,12 +67,17 @@ export interface ConfirmedDraft extends VoiceTaskDraft {
  * Create the confirmed drafts. Drafts marked `stepOf` become steps on an
  * existing task rather than new tasks. Returns everything plus one undo.
  */
-export function createFromDrafts(drafts: ConfirmedDraft[], transcript: string): { tasks: Task[]; steps: number; undo: () => void } {
+export function createFromDrafts(
+  drafts: ConfirmedDraft[],
+  transcript: string,
+  /** Which half of the app was open when this was spoken. */
+  space: Space = 'business',
+): { tasks: Task[]; steps: number; undo: () => void } {
   let tasks: Task[] = [];
   let steps = 0;
   const undo = ws().transact(() => {
     const fresh = drafts.filter((d) => !d.stepOf);
-    tasks = fresh.length ? ws().addTasks(fresh.map((d) => toInput(d, transcript))) : [];
+    tasks = fresh.length ? ws().addTasks(fresh.map((d) => toInput(d, transcript, space))) : [];
     for (const d of drafts) {
       if (!d.stepOf) continue;
       ws().addSubtask(d.stepOf, d.title);
