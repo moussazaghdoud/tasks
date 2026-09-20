@@ -45,6 +45,8 @@ export function CaptureBar() {
   const lastSound = useRef(0);
   const heard = useRef('');
   const lang = useRef(defaultSpeechLang());
+  /** Explain the fallback once per session, not after every sentence. */
+  const noticed = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);
 
   const teardown = useCallback(() => {
@@ -64,7 +66,7 @@ export function CaptureBar() {
         return;
       }
       setPhase('thinking');
-      const { tasks } = await analyzeMemo(said, lang.current);
+      const { tasks, source, notice } = await analyzeMemo(said, lang.current);
       const drafts: ConfirmedDraft[] = tasks.length
         ? tasks.map((d) => {
             // If the memo is plainly about something already on the list, it
@@ -88,7 +90,14 @@ export function CaptureBar() {
       setTranscript('');
 
       const label = made.length > 1 ? `${made.length} captured` : steps && !made.length ? 'Added as a step' : 'Captured';
-      toast(label, { action: { label: 'Undo', run: undo } });
+      // Say which engine read the memo. Without this the on-device fallback is
+      // indistinguishable from Claude having a bad day, and a server that
+      // quietly stopped answering looks like the app getting worse.
+      toast(source === 'local' ? `${label} · on-device` : label, { action: { label: 'Undo', run: undo } });
+      if (source === 'local' && notice && !noticed.current) {
+        noticed.current = true;
+        setTimeout(() => toast(notice), 2600);
+      }
     },
     [],
   );
