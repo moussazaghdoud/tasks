@@ -99,8 +99,29 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = partial
+
+        // Left alone, `requiresOnDeviceRecognition` stays false, which is
+        // deliberate: Apple's server model is markedly more accurate than the
+        // offline one, and accuracy is the whole point of this screen.
         if onDevice, recognizer.supportsOnDeviceRecognition {
             request.requiresOnDeviceRecognition = true
+        }
+
+        // Names are where dictation fails, and they are most of what gets
+        // spoken here: people, projects, companies. Handing the recogniser the
+        // vocabulary it is about to hear is what turns "Terry" into "Thierry".
+        let contextual = call.getArray("contextualStrings", String.self) ?? []
+        if !contextual.isEmpty {
+            request.contextualStrings = Array(contextual.prefix(100))
+        }
+
+        // Short spoken notes, not a conversation or a search query.
+        request.taskHint = .dictation
+
+        // Sentence breaks make the difference between one run-on thought and
+        // two separate ones once Claude reads it.
+        if #available(iOS 16.0, *) {
+            request.addsPunctuation = true
         }
 
         do {

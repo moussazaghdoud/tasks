@@ -7,13 +7,14 @@
  * the microphone level for the listening animation.
  */
 import { registerPlugin, type PluginListenerHandle } from '@capacitor/core';
+import { speechHints } from './hints';
 import type { SpeechCallbacks, SpeechErrorCode, SpeechSession } from './speechTypes';
 
 interface SpeechPlugin {
   available(options: { locale: string }): Promise<{ available: boolean; onDevice: boolean }>;
   checkPermissions(): Promise<{ speech: string; microphone: string }>;
   requestPermissions(): Promise<{ speech: string; microphone: string }>;
-  start(options: { locale: string; partialResults: boolean; onDevice?: boolean }): Promise<void>;
+  start(options: { locale: string; partialResults: boolean; onDevice?: boolean; contextualStrings?: string[] }): Promise<void>;
   stop(): Promise<void>;
   addListener(event: 'result', fn: (e: { text: string; isFinal: boolean }) => void): Promise<PluginListenerHandle>;
   addListener(event: 'level', fn: (e: { level: number }) => void): Promise<PluginListenerHandle>;
@@ -90,7 +91,9 @@ export function startNativeSpeech(lang: string, cb: SpeechCallbacks): SpeechSess
         }),
       );
 
-      await Speech.start({ locale: lang, partialResults: true });
+      // The names and projects this person actually talks about, so the
+      // recogniser spells them right the first time.
+      await Speech.start({ locale: lang, partialResults: true, contextualStrings: speechHints() });
     } catch (error) {
       cleanup();
       const code = (error as { code?: string })?.code;
