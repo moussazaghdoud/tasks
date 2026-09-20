@@ -10,6 +10,7 @@ import { exportFile } from '@/lib/native/bridge';
 import { isNative } from '@/lib/native/platform';
 import { ws } from '@/store/workspace';
 import { toast } from '@/store/toast';
+import { t } from './i18n';
 
 /** Text the person can act on: the thought, plus whatever context we captured. */
 function body(task: Task): string {
@@ -87,7 +88,7 @@ export async function shareThought(task: Task): Promise<void> {
       return;
     }
     await navigator.clipboard.writeText(text);
-    toast('Copied');
+    toast(t('copied'));
   } catch {
     // A dismissed share sheet is not a failure worth reporting.
   }
@@ -95,7 +96,8 @@ export async function shareThought(task: Task): Promise<void> {
 
 /** Reminder presets, resolved against the current time rather than a fixed clock. */
 export interface ReminderChoice {
-  label: string;
+  /** Dictionary key, so the label follows the chosen language. */
+  key: 'remind_hour' | 'remind_evening' | 'remind_tomorrow' | 'remind_next_week';
   at: Date;
 }
 
@@ -109,13 +111,13 @@ export function reminderChoices(now = new Date()): ReminderChoice[] {
   };
 
   const inAnHour = new Date(now.getTime() + 60 * 60_000);
-  out.push({ label: 'In an hour', at: inAnHour });
+  out.push({ key: 'remind_hour', at: inAnHour });
 
   const evening = at(0, 18);
-  if (evening > now) out.push({ label: 'This evening', at: evening });
+  if (evening > now) out.push({ key: 'remind_evening', at: evening });
 
-  out.push({ label: 'Tomorrow morning', at: at(1, 9) });
-  out.push({ label: 'Next week', at: at(7, 9) });
+  out.push({ key: 'remind_tomorrow', at: at(1, 9) });
+  out.push({ key: 'remind_next_week', at: at(7, 9) });
   return out;
 }
 

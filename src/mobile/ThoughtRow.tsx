@@ -1,23 +1,23 @@
 import { Bell, Check, Ellipsis } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 import type { Task } from '@/domain/types';
-import { relativeTime } from '@/lib/dates';
 import { isFresh } from '@/lib/fresh';
 import { cn } from '@/lib/platform';
 import { registerCompletionAnimator, toggleComplete } from '@/actions/taskActions';
 import { useSwipe } from '@/hooks/useSwipe';
+import { relativeIn, t, timeIn } from './i18n';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** A short, human reminder time: "18:00", "Tomorrow 09:00". */
 function reminderLabel(iso: string): string {
   const at = new Date(iso);
-  const time = at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const time = timeIn(at);
   const days = Math.round((new Date(at).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86_400_000);
   if (days === 0) return time;
-  if (days === 1) return `Tomorrow ${time}`;
-  if (days < 0) return `${relativeTime(iso)}`;
-  return `${at.toLocaleDateString([], { weekday: 'short' })} ${time}`;
+  if (days === 1) return t('tomorrow_at', { time });
+  if (days < 0) return relativeIn(iso);
+  return `${at.toLocaleDateString(undefined, { weekday: 'short' })} ${time}`;
 }
 
 /**

@@ -1,0 +1,32 @@
+import { beforeEach, describe, expect, it } from 'vitest';
+import { LANGUAGES, localeOf, setLang, t } from './i18n';
+
+describe('language', () => {
+  beforeEach(() => setLang('en'));
+
+  it('drives the speech locale, which is the whole point of the setting', () => {
+    expect(localeOf()).toBe('en-US');
+    setLang('fr');
+    expect(localeOf()).toBe('fr-FR');
+  });
+
+  it('translates captions', () => {
+    expect(t('business')).toBe('Business');
+    setLang('fr');
+    expect(t('business')).toBe('Professionnel');
+  });
+
+  it('fills placeholders', () => {
+    expect(t('thoughts_many', { n: 7 })).toBe('7 thoughts');
+    setLang('fr');
+    expect(t('thoughts_many', { n: 7 })).toBe('7 pensées');
+  });
+
+  it('leaves an unknown placeholder visible rather than printing "undefined"', () => {
+    expect(t('moved_to', {})).toBe('Moved to {space}');
+  });
+
+  it('offers a locale for every language', () => {
+    for (const l of LANGUAGES) expect(l.locale).toMatch(/^[a-z]{2}-[A-Z]{2}$/);
+  });
+});

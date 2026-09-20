@@ -5,9 +5,10 @@ import { haptic } from '@/lib/native/bridge';
 import { markFresh } from '@/lib/fresh';
 import { analyzeMemo } from '@/lib/voice/analyze';
 import { createFromDrafts, findTaskByTitle, type ConfirmedDraft } from '@/lib/voice/createFromDrafts';
-import { defaultSpeechLang, startLevelMeter, startSpeech, type SpeechErrorCode, type SpeechSession } from '@/lib/voice/speech';
+import { startLevelMeter, startSpeech, type SpeechErrorCode, type SpeechSession } from '@/lib/voice/speech';
 import { toast } from '@/store/toast';
 import { ui, useUi } from '@/store/ui';
+import { localeOf, t } from './i18n';
 import { currentSpace, spaceOf } from './space';
 import { Sheet } from './Sheet';
 import { Waveform } from './Waveform';
@@ -15,12 +16,21 @@ import { Waveform } from './Waveform';
 /** Stop on a long pause, so putting the phone down still captures the thought. */
 const SILENCE_MS = 3200;
 
-const ERROR_TEXT: Partial<Record<SpeechErrorCode, string>> = {
-  'not-allowed': 'Allow the microphone in Settings to speak your thoughts.',
-  'plugin-missing': 'Voice is missing from this build.',
-  unsupported: 'Voice isn’t available on this device.',
-  network: 'Transcription needs a connection.',
-  'no-speech': 'I didn’t catch that.',
+const errorText = (code: SpeechErrorCode): string => {
+  switch (code) {
+    case 'not-allowed':
+      return t('err_not_allowed');
+    case 'plugin-missing':
+      return t('err_plugin');
+    case 'unsupported':
+      return t('err_unsupported');
+    case 'network':
+      return t('err_network');
+    case 'no-speech':
+      return t('err_no_speech');
+    default:
+      return t('err_other');
+  }
 };
 
 type Phase = 'idle' | 'listening' | 'thinking';
@@ -45,7 +55,8 @@ export function CaptureBar() {
   const stopMeter = useRef<(() => void) | null>(null);
   const lastSound = useRef(0);
   const heard = useRef('');
-  const lang = useRef(defaultSpeechLang());
+  /** Read per recording, so changing the language takes effect immediately. */
+  const speechLocale = () => localeOf();
   /** Explain the fallback once per session, not after every sentence. */
   const noticed = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);
@@ -67,7 +78,9 @@ export function CaptureBar() {
         return;
       }
       setPhase('thinking');
-      const { tasks, source, notice } = await analyzeMemo(said, lang.current);
+      // Claude is told which language this was spoken in, so the thought it
+      // writes back comes out in the same one.
+      const { tasks, source, notice } = await analyzeMemo(said, speechLocale());
       const drafts: ConfirmedDraft[] = tasks.length
         ? tasks.map((d) => {
             // If the memo is plainly about something already on the list, it
@@ -82,7 +95,7 @@ export function CaptureBar() {
       if (!drafts.length) {
         setPhase('idle');
         setTranscript('');
-        toast('Nothing to capture');
+        toast(t('captured_nothing'));
         return;
       }
 
@@ -94,11 +107,12 @@ export function CaptureBar() {
       setPhase('idle');
       setTranscript('');
 
-      const label = made.length > 1 ? `${made.length} captured` : steps && !made.length ? 'Added as a step' : 'Captured';
+      const label =
+        made.length > 1 ? t('captured_many', { n: made.length }) : steps && !made.length ? t('captured_step') : t('captured');
       // Say which engine read the memo. Without this the on-device fallback is
       // indistinguishable from Claude having a bad day, and a server that
       // quietly stopped answering looks like the app getting worse.
-      toast(source === 'local' ? `${label} · on-device` : label, { action: { label: 'Undo', run: undo } });
+      toast(source === 'local' ? `${label} · ${t('on_device_suffix')}` : label, { action: { label: t('undo'), run: undo } });
       if (source === 'local' && notice && !noticed.current) {
         noticed.current = true;
         setTimeout(() => toast(notice), 2600);
@@ -133,7 +147,7 @@ export function CaptureBar() {
     setPhase('listening');
     lastSound.current = Date.now();
 
-    session.current = startSpeech(lang.current, {
+    session.current = startSpeech(speechLocale(), {
       onText: (final, interim) => {
         const text = [final, interim].filter(Boolean).join(' ').trim();
         heard.current = final || text;
@@ -144,7 +158,7 @@ export function CaptureBar() {
         teardown();
         setPhase('idle');
         setTranscript('');
-        toast(ERROR_TEXT[code] ?? 'Something interrupted the recording.');
+        toast(errorText(code));
       },
       onEnd: () => {
         // The recogniser can end on its own; treat it as finishing.
@@ -201,11 +215,11 @@ export function CaptureBar() {
           <div className="animate-sheet-up rounded-t-[28px] border-t border-line bg-raised px-5 pt-5 pb-[max(18px,env(safe-area-inset-bottom))] shadow-float">
             <div className="flex items-start justify-between">
               <p className="pt-1 text-[11px] font-semibold tracking-[0.16em] text-accent uppercase">
-                {phase === 'listening' ? 'Listening' : 'One moment'}
+                {phase === 'listening' ? t('listening') : t('thinking')}
               </p>
               <button
                 onClick={cancel}
-                aria-label="Cancel"
+                aria-label={t('cancel')}
                 className="-mt-1.5 -mr-1.5 grid size-10 place-items-center rounded-full text-ink-3 active:bg-wash-strong"
               >
                 <X className="size-5" />
@@ -220,7 +234,7 @@ export function CaptureBar() {
                   phase === 'thinking' && 'text-ink-3',
                 )}
               >
-                {transcript || 'Say what’s on your mind…'}
+                {transcript || t('say_something')}
               </p>
             </div>
 
@@ -233,7 +247,7 @@ export function CaptureBar() {
                 onClick={finish}
                 className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-accent-ink transition-transform active:scale-[0.985]"
               >
-                Done
+                {t('done')}
               </button>
             )}
           </div>
@@ -245,14 +259,14 @@ export function CaptureBar() {
             <span className="size-12" aria-hidden />
             <button
               onPointerDown={start}
-              aria-label="Capture a thought"
+              aria-label={t('capture')}
               className="capture-orb grid size-[70px] touch-none place-items-center rounded-full text-accent-ink transition-transform duration-150 select-none active:scale-95"
             >
               <Mic className="size-7" strokeWidth={2} />
             </button>
             <button
               onClick={() => setTyping(true)}
-              aria-label="Type a thought"
+              aria-label={t('type_placeholder')}
               className="grid size-12 place-items-center rounded-full text-ink-3 transition-colors active:bg-wash-strong"
             >
               <Keyboard className="size-[22px]" strokeWidth={1.8} />
@@ -312,7 +326,7 @@ function TypeSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () => 
             }
           }}
           rows={3}
-          placeholder="What’s on your mind?"
+          placeholder={t('type_placeholder')}
           className="w-full resize-none bg-transparent text-[20px] leading-[29px] text-ink outline-none placeholder:text-ink-4"
         />
         <button
@@ -320,7 +334,7 @@ function TypeSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () => 
           disabled={!text.trim()}
           className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-accent-ink transition-opacity disabled:opacity-30"
         >
-          Capture
+          {t('capture')}
         </button>
       </div>
     </Sheet>

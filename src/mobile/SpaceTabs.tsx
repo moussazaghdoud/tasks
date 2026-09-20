@@ -1,12 +1,10 @@
 import type { Space } from '@/domain/types';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
+import { t } from './i18n';
 import { setSpace } from './space';
 
-const TABS: Array<{ id: Space; label: string }> = [
-  { id: 'business', label: 'Business' },
-  { id: 'private', label: 'Private' },
-];
+const TAB_IDS: Space[] = ['business', 'private'];
 
 /**
  * Switching between the two halves of your life.
@@ -18,7 +16,7 @@ const TABS: Array<{ id: Space; label: string }> = [
  * allowed to glow, and a second bright object would fight it.
  */
 export function SpaceTabs({ active, counts }: { active: Space; counts: Record<Space, number> }) {
-  const index = TABS.findIndex((t) => t.id === active);
+  const index = TAB_IDS.indexOf(active);
 
   return (
     <div
@@ -32,27 +30,27 @@ export function SpaceTabs({ active, counts }: { active: Space; counts: Record<Sp
         className="absolute top-[3px] bottom-[3px] left-[3px] rounded-full bg-accent-soft ring-1 ring-accent/25 transition-transform duration-300 ease-[var(--ease-out)]"
         style={{ width: 'calc(50% - 3px)', transform: `translateX(${index * 100}%)` }}
       />
-      {TABS.map((tab) => {
-        const on = tab.id === active;
+      {TAB_IDS.map((id) => {
+        const on = id === active;
         return (
           <button
-            key={tab.id}
+            key={id}
             role="tab"
             aria-selected={on}
             onClick={() => {
               if (on) return;
               haptic('light');
-              setSpace(tab.id);
+              setSpace(id);
             }}
             className={cn(
               'relative z-10 flex flex-1 items-center justify-center gap-2 rounded-full text-[14px] transition-colors duration-200',
               on ? 'font-semibold text-accent' : 'font-medium text-ink-3',
             )}
           >
-            {tab.label}
-            {counts[tab.id] > 0 && (
+            {t(id)}
+            {counts[id] > 0 && (
               <span className={cn('text-[12px] font-medium tabular-nums', on ? 'text-accent/70' : 'text-ink-4')}>
-                {counts[tab.id]}
+                {counts[id]}
               </span>
             )}
           </button>

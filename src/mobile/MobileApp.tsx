@@ -1,10 +1,12 @@
-import { Search, X } from 'lucide-react';
+import { Search, Settings2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Space, Task } from '@/domain/types';
-import { greeting, todayKey } from '@/lib/dates';
+import { todayKey } from '@/lib/dates';
 import { cn } from '@/lib/platform';
 import { useWorkspace } from '@/store/workspace';
 import { CaptureBar } from './CaptureBar';
+import { greetingIn, t, useLang } from './i18n';
+import { SettingsSheet } from './SettingsSheet';
 import { spaceOf, useSpace } from './space';
 import { SpaceTabs } from './SpaceTabs';
 import { ThoughtRow } from './ThoughtRow';
@@ -26,6 +28,9 @@ export function MobileApp() {
   const [showDone, setShowDone] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const space = useSpace();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  // Subscribe so every caption on this screen re-renders when the language changes.
+  useLang();
 
   // Premium Dark is the phone's theme. It goes on <html> rather than this
   // element so sheets and toasts — which portal to the end of <body> — are
@@ -77,12 +82,12 @@ export function MobileApp() {
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search"
+                placeholder={t('search')}
                 className="h-full min-w-0 flex-1 bg-transparent text-[17px] text-ink outline-none placeholder:text-ink-4"
               />
               <button
                 onClick={() => setQuery(null)}
-                aria-label="Close search"
+                aria-label={t('cancel')}
                 className="-mr-2 grid size-11 place-items-center rounded-full text-ink-3 active:bg-wash-strong"
               >
                 <X className="size-5" />
@@ -95,19 +100,26 @@ export function MobileApp() {
                   you actually want to know. */}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[14px] leading-5 font-medium tracking-[0.01em] text-ink-3">
-                  {greeting()}
+                  {greetingIn()}
                   {name ? `, ${name.split(' ')[0]}` : ''}
                 </p>
                 <h1 className="mt-[3px] text-[26px] leading-8 font-bold tracking-[-0.03em] text-ink">
-                  {open.length === 0 ? 'Nothing kept' : `${open.length} thought${open.length === 1 ? '' : 's'}`}
+                  {open.length === 0 ? t('nothing_kept') : open.length === 1 ? t('thoughts_one') : t('thoughts_many', { n: open.length })}
                 </h1>
               </div>
               <button
                 onClick={() => setQuery('')}
-                aria-label="Search"
-                className="-mr-1.5 grid size-11 shrink-0 place-items-center rounded-full text-ink-3 transition-colors active:bg-wash-strong"
+                aria-label={t('search')}
+                className="grid size-11 shrink-0 place-items-center rounded-full text-ink-3 transition-colors active:bg-wash-strong"
               >
                 <Search className="size-[20px]" strokeWidth={1.8} />
+              </button>
+              <button
+                onClick={() => setSettingsOpen(true)}
+                aria-label={t('settings')}
+                className="-mr-1.5 grid size-11 shrink-0 place-items-center rounded-full text-ink-3 transition-colors active:bg-wash-strong"
+              >
+                <Settings2 className="size-[20px]" strokeWidth={1.8} />
               </button>
             </>
           )}
@@ -139,7 +151,7 @@ export function MobileApp() {
                   aria-expanded={showDone}
                   className="h-11 px-2 text-[13px] font-medium tracking-[0.03em] text-ink-4 transition-colors active:text-ink-3"
                 >
-                  {doneToday.length} done today
+                  {t('done_today', { n: doneToday.length })}
                 </button>
                 {showDone && (
                   <ul className="animate-fade">
@@ -158,6 +170,7 @@ export function MobileApp() {
 
       <CaptureBar />
       <ThoughtSheet taskId={openId} onClose={() => setOpenId(null)} />
+      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }
@@ -170,9 +183,9 @@ function Empty({ searching }: { searching: boolean }) {
   return (
     <div className="flex h-full flex-col items-center justify-center pb-28">
       <p className="text-[21px] font-semibold tracking-[-0.025em] text-ink-2">
-        {searching ? 'Nothing found.' : 'What’s on your mind?'}
+        {searching ? t('empty_search') : t('empty_title')}
       </p>
-      {!searching && <p className="mt-2.5 text-[14px] text-ink-4">Tap the orb and speak.</p>}
+      {!searching && <p className="mt-2.5 text-[14px] text-ink-4">{t('empty_hint')}</p>}
     </div>
   );
 }
