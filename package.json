@@ -10,7 +10,7 @@
     "build:server": "vite build --ssr server/index.ts --outDir dist-server",
     "start": "node dist-server/index.js",
     "preview": "npm run build && npm start",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -b --force",
     "test": "vitest run",
     "ios:sync": "npm run build && cap sync ios"
   },

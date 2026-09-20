@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { isOnDay } from './dates';
 
 /**
@@ -6,12 +6,11 @@ import { isOnDay } from './dates';
  * and this bug is invisible — the failure only appears east of Greenwich, in
  * the hours just after midnight.
  */
-const ORIGINAL_TZ = process.env.TZ;
 beforeAll(() => {
-  process.env.TZ = 'Europe/Paris';
+  vi.stubEnv('TZ', 'Europe/Paris');
 });
 afterAll(() => {
-  process.env.TZ = ORIGINAL_TZ;
+  vi.unstubAllEnvs();
 });
 
 describe('isOnDay', () => {
