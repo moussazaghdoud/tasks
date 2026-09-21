@@ -17,5 +17,6 @@ import UIKit
 public class AppViewController: CAPBridgeViewController {
     override public func capacitorDidLoad() {
         bridge?.registerPluginInstance(SpeechPlugin())
+        bridge?.registerPluginInstance(MicrosoftPlugin())
     }
 }

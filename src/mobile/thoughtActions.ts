@@ -12,6 +12,7 @@ import { isNative } from '@/lib/native/platform';
 import { ws } from '@/store/workspace';
 import { toast } from '@/store/toast';
 import { t } from './i18n';
+import { calendarConfigured, createEvent, isConnected } from './microsoft';
 
 /** Text the person can act on: the thought, plus whatever context we captured. */
 function body(task: Task): string {
@@ -44,6 +45,20 @@ const esc = (s: string) => s.replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n');
  * nothing is written to a calendar behind the person's back.
  */
 export async function addToCalendar(task: Task): Promise<void> {
+  // Connected to Outlook, the event goes straight in. Otherwise fall through
+  // to the file and the share sheet, which needs no account at all.
+  if (calendarConfigured()) {
+    try {
+      if (await isConnected()) {
+        await createEvent(task);
+        toast(t('added_to_calendar'));
+        return;
+      }
+    } catch {
+      // Fall through to the share sheet rather than leave the person stuck.
+    }
+  }
+
   const date = task.dueDate ?? todayKey();
   const allDay = !task.dueTime;
   let when: string;
