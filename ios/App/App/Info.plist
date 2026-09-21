@@ -103,7 +103,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-	<key>UIUserInterfaceStyle</key>
-	<string>Dark</string>
+	<!-- The app paints its own palette; this only governs the system pieces
+	     it does not draw, such as the keyboard and the native dialogs. Left to
+	     follow the phone, since a pin would be wrong half the time now that
+	     the theme is a choice. -->
 </dict>
 </plist>

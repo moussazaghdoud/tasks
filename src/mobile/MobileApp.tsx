@@ -5,11 +5,12 @@ import { isOnDay, todayKey } from '@/lib/dates';
 import { cn } from '@/lib/platform';
 import { useWorkspace, ws } from '@/store/workspace';
 import { toast } from '@/store/toast';
-import { confirmAction, haptic } from '@/lib/native/bridge';
+import { confirmAction, haptic, setStatusBarTheme } from '@/lib/native/bridge';
 import { CaptureBar } from './CaptureBar';
 import { greetingIn, t, useLang } from './i18n';
 import { SettingsSheet } from './SettingsSheet';
 import { spaceOf, useSpace } from './space';
+import { applyTheme, useTheme } from './theme';
 import { SpaceTabs } from './SpaceTabs';
 import { ThoughtRow } from './ThoughtRow';
 import { ThoughtSheet } from './ThoughtSheet';
@@ -34,14 +35,14 @@ export function MobileApp() {
   // Subscribe so every caption on this screen re-renders when the language changes.
   useLang();
 
-  // Premium Dark is the phone's theme. It goes on <html> rather than this
-  // element so sheets and toasts — which portal to the end of <body> — are
-  // painted from the same tokens.
+  // Paint the chosen palette, and tell iOS which way to draw the status bar
+  // so the clock stays legible against it.
+  const theme = useTheme();
   useEffect(() => {
-    const root = document.documentElement;
-    root.setAttribute('data-theme', 'dark');
-    return () => root.removeAttribute('data-theme');
-  }, []);
+    applyTheme(theme);
+    void setStatusBarTheme(theme);
+    return () => document.documentElement.removeAttribute('data-theme');
+  }, [theme]);
 
   const { open, doneToday, counts } = useMemo(() => {
     const live = Object.values(tasks).filter((t) => !t.archivedAt);

@@ -1,21 +1,56 @@
-import { Check } from 'lucide-react';
+import { Check, Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
 import { LANGUAGES, setLang, t, useLang } from './i18n';
 import { Sheet } from './Sheet';
+import { setTheme, useTheme, type Theme } from './theme';
+
+const THEMES: Array<{ id: Theme; icon: typeof Sun; label: 'theme_dark' | 'theme_light' }> = [
+  { id: 'dark', icon: Moon, label: 'theme_dark' },
+  { id: 'light', icon: Sun, label: 'theme_light' },
+];
 
 /**
- * Settings, which for now means one decision.
+ * Settings.
  *
- * Laid out as a named section rather than a bare list so the next setting can
- * arrive without the sheet being redesigned around it.
+ * Grouped into named sections rather than one flat list, so the next setting
+ * arrives without the sheet being redesigned around it.
  */
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const lang = useLang();
+  const theme = useTheme();
 
   return (
     <Sheet open={open} onClose={onClose} label={t('settings')}>
       <h2 className="px-6 pt-1 pb-4 text-[21px] font-semibold tracking-[-0.02em] text-ink">{t('settings')}</h2>
+
+      <p className="px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('appearance')}</p>
+
+      {/* Two halves of one control, so the choice reads at a glance rather
+          than as a list you have to compare. */}
+      <div className="mx-6 mb-5 flex h-11 rounded-full border border-line bg-sunk p-[3px]">
+        {THEMES.map(({ id, icon: Icon, label }) => {
+          const on = id === theme;
+          return (
+            <button
+              key={id}
+              onClick={() => {
+                if (on) return;
+                haptic('light');
+                setTheme(id);
+              }}
+              aria-pressed={on}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-2 rounded-full text-[14px] transition-colors',
+                on ? 'bg-accent-soft font-semibold text-accent ring-1 ring-accent/25' : 'font-medium text-ink-3',
+              )}
+            >
+              <Icon className="size-[17px]" strokeWidth={1.9} />
+              {t(label)}
+            </button>
+          );
+        })}
+      </div>
 
       <p className="px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('language')}</p>
 

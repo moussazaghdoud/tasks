@@ -30,6 +30,10 @@
   --color-accent-soft: #e2edeb;
   --color-accent-wash: #eef4f2;
   --color-accent-ink: #134a4e;
+  /* Whatever sits on top of the accent. Teal takes white; the dark theme’s
+     mint takes near-black, so this flips with the theme and text-on-accent
+     stays correct in both. */
+  --color-on-accent: #ffffff;
 
   --color-ember: #bf5530;
   --color-ember-soft: #f6e6de;
@@ -149,6 +153,7 @@
   --color-accent-soft: #143029;
   --color-accent-wash: #0f2420;
   --color-accent-ink: #06211c;
+  --color-on-accent: #06211c;
 
   --color-ember: #ff8a6b;
   --color-ember-soft: #38211b;
@@ -157,6 +162,16 @@
   --shadow-sheet: 0 0 0 1px rgb(255 255 255 / 0.05), 0 10px 30px -14px rgb(0 0 0 / 0.7);
 
   color-scheme: dark;
+}
+
+/* The capture orb in daylight: solid, with a shadow rather than a glow. A
+   glow needs darkness around it to read as light. */
+.capture-orb {
+  background: var(--color-accent);
+  box-shadow:
+    0 0 0 1px rgb(19 74 78 / 0.18),
+    0 10px 26px -8px rgb(30 103 108 / 0.55),
+    0 2px 6px -2px rgb(29 28 26 / 0.2);
 }
 
 /* The capture orb: lit from within, the one bright object on the screen. */

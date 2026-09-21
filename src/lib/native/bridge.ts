@@ -17,6 +17,21 @@ import { isIOS, isNative } from './platform';
 
 // ---- feedback ---------------------------------------------------------------
 
+/**
+ * Draw the clock and battery to suit the palette behind them.
+ *
+ * Capacitor's naming is the opposite of what it reads like: Style.Dark means
+ * light glyphs, for a dark background.
+ */
+export async function setStatusBarTheme(theme: 'dark' | 'light'): Promise<void> {
+  if (!isNative() || !isIOS()) return;
+  try {
+    await StatusBar.setStyle({ style: theme === 'dark' ? Style.Dark : Style.Light });
+  } catch {
+    /* best effort */
+  }
+}
+
 export function haptic(kind: 'light' | 'medium' | 'success' = 'light'): void {
   if (!isNative()) return;
   void (kind === 'success'

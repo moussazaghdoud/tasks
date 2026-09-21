@@ -128,6 +128,9 @@ const EN = {
   copied: 'Copied',
 
   settings: 'Settings',
+  appearance: 'Appearance',
+  theme_dark: 'Dark',
+  theme_light: 'Light',
   language: 'Language',
   language_note: 'Used for what you read, and for what the microphone listens for.',
 } as const;
@@ -203,6 +206,9 @@ const FR: Record<Key, string> = {
   copied: 'Copié',
 
   settings: 'Réglages',
+  appearance: 'Apparence',
+  theme_dark: 'Sombre',
+  theme_light: 'Clair',
   language: 'Langue',
   language_note: 'Sert à l’affichage et à ce que le micro écoute.',
 };

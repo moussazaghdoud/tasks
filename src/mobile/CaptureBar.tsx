@@ -258,7 +258,7 @@ export function CaptureBar() {
             {phase === 'listening' && (
               <button
                 onClick={finish}
-                className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-accent-ink transition-transform active:scale-[0.985]"
+                className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-on-accent transition-transform active:scale-[0.985]"
               >
                 {t('done')}
               </button>
@@ -273,7 +273,7 @@ export function CaptureBar() {
             <button
               onPointerDown={start}
               aria-label={t('capture')}
-              className="capture-orb grid size-[70px] touch-none place-items-center rounded-full text-accent-ink transition-transform duration-150 select-none active:scale-95"
+              className="capture-orb grid size-[70px] touch-none place-items-center rounded-full text-on-accent transition-transform duration-150 select-none active:scale-95"
             >
               <Mic className="size-7" strokeWidth={2} />
             </button>
@@ -345,7 +345,7 @@ function TypeSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () => 
         <button
           onClick={submit}
           disabled={!text.trim()}
-          className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-accent-ink transition-opacity disabled:opacity-30"
+          className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-on-accent transition-opacity disabled:opacity-30"
         >
           {t('capture')}
         </button>

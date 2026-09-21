@@ -62,7 +62,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           <div
             className={cn(
               'absolute inset-0 flex items-center rounded-[15px] px-6',
-              swipe.dx > 0 ? 'justify-start text-accent-ink' : 'justify-end text-ink',
+              swipe.dx > 0 ? 'justify-start text-on-accent' : 'justify-end text-ink',
               swipe.dx > 0 ? (swipe.armed ? 'bg-accent' : 'bg-accent/40') : swipe.armed ? 'bg-line-strong' : 'bg-line',
             )}
           >
@@ -100,7 +100,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
               )}
             >
               <Check
-                className={cn('size-[11px] text-accent-ink transition-opacity duration-150', checked ? 'opacity-100' : 'opacity-0')}
+                className={cn('size-[11px] text-on-accent transition-opacity duration-150', checked ? 'opacity-100' : 'opacity-0')}
                 strokeWidth={3.2}
               />
             </span>

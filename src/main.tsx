@@ -5,11 +5,12 @@ import '@fontsource-variable/sora';
 import '@fontsource/instrument-serif/400.css';
 import './styles/index.css';
 import App from './App';
+import { applyTheme, storedTheme } from './mobile/theme';
 
-// Decide the theme before the first paint: the phone runs Premium Dark, and
-// setting this inside React would show one frame of the light loading screen.
+// Paint the theme before the first frame. Doing it inside React would show
+// one frame of the wrong palette on every launch.
 if (window.matchMedia('(max-width: 767px)').matches) {
-  document.documentElement.setAttribute('data-theme', 'dark');
+  applyTheme(storedTheme());
 }
 
 createRoot(document.getElementById('root')!).render(
