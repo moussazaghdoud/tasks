@@ -7,6 +7,9 @@ import UIKit
 /// Anything Microsoft said no to, carried as a message worth showing.
 private struct AuthError: Error {
     let message: String
+    /// The OAuth error code, when Microsoft gave one — it decides whether the
+    /// connection is dead or just had a bad moment.
+    var code: String = ""
 }
 
 /**
@@ -34,6 +37,8 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
     ]
 
     private var session: ASWebAuthenticationSession?
+    /// Why the last token refresh failed, so a rejection can say so.
+    private var lastAuthError = ""
     private let keychainAccount = "microsoft.refresh-token"
     private let defaultsUser = "microsoft.user"
     private let defaultsTenant = "microsoft.tenant"
@@ -180,7 +185,7 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
 
         accessToken { token in
             guard let token = token else {
-                call.reject("Not connected to Microsoft", "not_connected")
+                call.reject(self.lastAuthError.isEmpty ? "Not connected to Microsoft" : self.lastAuthError, "not_connected")
                 return
             }
 
@@ -230,13 +235,16 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
 
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        // With an explicit offset. Without one Graph reads the window as UTC,
+        // which in Paris shifts "today" by two hours: late meetings vanish and
+        // tomorrow’s early ones appear.
+        let formatter = ISO8601DateFormatter()
         formatter.timeZone = zone
+        formatter.formatOptions = [.withInternetDateTime]
 
         accessToken { token in
             guard let token = token else {
-                call.reject("Not connected to Microsoft", "not_connected")
+                call.reject(self.lastAuthError.isEmpty ? "Not connected to Microsoft" : self.lastAuthError, "not_connected")
                 return
             }
 
@@ -262,7 +270,14 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 0
                 guard (200..<300).contains(status), let data = data else {
-                    call.reject("Calendar refused the request", status == 401 ? "not_connected" : "failed")
+                    // Graph explains itself in the body: keep that, because "refused"
+                    // alone leaves nobody able to tell a permission from a policy.
+                    let body = data.flatMap { (try? JSONSerialization.jsonObject(with: $0)) as? [String: Any] }
+                    let graph = (body?["error"] as? [String: Any])
+                    let code = (graph?["code"] as? String) ?? ""
+                    let message = (graph?["message"] as? String) ?? ""
+                    call.reject("HTTP (status) (code) (message)".trimmingCharacters(in: .whitespaces),
+                                status == 401 ? "not_connected" : "failed")
                     return
                 }
                 let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
@@ -304,10 +319,13 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
 
         token(tenantId: tenantId, form: body.percentEncodedQuery ?? "") { [weak self] result in
             switch result {
-            case .failure:
-                // The refresh token is spent or revoked; make the app say so
-                // rather than fail silently on every attempt.
-                self?.deleteRefresh()
+            case .failure(let error):
+                self?.lastAuthError = error.message
+                // Only forget the connection when Microsoft says it is over. A
+                // dropped network or a timeout is not a reason to sign you out.
+                if ["invalid_grant", "interaction_required", "invalid_client"].contains(error.code) {
+                    self?.deleteRefresh()
+                }
                 done(nil)
             case .success(let json):
                 if let rotated = json["refresh_token"] as? String { self?.store(refresh: rotated) }
@@ -333,7 +351,7 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
                 return
             }
             if let description = json["error_description"] as? String {
-                done(.failure(AuthError(message: description)))
+                done(.failure(AuthError(message: description, code: (json["error"] as? String) ?? "")))
                 return
             }
             done(.success(json))

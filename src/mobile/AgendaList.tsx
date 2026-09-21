@@ -2,7 +2,7 @@ import { CalendarCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/platform';
 import { t } from './i18n';
-import { calendarConfigured, listToday, useMicrosoft, type Meeting } from './microsoft';
+import { calendarConfigured, listToday, refreshAccount, useMicrosoft, type Meeting } from './microsoft';
 
 /** "1 h", "30 min", "1 h 30" — the shortest thing that is still exact. */
 function duration(start: string, end: string): string {
@@ -27,19 +27,29 @@ const clock = (iso: string) =>
 export function AgendaList() {
   const { connected } = useMicrosoft();
   const [meetings, setMeetings] = useState<Meeting[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!connected) return;
     let live = true;
-    setFailed(false);
+    setFailure(null);
+    setMeetings(null);
     void listToday()
       .then((list) => live && setMeetings(list))
-      .catch(() => live && setFailed(true));
+      .catch((error: { message?: string; code?: string }) => {
+        if (!live) return;
+        // Keep Microsoft’s own words: "could not reach" alone cannot tell a
+        // missing permission from a company policy from a dead connection.
+        setFailure(error?.message || '');
+        // If the connection itself is gone, let Settings and this screen
+        // both find out, so the prompt to reconnect appears.
+        if (error?.code === 'not_connected') void refreshAccount();
+      });
     return () => {
       live = false;
     };
-  }, [connected]);
+  }, [connected, attempt]);
 
   if (!calendarConfigured() || !connected) {
     return (
@@ -49,7 +59,20 @@ export function AgendaList() {
     );
   }
 
-  if (failed) return <Empty>{t('agenda_failed')}</Empty>;
+  if (failure !== null) {
+    return (
+      <Empty>
+        {t('agenda_failed')}
+        {failure && <span className="mt-2 block text-[12px] leading-[17px] text-ink-4 select-text">{failure}</span>}
+        <button
+          onClick={() => setAttempt((n) => n + 1)}
+          className="mt-4 h-10 rounded-full border border-line px-5 text-[14px] font-medium text-accent active:bg-wash-strong"
+        >
+          {t('retry')}
+        </button>
+      </Empty>
+    );
+  }
   if (meetings === null) return <Empty>{t('agenda_loading')}</Empty>;
   if (meetings.length === 0) return <Empty>{t('agenda_empty')}</Empty>;
 
@@ -88,7 +111,7 @@ function Empty({ children, icon }: { children: React.ReactNode; icon?: boolean }
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-8 pt-24 text-center">
       {icon && <CalendarCheck className="size-7 text-ink-4" strokeWidth={1.6} />}
-      <p className="text-[15px] leading-[22px] text-ink-3">{children}</p>
+      <div className="text-[15px] leading-[22px] text-ink-3">{children}</div>
     </div>
   );
 }

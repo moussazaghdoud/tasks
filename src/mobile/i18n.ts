@@ -80,6 +80,7 @@ const EN = {
   agenda_failed: 'Could not reach your calendar.',
   agenda_connect: 'Connect Outlook in Settings to see today’s meetings here.',
   agenda_all_day: 'All day',
+  retry: 'Try again',
   private: 'Private',
 
   listening: 'Listening',
@@ -173,6 +174,7 @@ const FR: Record<Key, string> = {
   agenda_failed: 'Calendrier inaccessible.',
   agenda_connect: 'Connectez Outlook dans les Réglages pour voir vos réunions ici.',
   agenda_all_day: 'Journée',
+  retry: 'Réessayer',
   private: 'Perso',
 
   listening: 'À l’écoute',
