@@ -257,6 +257,13 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
                 URLQueryItem(name: "$select", value: "subject,start,end,isAllDay,showAs")
             ]
 
+            // URLComponents leaves "+" alone, and a query string reads "+" as a
+            // space — so the "+02:00" offset would reach Graph as " 02:00", an
+            // invalid date. Writing events never hit this: those times travel in
+            // the body, not the URL.
+            components.percentEncodedQuery = components.percentEncodedQuery?
+                .replacingOccurrences(of: "+", with: "%2B")
+
             var request = URLRequest(url: components.url!)
             request.setValue("Bearer (token)", forHTTPHeaderField: "Authorization")
             // Ask for the times in the phone’s zone, so nothing has to be
@@ -338,7 +345,9 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
         var request = URLRequest(url: URL(string: "https://login.microsoftonline.com/\(tenantId)/oauth2/v2.0/token")!)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.httpBody = form.data(using: .utf8)
+        // Form bodies read "+" as a space, the same as query strings. Spaces are
+        // already %20 here, so any literal "+" is a real one and must survive.
+        request.httpBody = form.replacingOccurrences(of: "+", with: "%2B").data(using: .utf8)
 
         URLSession.shared.dataTask(with: request) { data, _, error in
             if let error = error {
