@@ -2,6 +2,12 @@ import AuthenticationServices
 import Capacitor
 import CommonCrypto
 import Foundation
+import UIKit
+
+/// Anything Microsoft said no to, carried as a message worth showing.
+private struct AuthError: Error {
+    let message: String
+}
 
 /**
  Signing in to Microsoft, and writing to the calendar.
@@ -122,8 +128,8 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
         token(tenantId: tenantId, form: body.percentEncodedQuery ?? "") { [weak self] result in
             guard let self = self else { return }
             switch result {
-            case .failure(let message):
-                call.reject(message, "failed")
+            case .failure(let error):
+                call.reject(error.message, "failed")
             case .success(let json):
                 guard let refresh = json["refresh_token"] as? String else {
                     call.reject("Microsoft did not return a refresh token", "failed")
@@ -171,8 +177,7 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
         let timeZone = call.getString("timeZone") ?? TimeZone.current.identifier
         let allDay = call.getBool("allDay") ?? false
 
-        accessToken { [weak self] token in
-            guard let self = self else { return }
+        accessToken { token in
             guard let token = token else {
                 call.reject("Not connected to Microsoft", "not_connected")
                 return
@@ -243,7 +248,7 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
-    private func token(tenantId: String, form: String, done: @escaping (Result<[String: Any], String>) -> Void) {
+    private func token(tenantId: String, form: String, done: @escaping (Result<[String: Any], AuthError>) -> Void) {
         var request = URLRequest(url: URL(string: "https://login.microsoftonline.com/\(tenantId)/oauth2/v2.0/token")!)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
@@ -251,16 +256,16 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
 
         URLSession.shared.dataTask(with: request) { data, _, error in
             if let error = error {
-                done(.failure(error.localizedDescription))
+                done(.failure(AuthError(message: error.localizedDescription)))
                 return
             }
             guard let data = data,
                   let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
-                done(.failure("Microsoft returned something unreadable"))
+                done(.failure(AuthError(message: "Microsoft returned something unreadable")))
                 return
             }
             if let description = json["error_description"] as? String {
-                done(.failure(description))
+                done(.failure(AuthError(message: description)))
                 return
             }
             done(.success(json))
@@ -342,8 +347,6 @@ private extension Data {
 
 extension MicrosoftPlugin: ASWebAuthenticationPresentationContextProviding {
     public func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        DispatchQueue.main.sync {
-            self.bridge?.viewController?.view.window ?? ASPresentationAnchor()
-        }
+        bridge?.viewController?.view.window ?? ASPresentationAnchor()
     }
 }
