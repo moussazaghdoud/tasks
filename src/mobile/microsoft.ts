@@ -50,11 +50,20 @@ export const calendarConfigured = (): boolean => isNative() && !!CLIENT_ID && !!
 
 /* ---- connection state, shared with the interface ---- */
 
-let state: Account = { connected: false, account: '' };
+/**
+ * `checked` separates "not connected" from "not asked yet". Without it the
+ * first frames after launch read as disconnected, and the agenda told a
+ * connected person to go and connect.
+ */
+export interface Connection extends Account {
+  checked: boolean;
+}
+
+let state: Connection = { connected: false, account: '', checked: false };
 const listeners = new Set<() => void>();
 
 const publish = (next: Account) => {
-  state = next;
+  state = { ...next, checked: true };
   for (const notify of listeners) notify();
 };
 
@@ -65,15 +74,66 @@ function subscribe(onChange: () => void): () => void {
   };
 }
 
-export const useMicrosoft = (): Account => useSyncExternalStore(subscribe, () => state, () => state);
+export const useMicrosoft = (): Connection => useSyncExternalStore(subscribe, () => state, () => state);
 
-/** Read the connection the app already has, on launch. */
+/**
+ * Read the connection the phone already holds.
+ *
+ * The sign-in survives the app closing — it lives in the Keychain — but
+ * nothing asked about it at launch, so a restarted app believed it was
+ * disconnected until Settings happened to be opened.
+ */
 export async function refreshAccount(): Promise<void> {
-  if (!calendarConfigured()) return;
+  if (!calendarConfigured()) {
+    publish({ connected: false, account: '' });
+    return;
+  }
   try {
     publish(await Microsoft.account());
   } catch {
     publish({ connected: false, account: '' });
+  }
+}
+
+/* ---- the last agenda, kept on the phone ---- */
+
+/**
+ * The most recent agenda, so it appears the instant the app opens and still
+ * reads on a plane. Kept on the device rather than on a server: the phone
+ * already holds the connection, so a copy elsewhere would only add a place
+ * for your meeting titles to be.
+ */
+const AGENDA_KEY = 'hence.agenda';
+
+export interface CachedAgenda {
+  at: number;
+  meetings: Meeting[];
+}
+
+export function readAgendaCache(): CachedAgenda | null {
+  try {
+    const raw = localStorage.getItem(AGENDA_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedAgenda;
+    return Array.isArray(parsed?.meetings) && typeof parsed.at === 'number' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeAgendaCache(meetings: Meeting[]): void {
+  try {
+    localStorage.setItem(AGENDA_KEY, JSON.stringify({ at: Date.now(), meetings }));
+  } catch {
+    /* storage full or unavailable; the agenda simply loads from the network */
+  }
+}
+
+function clearAgendaCache(): void {
+  try {
+    localStorage.removeItem(AGENDA_KEY);
+  } catch {
+    /* nothing to clear */
   }
 }
 
@@ -96,6 +156,8 @@ export async function connect(): Promise<Account> {
 }
 
 export async function disconnect(): Promise<void> {
+  // Disconnecting means the calendar leaves the phone, the copy included.
+  clearAgendaCache();
   await Microsoft.signOut();
   publish({ connected: false, account: '' });
 }

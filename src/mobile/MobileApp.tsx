@@ -11,6 +11,7 @@ import { greetingIn, t, useLang } from './i18n';
 import { SettingsSheet } from './SettingsSheet';
 import { spaceOf, useView } from './space';
 import { AgendaList } from './AgendaList';
+import { refreshAccount } from './microsoft';
 import { applyTheme, useTheme } from './theme';
 import { SpaceTabs } from './SpaceTabs';
 import { ThoughtRow } from './ThoughtRow';
@@ -36,6 +37,12 @@ export function MobileApp() {
   // Business is where a thought captured from there would land.
   const space: Space = view === 'agenda' ? 'business' : view;
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Ask the phone whether Outlook is connected as soon as the app opens.
+  // The sign-in survives restarts in the Keychain; nothing used to ask.
+  useEffect(() => {
+    void refreshAccount();
+  }, []);
   // Subscribe so every caption on this screen re-renders when the language changes.
   useLang();
 

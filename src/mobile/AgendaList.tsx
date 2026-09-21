@@ -3,7 +3,15 @@ import { useEffect, useState } from 'react';
 import { toKey } from '@/lib/dates';
 import { cn } from '@/lib/platform';
 import { localeOf, t } from './i18n';
-import { calendarConfigured, listAgenda, refreshAccount, useMicrosoft, type Meeting } from './microsoft';
+import {
+  calendarConfigured,
+  listAgenda,
+  readAgendaCache,
+  refreshAccount,
+  useMicrosoft,
+  writeAgendaCache,
+  type Meeting,
+} from './microsoft';
 
 /** "1 h", "30 min", "1 h 30" — the shortest thing that is still exact. */
 function duration(start: string, end: string): string {
@@ -29,8 +37,11 @@ const clock = (iso: string) => new Date(iso).toLocaleTimeString(localeOf(), { ho
  * to Outlook, not to a list you tick off here.
  */
 export function AgendaList() {
-  const { connected } = useMicrosoft();
-  const [meetings, setMeetings] = useState<Meeting[] | null>(null);
+  const { connected, checked } = useMicrosoft();
+  // Start from the copy on the phone, so the day is there the moment the
+  // app opens; the network only has to confirm it.
+  const [meetings, setMeetings] = useState<Meeting[] | null>(() => readAgendaCache()?.meetings ?? null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(() => readAgendaCache()?.at ?? null);
   const [failure, setFailure] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   // Re-evaluated each minute, so a meeting leaves the list when it ends
@@ -42,13 +53,35 @@ export function AgendaList() {
     return () => clearInterval(id);
   }, []);
 
+  // Coming back to the app is when the day has most likely moved on: read
+  // the clock and the calendar again.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      setNow(Date.now());
+      setAttempt((n) => n + 1);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
+
+  useEffect(() => {
+    if (!checked) void refreshAccount();
+  }, [checked]);
+
   useEffect(() => {
     if (!connected) return;
     let live = true;
     setFailure(null);
-    setMeetings(null);
+    // Deliberately not clearing what is on screen: the stored day stays up
+    // while the fresh one loads, rather than flashing to a spinner.
     void listAgenda(2)
-      .then((list) => live && setMeetings(list))
+      .then((list) => {
+        if (!live) return;
+        setMeetings(list);
+        setUpdatedAt(Date.now());
+        writeAgendaCache(list);
+      })
       .catch((error: { message?: string; code?: string }) => {
         if (!live) return;
         // Keep Microsoft's own words: "could not reach" alone cannot tell a
@@ -61,11 +94,13 @@ export function AgendaList() {
     };
   }, [connected, attempt]);
 
-  if (!calendarConfigured() || !connected) {
+  if (!calendarConfigured() || (checked && !connected)) {
     return <Empty icon>{t('agenda_connect')}</Empty>;
   }
 
-  if (failure !== null) {
+  // Only a failure with nothing to show is worth a whole screen. With a
+  // stored day to fall back on, it becomes a quiet line instead.
+  if (failure !== null && !meetings) {
     return (
       <Empty>
         {t('agenda_failed')}
@@ -120,6 +155,17 @@ export function AgendaList() {
         </ul>
       ) : (
         <p className="px-2 pb-3 text-[14px] text-ink-4">{t('agenda_nothing_tomorrow')}</p>
+      )}
+
+      {/* Say when the calendar last answered, but only when it did not just
+          now: a timestamp on every screen is noise. */}
+      {failure !== null && updatedAt && (
+        <button
+          onClick={() => setAttempt((n) => n + 1)}
+          className="mx-auto mt-4 block text-center text-[12px] text-ink-4 active:text-ink-3"
+        >
+          {t('agenda_stale', { time: clock(new Date(updatedAt).toISOString()) })}
+        </button>
       )}
     </div>
   );
