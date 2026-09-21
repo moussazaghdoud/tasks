@@ -265,10 +265,10 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
                 .replacingOccurrences(of: "+", with: "%2B")
 
             var request = URLRequest(url: components.url!)
-            request.setValue("Bearer (token)", forHTTPHeaderField: "Authorization")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             // Ask for the times in the phone’s zone, so nothing has to be
             // converted on the way out.
-            request.setValue("outlook.timezone=\"(zone.identifier)\"", forHTTPHeaderField: "Prefer")
+            request.setValue("outlook.timezone=\"\(zone.identifier)\"", forHTTPHeaderField: "Prefer")
 
             URLSession.shared.dataTask(with: request) { data, response, error in
                 if let error = error {
@@ -283,7 +283,7 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
                     let graph = (body?["error"] as? [String: Any])
                     let code = (graph?["code"] as? String) ?? ""
                     let message = (graph?["message"] as? String) ?? ""
-                    call.reject("HTTP (status) (code) (message)".trimmingCharacters(in: .whitespaces),
+                    call.reject("HTTP \(status) \(code) \(message)".trimmingCharacters(in: .whitespaces),
                                 status == 401 ? "not_connected" : "failed")
                     return
                 }
