@@ -216,11 +216,17 @@ platform :ios do
       }
     )
 
+    # Release notes can only be attached once App Store Connect lists the build,
+    # so passing them makes fastlane poll until it does — which at night took
+    # over twenty minutes after the upload had already finished. Only wait when
+    # someone actually wrote notes; the build number says the rest.
+    notes = (options[:changelog] || env_or('CHANGELOG', '')).to_s.strip
+
     upload_to_testflight(
       api_key: key,
       app_identifier: APP_IDENTIFIER,
       skip_waiting_for_build_processing: true,
-      changelog: options[:changelog] || env_or('CHANGELOG', "Build #{build_number} from #{env_or('GITHUB_SHA', 'local')[0, 7]}"),
+      changelog: notes.empty? ? nil : notes,
       distribute_external: false
     )
 
