@@ -34,7 +34,10 @@ jobs:
   testflight:
     name: Build, sign, upload to TestFlight
     runs-on: macos-latest
-    timeout-minutes: 60
+    # A healthy release takes about six minutes. Thirty is five times that —
+    # generous for a slow day at Apple, but a hung upload no longer holds the
+    # runner, and your attention, for a full hour.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
