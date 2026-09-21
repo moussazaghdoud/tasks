@@ -9,7 +9,8 @@ import { confirmAction, haptic, setStatusBarTheme } from '@/lib/native/bridge';
 import { CaptureBar } from './CaptureBar';
 import { greetingIn, t, useLang } from './i18n';
 import { SettingsSheet } from './SettingsSheet';
-import { spaceOf, useSpace } from './space';
+import { spaceOf, useView } from './space';
+import { AgendaList } from './AgendaList';
 import { applyTheme, useTheme } from './theme';
 import { SpaceTabs } from './SpaceTabs';
 import { ThoughtRow } from './ThoughtRow';
@@ -30,7 +31,10 @@ export function MobileApp() {
   const [query, setQuery] = useState<string | null>(null);
   const [showDone, setShowDone] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
-  const space = useSpace();
+  const view = useView();
+  // The agenda holds no thoughts; the lists below still need a space, and
+  // Business is where a thought captured from there would land.
+  const space: Space = view === 'agenda' ? 'business' : view;
   const [settingsOpen, setSettingsOpen] = useState(false);
   // Subscribe so every caption on this screen re-renders when the language changes.
   useLang();
@@ -44,19 +48,13 @@ export function MobileApp() {
     return () => document.documentElement.removeAttribute('data-theme');
   }, [theme]);
 
-  const { open, doneToday, counts } = useMemo(() => {
+  const { open, doneToday } = useMemo(() => {
     const live = Object.values(tasks).filter((t) => !t.archivedAt);
     const today = todayKey();
     const q = query?.trim().toLowerCase();
     const matches = (t: Task) => !q || t.title.toLowerCase().includes(q) || t.notes.toLowerCase().includes(q);
-    // Both halves are counted before filtering, so the other tab can say how
-    // much is waiting over there without you having to look.
-    const counts: Record<Space, number> = { business: 0, private: 0 };
-    for (const t of live) if (t.status !== 'done') counts[spaceOf(t)]++;
-
     const all = live.filter((t) => spaceOf(t) === space);
     return {
-      counts,
       // Important first, then newest: what you just said is what you are
       // thinking about, unless you have said something matters more.
       open: all
@@ -129,13 +127,15 @@ export function MobileApp() {
         </div>
         {!searching && (
           <div className="px-[22px] pb-3">
-            <SpaceTabs active={space} counts={counts} />
+            <SpaceTabs active={view} />
           </div>
         )}
       </header>
 
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 pb-[184px]">
-        {open.length === 0 && doneToday.length === 0 ? (
+        {view === 'agenda' ? (
+          <AgendaList />
+        ) : open.length === 0 && doneToday.length === 0 ? (
           <Empty searching={searching} />
         ) : (
           <>

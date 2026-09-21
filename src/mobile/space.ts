@@ -1,6 +1,9 @@
 import { useSyncExternalStore } from 'react';
 import type { Space, Task } from '@/domain/types';
 
+/** What the list is showing. The agenda is read-only; the other two are spaces. */
+export type View = 'agenda' | Space;
+
 /**
  * Which half of your life you are looking at.
  *
@@ -11,23 +14,27 @@ import type { Space, Task } from '@/domain/types';
  */
 const KEY = 'hence.space';
 
-function read(): Space {
+function read(): View {
   try {
-    return localStorage.getItem(KEY) === 'private' ? 'private' : 'business';
+    const stored = localStorage.getItem(KEY);
+    return stored === 'private' || stored === 'agenda' ? stored : 'business';
   } catch {
     return 'business';
   }
 }
 
-let current: Space = read();
+let current: View = read();
 const listeners = new Set<() => void>();
 
 /** Tasks captured before spaces existed belong to Business. */
 export const spaceOf = (task: Task): Space => task.space ?? 'business';
 
-export const currentSpace = (): Space => current;
+export const currentView = (): View => current;
 
-export function setSpace(next: Space): void {
+/** Where a thought captured right now belongs. The agenda holds none. */
+export const currentSpace = (): Space => (current === 'agenda' ? 'business' : current);
+
+export function setView(next: View): void {
   if (next === current) return;
   current = next;
   try {
@@ -45,4 +52,4 @@ function subscribe(onChange: () => void): () => void {
   };
 }
 
-export const useSpace = (): Space => useSyncExternalStore(subscribe, () => current, () => 'business');
+export const useView = (): View => useSyncExternalStore(subscribe, () => current, () => 'business');

@@ -29,7 +29,8 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "signIn", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "account", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "createEvent", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "createEvent", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "todayEvents", returnType: CAPPluginReturnPromise)
     ]
 
     private var session: ASWebAuthenticationSession?
@@ -210,6 +211,73 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
                 let json = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
                 call.resolve(["id": (json?["id"] as? String) ?? "", "webLink": (json?["webLink"] as? String) ?? ""])
+            }.resume()
+        }
+    }
+
+    /// Today’s meetings, in the order they happen.
+    ///
+    /// calendarView rather than the events collection: it expands recurring
+    /// series into the occurrences that actually fall today, which is what a
+    /// person means by "my meetings".
+    @objc func todayEvents(_ call: CAPPluginCall) {
+        let zone = TimeZone.current
+        var calendar = Calendar.current
+        calendar.timeZone = zone
+        let startOfDay = calendar.startOfDay(for: Date())
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+            call.reject("Could not work out today", "internal")
+            return
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        formatter.timeZone = zone
+
+        accessToken { token in
+            guard let token = token else {
+                call.reject("Not connected to Microsoft", "not_connected")
+                return
+            }
+
+            var components = URLComponents(string: "https://graph.microsoft.com/v1.0/me/calendarView")!
+            components.queryItems = [
+                URLQueryItem(name: "startDateTime", value: formatter.string(from: startOfDay)),
+                URLQueryItem(name: "endDateTime", value: formatter.string(from: endOfDay)),
+                URLQueryItem(name: "$orderby", value: "start/dateTime"),
+                URLQueryItem(name: "$top", value: "50"),
+                URLQueryItem(name: "$select", value: "subject,start,end,isAllDay,showAs")
+            ]
+
+            var request = URLRequest(url: components.url!)
+            request.setValue("Bearer (token)", forHTTPHeaderField: "Authorization")
+            // Ask for the times in the phone’s zone, so nothing has to be
+            // converted on the way out.
+            request.setValue("outlook.timezone=\"(zone.identifier)\"", forHTTPHeaderField: "Prefer")
+
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    call.reject(error.localizedDescription, "network")
+                    return
+                }
+                let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                guard (200..<300).contains(status), let data = data else {
+                    call.reject("Calendar refused the request", status == 401 ? "not_connected" : "failed")
+                    return
+                }
+                let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+                let items = (json?["value"] as? [[String: Any]]) ?? []
+
+                let events: [[String: Any]] = items.map { item in
+                    [
+                        "subject": (item["subject"] as? String) ?? "(no title)",
+                        "start": ((item["start"] as? [String: Any])?["dateTime"] as? String) ?? "",
+                        "end": ((item["end"] as? [String: Any])?["dateTime"] as? String) ?? "",
+                        "allDay": (item["isAllDay"] as? Bool) ?? false,
+                        "showAs": (item["showAs"] as? String) ?? ""
+                    ]
+                }
+                call.resolve(["events": events])
             }.resume()
         }
     }

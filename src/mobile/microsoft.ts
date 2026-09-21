@@ -15,6 +15,7 @@ interface MicrosoftPlugin {
   signIn(options: { clientId: string; tenantId: string; scopes?: string }): Promise<Account>;
   signOut(): Promise<{ connected: boolean }>;
   account(): Promise<Account>;
+  todayEvents(): Promise<{ events: Meeting[] }>;
   createEvent(options: {
     subject: string;
     body: string;
@@ -23,6 +24,15 @@ interface MicrosoftPlugin {
     timeZone: string;
     allDay: boolean;
   }): Promise<{ id: string; webLink: string }>;
+}
+
+export interface Meeting {
+  subject: string;
+  /** Local wall time, no zone suffix: Graph was asked for this phone’s zone. */
+  start: string;
+  end: string;
+  allDay: boolean;
+  showAs: string;
 }
 
 export interface Account {
@@ -88,6 +98,12 @@ export async function connect(): Promise<Account> {
 export async function disconnect(): Promise<void> {
   await Microsoft.signOut();
   publish({ connected: false, account: '' });
+}
+
+/** Today’s meetings, in the order they happen. */
+export async function listToday(): Promise<Meeting[]> {
+  const { events } = await Microsoft.todayEvents();
+  return events;
 }
 
 /* ---- events ---- */

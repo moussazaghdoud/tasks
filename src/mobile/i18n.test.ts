@@ -13,7 +13,9 @@ describe('language', () => {
   it('translates captions', () => {
     expect(t('business')).toBe('Business');
     setLang('fr');
-    expect(t('business')).toBe('Professionnel');
+    // Shortened when the agenda became a third tab: three labels have to
+    // fit across a phone.
+    expect(t('business')).toBe('Pro');
   });
 
   it('fills placeholders', () => {
