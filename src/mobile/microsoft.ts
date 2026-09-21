@@ -15,7 +15,7 @@ interface MicrosoftPlugin {
   signIn(options: { clientId: string; tenantId: string; scopes?: string }): Promise<Account>;
   signOut(): Promise<{ connected: boolean }>;
   account(): Promise<Account>;
-  todayEvents(): Promise<{ events: Meeting[] }>;
+  todayEvents(options?: { days?: number }): Promise<{ events: Meeting[] }>;
   createEvent(options: {
     subject: string;
     body: string;
@@ -100,9 +100,9 @@ export async function disconnect(): Promise<void> {
   publish({ connected: false, account: '' });
 }
 
-/** Today’s meetings, in the order they happen. */
-export async function listToday(): Promise<Meeting[]> {
-  const { events } = await Microsoft.todayEvents();
+/** Meetings from the start of today for `days` days, in the order they happen. */
+export async function listAgenda(days = 2): Promise<Meeting[]> {
+  const { events } = await Microsoft.todayEvents({ days });
   return events;
 }
 

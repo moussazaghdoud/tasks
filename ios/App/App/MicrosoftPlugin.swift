@@ -230,7 +230,10 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
         var calendar = Calendar.current
         calendar.timeZone = zone
         let startOfDay = calendar.startOfDay(for: Date())
-        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+        // How many days to read, starting today. The agenda shows the rest of
+        // today and all of tomorrow, so it asks for two.
+        let days = max(1, min(7, call.getInt("days") ?? 1))
+        guard let endOfDay = calendar.date(byAdding: .day, value: days, to: startOfDay) else {
             call.reject("Could not work out today", "internal")
             return
         }

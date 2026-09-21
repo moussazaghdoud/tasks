@@ -38,6 +38,13 @@
   --color-ember: #bf5530;
   --color-ember-soft: #f6e6de;
 
+  /* Tomorrow, in the agenda. A second hue rather than a dimmer version of
+     today's, so the two days read apart at a glance instead of one looking
+     like the other switched off. Indigo, because ember already means
+     important and the accent already means now. */
+  --color-tomorrow: #5a5fb5;
+  --color-tomorrow-soft: #ecedf8;
+
   --color-p-petrol: #2c7a78;
   --color-p-indigo: #4b58a3;
   --color-p-ember: #c0603e;
@@ -157,6 +164,9 @@
 
   --color-ember: #ff8a6b;
   --color-ember-soft: #38211b;
+
+  --color-tomorrow: #a3a8ff;
+  --color-tomorrow-soft: #1b1d33;
 
   --shadow-float: 0 0 0 1px rgb(255 255 255 / 0.06), 0 30px 70px -20px rgb(0 0 0 / 0.8);
   --shadow-sheet: 0 0 0 1px rgb(255 255 255 / 0.05), 0 10px 30px -14px rgb(0 0 0 / 0.7);
