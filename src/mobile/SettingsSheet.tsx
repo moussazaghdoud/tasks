@@ -213,9 +213,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
   const theme = useTheme();
 
   return (
-    <Sheet open={open} onClose={onClose} label={t('settings')}>
-      <h2 className="px-6 pt-1 pb-4 text-[21px] font-semibold tracking-[-0.02em] text-ink">{t('settings')}</h2>
-
+    <Sheet open={open} onClose={onClose} label={t('settings')} title={t('settings')}>
       <p className="px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('appearance')}</p>
 
       {/* Two halves of one control, so the choice reads at a glance rather

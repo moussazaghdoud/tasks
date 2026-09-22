@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
+import { t } from './i18n';
 
 /**
  * A bottom sheet that behaves like one: it rises from the edge, you can throw
@@ -17,16 +18,20 @@ export function Sheet({
   onClose,
   children,
   label,
+  title,
 }: {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
   label: string;
+  /** Shown in a bar with a Done button — for a sheet you read, not one you pick from. */
+  title?: string;
 }) {
   const [dy, setDy] = useState(0);
   const [keyboard, setKeyboard] = useState(0);
   const dragging = useRef(false);
   const start = useRef(0);
+  const scroller = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -76,25 +81,51 @@ export function Sheet({
             transition: dragging.current ? 'none' : 'transform 240ms var(--ease-out)',
             paddingBottom: keyboard ? keyboard + 14 : undefined,
           }}
-          className="animate-sheet-up rounded-t-[28px] border-t border-line bg-raised pb-[max(14px,env(safe-area-inset-bottom))] font-display shadow-float"
+          // Never taller than most of the screen: a sheet that reaches the
+          // status bar has swallowed the screen, and the way out goes with it.
+          className="flex max-h-[86dvh] animate-sheet-up flex-col rounded-t-[28px] border-t border-line bg-raised pb-[max(14px,env(safe-area-inset-bottom))] font-display shadow-float"
+          // A drag starting anywhere on the sheet closes it, as long as the
+          // content is scrolled to the top — the same rule iOS uses, so a
+          // sheet that is scrolled down scrolls rather than closing.
+          onTouchStart={(e) => {
+            const target = e.target as HTMLElement;
+            const grip = !!target.closest('[data-sheet-grip]');
+            // A drag across a text field is someone selecting words, not
+            // throwing the sheet away.
+            const field = !!target.closest('input, textarea, [contenteditable="true"]');
+            dragging.current = grip || (!field && (scroller.current?.scrollTop ?? 0) <= 0);
+            start.current = e.touches[0].clientY;
+          }}
+          onTouchMove={(e) => dragging.current && setDy(Math.max(0, e.touches[0].clientY - start.current))}
+          onTouchEnd={() => {
+            dragging.current = false;
+            if (dy > 100) onClose();
+            else setDy(0);
+          }}
         >
           {/* The grab area is the whole top strip, not just the bar you can see. */}
-          <div
-            className="flex h-8 touch-none items-center justify-center"
-            onTouchStart={(e) => {
-              dragging.current = true;
-              start.current = e.touches[0].clientY;
-            }}
-            onTouchMove={(e) => dragging.current && setDy(Math.max(0, e.touches[0].clientY - start.current))}
-            onTouchEnd={() => {
-              dragging.current = false;
-              if (dy > 100) onClose();
-              else setDy(0);
-            }}
-          >
+          <div data-sheet-grip className="flex h-8 shrink-0 touch-none items-center justify-center">
             <span className="h-[5px] w-10 rounded-full bg-line-strong" />
           </div>
-          {children}
+
+          {/* Title left, Done right: the bar every iOS sheet you read has, and
+              the one control that is always reachable however long the
+              content gets. */}
+          {title && (
+            <div className="flex shrink-0 items-center gap-3 px-6 pt-1 pb-3">
+              <h2 className="min-w-0 flex-1 truncate text-[21px] font-semibold tracking-[-0.02em] text-ink">{title}</h2>
+              <button
+                onClick={onClose}
+                className="-mr-2 h-11 shrink-0 px-2 text-[17px] font-semibold text-accent active:opacity-60"
+              >
+                {t('done_sheet')}
+              </button>
+            </div>
+          )}
+
+          <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            {children}
+          </div>
         </div>
       </FloatingOverlay>
     </FloatingPortal>

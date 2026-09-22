@@ -139,6 +139,7 @@ const EN = {
   capture: 'Capture',
   type_placeholder: 'What’s on your mind?',
   cancel: 'Cancel',
+  done_sheet: 'Done',
 
   captured: 'Captured',
   captured_many: '{n} captured',
@@ -270,6 +271,7 @@ const FR: Record<Key, string> = {
   capture: 'Noter',
   type_placeholder: 'À quoi pensez-vous ?',
   cancel: 'Annuler',
+  done_sheet: 'Terminé',
 
   captured: 'Noté',
   captured_many: '{n} notées',
@@ -398,6 +400,7 @@ const ZH: Record<Key, string> = {
   capture: '记录',
   type_placeholder: '在想什么？',
   cancel: '取消',
+  done_sheet: '完成',
 
   captured: '已记录',
   captured_many: '已记录 {n} 条',
