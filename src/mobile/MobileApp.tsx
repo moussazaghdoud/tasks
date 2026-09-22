@@ -9,11 +9,11 @@ import { confirmAction, haptic, setStatusBarTheme } from '@/lib/native/bridge';
 import { CaptureBar } from './CaptureBar';
 import { greetingIn, LANGUAGES, nextSpeechLang, setSpeechLang, t, useLang, useSpeechLang } from './i18n';
 import { SettingsSheet } from './SettingsSheet';
-import { spaceOf, useView } from './space';
+import { setView, spaceOf, useView } from './space';
 import { AgendaList } from './AgendaList';
-import { refreshAccount } from './microsoft';
+import { calendarConfigured, refreshAccount, stillAhead, useAgendaMeetings, useMicrosoft } from './microsoft';
 import { applyTheme, useTheme } from './theme';
-import { SpaceTabs } from './SpaceTabs';
+import { SpaceTabs, visibleTabs } from './SpaceTabs';
 import { ThoughtRow } from './ThoughtRow';
 import { ThoughtSheet } from './ThoughtSheet';
 
@@ -43,6 +43,27 @@ export function MobileApp() {
   useEffect(() => {
     void refreshAccount();
   }, []);
+
+  const { connected, checked } = useMicrosoft();
+  const hasAgenda = calendarConfigured() && connected;
+  const tabs = visibleTabs(hasAgenda);
+  // Disconnecting while the agenda is open, or opening the app with a
+  // connection that has lapsed, would otherwise leave a selected tab that is
+  // no longer there.
+  useEffect(() => {
+    if (checked && !hasAgenda && view === 'agenda') setView('business');
+  }, [checked, hasAgenda, view]);
+
+  const meetings = useAgendaMeetings();
+  // The heading counts what is still ahead, so it has to notice a meeting
+  // ending even when nothing else on the screen changes.
+  const [minute, setMinute] = useState(() => Date.now());
+  useEffect(() => {
+    if (view !== 'agenda') return;
+    const id = setInterval(() => setMinute(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, [view]);
+  const ahead = view === 'agenda' ? stillAhead(meetings, minute).length : 0;
   // Subscribe so every caption on this screen re-renders when the language changes.
   useLang();
 
@@ -112,7 +133,7 @@ export function MobileApp() {
                   {name ? `, ${name.split(' ')[0]}` : ''}
                 </p>
                 <h1 className="mt-[3px] text-[26px] leading-8 font-bold tracking-[-0.03em] text-ink">
-                  {open.length === 0 ? t('nothing_kept') : open.length === 1 ? t('thoughts_one') : t('thoughts_many', { n: open.length })}
+                  {view === 'agenda' ? meetingCount(ahead) : thoughtCount(open.length)}
                 </h1>
               </div>
               <SpeechLangSwitch />
@@ -135,7 +156,7 @@ export function MobileApp() {
         </div>
         {!searching && (
           <div className="px-[22px] pb-3">
-            <SpaceTabs active={view} />
+            <SpaceTabs active={view} tabs={tabs} />
           </div>
         )}
       </header>
@@ -206,6 +227,14 @@ export function MobileApp() {
     </div>
   );
 }
+
+/** The headline over a list of thoughts. */
+const thoughtCount = (n: number): string =>
+  n === 0 ? t('nothing_kept') : n === 1 ? t('thoughts_one') : t('thoughts_many', { n });
+
+/** The same headline over the agenda, counting what is still ahead of you. */
+const meetingCount = (n: number): string =>
+  n === 0 ? t('meetings_none') : n === 1 ? t('meetings_one') : t('meetings_many', { n });
 
 /**
  * The language you are about to speak, one tap from the microphone's screen.

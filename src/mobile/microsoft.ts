@@ -162,7 +162,38 @@ export function writeAgendaCache(meetings: Meeting[]): void {
   } catch {
     /* storage full or unavailable; the agenda simply loads from the network */
   }
+  known = meetings;
+  for (const notify of agendaStateListeners) notify();
 }
+
+/**
+ * The week as last read, for anything outside the agenda that needs to say
+ * something about it — the heading counting what is left of your day, for
+ * one. Seeded from the copy on the phone so it is right before any network.
+ */
+let known: Meeting[] = readAgendaCache()?.meetings ?? [];
+const agendaStateListeners = new Set<() => void>();
+
+export const useAgendaMeetings = (): Meeting[] =>
+  useSyncExternalStore(
+    (onChange) => {
+      agendaStateListeners.add(onChange);
+      return () => {
+        agendaStateListeners.delete(onChange);
+      };
+    },
+    () => known,
+    () => known,
+  );
+
+/** Meetings still ahead of you: what the agenda itself is showing. */
+export const stillAhead = (meetings: Meeting[], now = Date.now()): Meeting[] => {
+  const midnight = new Date(now);
+  midnight.setHours(0, 0, 0, 0);
+  return meetings.filter((m) =>
+    m.allDay ? new Date(m.start).getTime() >= midnight.getTime() : new Date(m.end).getTime() > now,
+  );
+};
 
 function clearAgendaCache(): void {
   try {
@@ -170,6 +201,8 @@ function clearAgendaCache(): void {
   } catch {
     /* nothing to clear */
   }
+  known = [];
+  for (const notify of agendaStateListeners) notify();
 }
 
 /** Ask the phone, rather than trusting what this module last remembered. */
