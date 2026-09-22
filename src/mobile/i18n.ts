@@ -10,11 +10,14 @@ import { useSyncExternalStore } from 'react';
  * knows which language they are about to speak; the phone only knows how it
  * was set up.
  */
-export type Lang = 'en' | 'fr';
+export type Lang = 'en' | 'fr' | 'zh';
 
 export const LANGUAGES: Array<{ id: Lang; native: string; locale: string }> = [
   { id: 'en', native: 'English', locale: 'en-US' },
   { id: 'fr', native: 'Français', locale: 'fr-FR' },
+  // Simplified, as used in mainland China. The recogniser takes zh-CN too,
+  // and Claude writes the thought back in the language it heard.
+  { id: 'zh', native: '简体中文', locale: 'zh-CN' },
 ];
 
 const KEY = 'hence.lang';
@@ -22,11 +25,14 @@ const KEY = 'hence.lang';
 function detect(): Lang {
   try {
     const stored = localStorage.getItem(KEY);
-    if (stored === 'en' || stored === 'fr') return stored;
+    if (stored === 'en' || stored === 'fr' || stored === 'zh') return stored;
   } catch {
     /* private browsing */
   }
-  return typeof navigator !== 'undefined' && /^fr/i.test(navigator.language) ? 'fr' : 'en';
+  const phone = typeof navigator !== 'undefined' ? navigator.language : '';
+  if (/^fr/i.test(phone)) return 'fr';
+  if (/^zh/i.test(phone)) return 'zh';
+  return 'en';
 }
 
 let current: Lang = detect();
@@ -257,7 +263,106 @@ const FR: Record<Key, string> = {
   language_note: 'Sert à l’affichage et à ce que le micro écoute.',
 };
 
-const DICTIONARIES: Record<Lang, Record<Key, string>> = { en: EN, fr: FR };
+const ZH: Record<Key, string> = {
+  thoughts_one: '1 条想法',
+  thoughts_many: '{n} 条想法',
+  nothing_kept: '暂无记录',
+  search: '搜索',
+  done_today: '今天已完成 {n} 条',
+  clear_done: '清除',
+  deleted_many: '已删除 {n} 条',
+  clear_confirm_title: '清除已完成的想法？',
+  clear_confirm_body: '将删除 {n} 条，删除后可立即撤销。',
+  empty_title: '在想什么？',
+  empty_hint: '点击麦克风，开口说。',
+  empty_search: '没有找到。',
+  agenda: '日程',
+  business: '工作',
+  agenda_today: '今天的会议',
+  agenda_empty: '本周没有剩余安排。',
+  agenda_today_header: '今天',
+  agenda_tomorrow_header: '明天',
+  agenda_nothing_left: '今天没有剩余安排。',
+  agenda_nothing_tomorrow: '明天没有安排。',
+  agenda_now: '进行中',
+  agenda_stale: '离线 · 更新于 {time} · 点击重试',
+  agenda_loading: '正在读取日历…',
+  agenda_failed: '无法连接到日历。',
+  agenda_connect: '在设置中连接 Outlook，即可在此查看会议。',
+  agenda_all_day: '全天',
+  retry: '重试',
+  private: '私人',
+
+  listening: '正在聆听',
+  thinking: '请稍候',
+  say_something: '说出你的想法…',
+  done: '完成',
+  capture: '记录',
+  type_placeholder: '在想什么？',
+  cancel: '取消',
+
+  captured: '已记录',
+  captured_many: '已记录 {n} 条',
+  captured_step: '已添加为步骤',
+  on_device_suffix: '本机分析',
+
+  err_not_allowed: '请在“设置”中允许使用麦克风。',
+  err_plugin: '此版本缺少语音功能。',
+  err_unsupported: '此设备不支持语音输入。',
+  err_network: '语音转写需要网络连接。',
+  err_no_speech: '没有听清。',
+  err_other: '录音被中断。',
+
+  // Time first: "2分钟前记录" reads naturally, "记录于 2分钟前" does not.
+  captured_at: '{when}记录',
+  tomorrow_at: '明天 {time}',
+  act_done: '完成',
+  act_reopen: '恢复为未完成',
+  act_important: '重要',
+  act_not_important: '取消重要',
+  act_remind: '提醒我',
+  act_change_remind: '修改提醒',
+  act_move_private: '移至私人',
+  act_move_business: '移至工作',
+  act_email: '转为邮件',
+  act_calendar: '添加到日历',
+  act_share: '分享',
+  act_delete: '删除',
+
+  remind_title: '提醒我',
+  remind_hour: '一小时后',
+  remind_evening: '今晚',
+  remind_tomorrow: '明天早上',
+  remind_next_week: '下周',
+  remind_remove: '删除提醒',
+  reminder_set: '提醒 {when}',
+  reminder_set_no_perm: '已设置提醒，请允许通知以便接收',
+  reminder_removed: '已删除提醒',
+
+  marked_important: '已标记为重要',
+  unmarked_important: '已取消重要',
+  moved_to: '已移至{space}',
+  deleted: '已删除',
+  undo: '撤销',
+  copied: '已复制',
+
+  calendar: '日历',
+  connect_calendar: '连接 Outlook',
+  disconnect_calendar: '断开连接',
+  calendar_note: '连接后，想法会成为你日历中的事件；否则将通过分享面板发送。',
+  connecting: '正在连接…',
+  connect_failed: '无法连接到 Microsoft',
+  connected_as: '已连接',
+  added_to_calendar: '已添加到日历',
+  settings: '设置',
+  appearance: '外观',
+  theme_dark: '深色',
+  theme_light: '浅色',
+  language: '语言',
+  language_note: '用于界面文字，以及麦克风识别的语言。',
+};
+
+const DICTIONARIES: Record<Lang, Record<Key, string>> = { en: EN, fr: FR, zh: ZH };
 
 /** Translate, filling {placeholders}. Typed, so a missing French line fails the build. */
 export function t(key: Key, vars?: Record<string, string | number>): string {
@@ -272,6 +377,7 @@ export function greetingIn(now = new Date()): string {
   const table = {
     en: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening' },
     fr: { morning: 'Bonjour', afternoon: 'Bon après-midi', evening: 'Bonsoir' },
+    zh: { morning: '早上好', afternoon: '下午好', evening: '晚上好' },
   } as const;
   return table[current][slot];
 }

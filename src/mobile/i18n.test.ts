@@ -18,6 +18,13 @@ describe('language', () => {
     expect(t('business')).toBe('Pro');
   });
 
+  it('speaks Simplified Chinese, captions and microphone alike', () => {
+    setLang('zh');
+    expect(localeOf()).toBe('zh-CN');
+    expect(t('business')).toBe('工作');
+    expect(t('thoughts_many', { n: 3 })).toBe('3 条想法');
+  });
+
   it('fills placeholders', () => {
     expect(t('thoughts_many', { n: 7 })).toBe('7 thoughts');
     setLang('fr');
