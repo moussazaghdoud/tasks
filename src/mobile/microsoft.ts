@@ -247,5 +247,22 @@ export async function createEvent(task: Task): Promise<{ webLink: string }> {
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     allDay,
   });
+  agendaChanged();
   return { webLink: result.webLink };
+}
+
+/* ---- telling the agenda ---- */
+
+const agendaListeners = new Set<() => void>();
+
+/** The calendar changed from here, so an agenda on screen should read it again. */
+function agendaChanged(): void {
+  for (const notify of agendaListeners) notify();
+}
+
+export function onAgendaChanged(listener: () => void): () => void {
+  agendaListeners.add(listener);
+  return () => {
+    agendaListeners.delete(listener);
+  };
 }
