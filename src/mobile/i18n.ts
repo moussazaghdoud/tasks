@@ -170,6 +170,16 @@ const EN = {
   a11y_complete: 'Mark done: {title}',
   a11y_reopen: 'Mark not done: {title}',
   a11y_thought: 'Thought',
+
+  ai_title: 'Tidy your notes with Claude?',
+  ai_body: 'Hence can send the text of each voice note — never the audio — to Anthropic’s Claude, which turns what you said into one clear line.',
+  ai_detail: 'The names of people and projects on your list go with it, so they are recognised. Nothing is stored on the way, and nothing is used to train models.',
+  ai_allow: 'Allow',
+  ai_decline: 'Keep it on my iPhone',
+  ai_change_later: 'You can change this at any time in Settings.',
+  ai_section: 'Voice notes',
+  ai_toggle: 'Tidy notes with Claude',
+  ai_setting_note: 'When on, the text of each note is sent to Anthropic’s Claude to be cleaned up. When off, notes are read on your iPhone and nothing leaves it.',
 } as const;
 
 type Key = keyof typeof EN;
@@ -278,6 +288,16 @@ const FR: Record<Key, string> = {
   a11y_complete: 'Marquer comme terminé : {title}',
   a11y_reopen: 'Marquer comme non terminé : {title}',
   a11y_thought: 'Pensée',
+
+  ai_title: 'Mettre vos notes au propre avec Claude ?',
+  ai_body: 'Hence peut envoyer le texte de chaque note vocale — jamais l’audio — à Claude, d’Anthropic, qui transforme ce que vous avez dit en une ligne claire.',
+  ai_detail: 'Les noms des personnes et des projets de votre liste l’accompagnent, pour être reconnus. Rien n’est conservé en chemin, et rien ne sert à entraîner des modèles.',
+  ai_allow: 'Autoriser',
+  ai_decline: 'Garder sur mon iPhone',
+  ai_change_later: 'Modifiable à tout moment dans les Réglages.',
+  ai_section: 'Notes vocales',
+  ai_toggle: 'Mise au propre par Claude',
+  ai_setting_note: 'Activé, le texte de chaque note est envoyé à Claude, d’Anthropic, pour être mis au propre. Désactivé, les notes sont lues sur votre iPhone et rien n’en sort.',
 };
 
 const ZH: Record<Key, string> = {
@@ -385,6 +405,16 @@ const ZH: Record<Key, string> = {
   a11y_complete: '标记为完成：{title}',
   a11y_reopen: '标记为未完成：{title}',
   a11y_thought: '想法',
+
+  ai_title: '用 Claude 整理你的笔记？',
+  ai_body: 'Hence 可以将每条语音笔记的文字（绝不包括音频）发送给 Anthropic 的 Claude，由它把你说的话整理成一条清晰的内容。',
+  ai_detail: '列表中的人名和项目名会一并发送，以便准确识别。传输过程中不会保存任何内容，也不会用于训练模型。',
+  ai_allow: '允许',
+  ai_decline: '仅保留在我的 iPhone 上',
+  ai_change_later: '你可以随时在“设置”中更改。',
+  ai_section: '语音笔记',
+  ai_toggle: '用 Claude 整理笔记',
+  ai_setting_note: '开启后，每条笔记的文字会发送给 Anthropic 的 Claude 进行整理。关闭后，笔记只在你的 iPhone 上处理，不会离开设备。',
 };
 
 const DICTIONARIES: Record<Lang, Record<Key, string>> = { en: EN, fr: FR, zh: ZH };

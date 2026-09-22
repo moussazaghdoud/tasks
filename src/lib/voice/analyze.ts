@@ -57,9 +57,21 @@ let claudeUnavailable = false;
  * Turn a memo into task drafts: Claude when configured (via the app's own
  * server route), otherwise on-device analysis. Never throws.
  */
-export async function analyzeMemo(transcript: string, language: string): Promise<AnalysisResult> {
+export async function analyzeMemo(
+  transcript: string,
+  language: string,
+  /**
+   * Whether this memo may leave the device for Claude. The phone app asks the
+   * person first — App Review Guideline 5.1.2(i) requires explicit permission
+   * before sharing personal data with a third-party AI — and passes the
+   * answer here. Declining is not an error: the memo is read on the device,
+   * which is exactly what happens offline.
+   */
+  options: { cloud?: boolean } = {},
+): Promise<AnalysisResult> {
   const text = transcript.trim();
   if (!text) return { tasks: [], source: 'local' };
+  if (options.cloud === false) return local(text);
   if (claudeUnavailable) return local(text, 'On-device analysis. Add a Claude API key for smarter results.');
   if (isNative() && !apiBase()) {
     claudeUnavailable = true;

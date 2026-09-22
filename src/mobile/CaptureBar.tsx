@@ -8,6 +8,8 @@ import { createFromDrafts, findTaskByTitle, type ConfirmedDraft } from '@/lib/vo
 import { startLevelMeter, startSpeech, type SpeechErrorCode, type SpeechSession } from '@/lib/voice/speech';
 import { toast } from '@/store/toast';
 import { ui, useUi } from '@/store/ui';
+import { AiConsentSheet } from './AiConsentSheet';
+import { aiConsent, setAiConsent } from './aiConsent';
 import { localeOf, t } from './i18n';
 import { currentSpace, spaceOf } from './space';
 import { Sheet } from './Sheet';
@@ -50,6 +52,8 @@ export function CaptureBar() {
   const [transcript, setTranscript] = useState('');
   const [level, setLevel] = useState(0);
   const [typing, setTyping] = useState(false);
+  /** Set while the one-time AI question is on screen; resolves the capture waiting on it. */
+  const [consentAnswer, setConsentAnswer] = useState<((allow: boolean) => void) | null>(null);
 
   const session = useRef<SpeechSession | null>(null);
   const stopMeter = useRef<(() => void) | null>(null);
@@ -78,9 +82,18 @@ export function CaptureBar() {
         return;
       }
       setPhase('thinking');
+
+      // Nothing leaves the phone for Claude without a yes. Asked once, here,
+      // where the question means something; the answer is remembered.
+      let cloud = aiConsent() === 'granted';
+      if (aiConsent() === 'unset') {
+        cloud = await new Promise<boolean>((resolve) => setConsentAnswer(() => resolve));
+        setConsentAnswer(null);
+      }
+
       // Claude is told which language this was spoken in, so the thought it
       // writes back comes out in the same one.
-      const { tasks, source, notice } = await analyzeMemo(said, speechLocale());
+      const { tasks, source, notice } = await analyzeMemo(said, speechLocale(), { cloud });
       const drafts: ConfirmedDraft[] = tasks.length
         ? tasks.map((d) => {
             // If the memo is plainly about something already on the list, it
@@ -125,8 +138,13 @@ export function CaptureBar() {
       // Say which engine read the memo. Without this the on-device fallback is
       // indistinguishable from Claude having a bad day, and a server that
       // quietly stopped answering looks like the app getting worse.
-      toast(source === 'local' ? `${label} · ${t('on_device_suffix')}` : label, { action: { label: t('undo'), run: undo } });
-      if (source === 'local' && notice && !noticed.current) {
+      // Mark on-device results only when that was not the person's own
+      // choice: someone who said "keep it on my iPhone" does not need telling.
+      const chosenLocal = !cloud;
+      toast(source === 'local' && !chosenLocal ? `${label} · ${t('on_device_suffix')}` : label, {
+        action: { label: t('undo'), run: undo },
+      });
+      if (source === 'local' && !chosenLocal && notice && !noticed.current) {
         noticed.current = true;
         setTimeout(() => toast(notice), 2600);
       }
@@ -310,6 +328,15 @@ export function CaptureBar() {
       </div>
 
       <TypeSheet open={typing} onClose={() => setTyping(false)} onSubmit={(text) => void capture(text)} />
+      <AiConsentSheet
+        open={!!consentAnswer}
+        onChoose={(allow) => {
+          // Only a button press is an answer to remember; swiping the sheet
+          // away keeps this note on the phone and asks again next time.
+          if (allow !== null) setAiConsent(allow ? 'granted' : 'denied');
+          consentAnswer?.(allow === true);
+        }}
+      />
     </>
   );
 }

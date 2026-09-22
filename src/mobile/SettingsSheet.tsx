@@ -4,6 +4,7 @@ import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
 import { apiBase, isNative } from '@/lib/native/platform';
 import { readVersion, WEB_VERSION } from '@/lib/version';
+import { setAiConsent, useAiConsent } from './aiConsent';
 import { LANGUAGES, setLang, t, useLang } from './i18n';
 import { toast } from '@/store/toast';
 import { calendarConfigured, connect, disconnect, refreshAccount, useMicrosoft } from './microsoft';
@@ -67,6 +68,48 @@ function CalendarSection() {
       </div>
 
       <p className="px-6 pt-3 text-[12.5px] leading-[18px] text-ink-3">{t('calendar_note')}</p>
+    </>
+  );
+}
+
+/**
+ * Whether notes are read by Claude or kept on the phone — the same choice
+ * the first capture asks for, here so it can be changed at any time.
+ */
+function AiSection() {
+  const on = useAiConsent() === 'granted';
+  return (
+    <>
+      <p className="mt-7 px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('ai_section')}</p>
+      <div className="border-t border-line">
+        <button
+          role="switch"
+          aria-checked={on}
+          onClick={() => {
+            haptic('light');
+            setAiConsent(on ? 'denied' : 'granted');
+          }}
+          className="flex h-[58px] w-full items-center gap-4 px-6 text-left transition-colors active:bg-wash-strong"
+        >
+          <span className="flex-1 text-[17px] text-ink">{t('ai_toggle')}</span>
+          {/* Drawn like the system switch, so it reads as one without a label. */}
+          <span
+            aria-hidden
+            className={cn(
+              'relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200',
+              on ? 'bg-accent' : 'bg-line-strong',
+            )}
+          >
+            <span
+              className={cn(
+                'absolute top-[2px] left-[2px] size-[27px] rounded-full bg-white shadow-[0_2px_4px_rgb(0_0_0/0.25)] transition-transform duration-200',
+                on && 'translate-x-5',
+              )}
+            />
+          </span>
+        </button>
+      </div>
+      <p className="px-6 pt-3 text-[12.5px] leading-[18px] text-ink-3">{t('ai_setting_note')}</p>
     </>
   );
 }
@@ -182,6 +225,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
       </div>
 
       <p className="px-6 pt-3 text-[12.5px] leading-[18px] text-ink-3">{t('language_note')}</p>
+
+      <AiSection />
 
       {calendarConfigured() && <CalendarSection />}
 
