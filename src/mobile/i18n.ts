@@ -161,6 +161,15 @@ const EN = {
   theme_light: 'Light',
   language: 'Language',
   language_note: 'Used for what you read, and for what the microphone listens for.',
+  about: 'About',
+  privacy_policy: 'Privacy policy',
+  support: 'Support',
+
+  // Spoken by VoiceOver, never shown.
+  a11y_views: 'Show',
+  a11y_complete: 'Mark done: {title}',
+  a11y_reopen: 'Mark not done: {title}',
+  a11y_thought: 'Thought',
 } as const;
 
 type Key = keyof typeof EN;
@@ -261,6 +270,14 @@ const FR: Record<Key, string> = {
   theme_light: 'Clair',
   language: 'Langue',
   language_note: 'Sert à l’affichage et à ce que le micro écoute.',
+  about: 'À propos',
+  privacy_policy: 'Politique de confidentialité',
+  support: 'Assistance',
+
+  a11y_views: 'Afficher',
+  a11y_complete: 'Marquer comme terminé : {title}',
+  a11y_reopen: 'Marquer comme non terminé : {title}',
+  a11y_thought: 'Pensée',
 };
 
 const ZH: Record<Key, string> = {
@@ -360,6 +377,14 @@ const ZH: Record<Key, string> = {
   theme_light: '浅色',
   language: '语言',
   language_note: '用于界面文字，以及麦克风识别的语言。',
+  about: '关于',
+  privacy_policy: '隐私政策',
+  support: '支持',
+
+  a11y_views: '显示',
+  a11y_complete: '标记为完成：{title}',
+  a11y_reopen: '标记为未完成：{title}',
+  a11y_thought: '想法',
 };
 
 const DICTIONARIES: Record<Lang, Record<Key, string>> = { en: EN, fr: FR, zh: ZH };

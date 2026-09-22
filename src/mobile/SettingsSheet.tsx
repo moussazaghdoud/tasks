@@ -1,7 +1,9 @@
-import { CalendarCheck, Check, Moon, Sun } from 'lucide-react';
+import { ArrowUpRight, CalendarCheck, Check, Moon, Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
+import { apiBase, isNative } from '@/lib/native/platform';
+import { readVersion, WEB_VERSION } from '@/lib/version';
 import { LANGUAGES, setLang, t, useLang } from './i18n';
 import { toast } from '@/store/toast';
 import { calendarConfigured, connect, disconnect, refreshAccount, useMicrosoft } from './microsoft';
@@ -65,6 +67,50 @@ function CalendarSection() {
       </div>
 
       <p className="px-6 pt-3 text-[12.5px] leading-[18px] text-ink-3">{t('calendar_note')}</p>
+    </>
+  );
+}
+
+/**
+ * The privacy policy and support pages, and which build this is.
+ *
+ * The policy has to be reachable from inside the app, not only from the App
+ * Store listing. Links open in Safari: a page loaded into this web view would
+ * replace the app, with no way back.
+ */
+function AboutSection() {
+  const [version, setVersion] = useState(WEB_VERSION);
+  useEffect(() => {
+    void readVersion().then(setVersion);
+  }, []);
+
+  // Same origin on the web; the deployed server inside the app.
+  const site = isNative() ? apiBase() : '';
+  const canLink = !isNative() || !!site;
+
+  return (
+    <>
+      <p className="mt-7 px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('about')}</p>
+      {canLink && (
+        <div className="border-t border-line">
+          {[
+            { href: `${site}/privacy`, label: t('privacy_policy') },
+            { href: `${site}/support`, label: t('support') },
+          ].map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-[58px] w-full items-center gap-4 px-6 text-[17px] text-ink transition-colors active:bg-wash-strong"
+            >
+              <span className="flex-1">{link.label}</span>
+              <ArrowUpRight className="size-[18px] shrink-0 text-ink-4" strokeWidth={1.8} />
+            </a>
+          ))}
+        </div>
+      )}
+      <p className="px-6 pt-3 text-[12.5px] text-ink-4 tabular-nums">Hence {version}</p>
     </>
   );
 }
@@ -138,6 +184,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
       <p className="px-6 pt-3 text-[12.5px] leading-[18px] text-ink-3">{t('language_note')}</p>
 
       {calendarConfigured() && <CalendarSection />}
+
+      <AboutSection />
     </Sheet>
   );
 }

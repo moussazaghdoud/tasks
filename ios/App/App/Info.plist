@@ -50,17 +50,10 @@
 			</array>
 		</dict>
 	</array>
-	<!-- Lets the app hand sign-in to the Microsoft Authenticator when it is
-	     installed, instead of falling back to a web sign-in every time. -->
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>msauthv2</string>
-		<string>msauthv3</string>
-	</array>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Hence uses the microphone so you can speak a task instead of typing it.</string>
+	<string>Hence uses the microphone only while you are recording a voice note, so what you say can be saved as a line on your list.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Your spoken task is turned into text so it can be saved as a task. Apple processes the audio to transcribe it.</string>
+	<string>Hence turns your voice note into text so it can be saved to your list. Apple processes the audio to transcribe it.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>UIApplicationSceneManifest</key>
@@ -86,20 +79,16 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<!-- arm64, not the template's armv7: every iPhone this app supports is
+	     64-bit, and declaring a 32-bit architecture as required is simply
+	     wrong for an iOS 15 app. -->
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>

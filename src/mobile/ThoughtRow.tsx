@@ -90,7 +90,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
             onClick={() => toggleComplete(task.id)}
             role="checkbox"
             aria-checked={checked}
-            aria-label={checked ? `Reopen ${task.title}` : `Complete ${task.title}`}
+            aria-label={checked ? t('a11y_reopen', { title: task.title }) : t('a11y_complete', { title: task.title })}
             className="-my-2 -ml-1.5 grid h-11 w-9 shrink-0 place-items-center rounded-full"
           >
             <span

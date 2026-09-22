@@ -22,6 +22,7 @@ import { buildDemoWorkspace, buildEmptyWorkspace } from '@/data/demo';
 import { dueLabel, formatTime, todayKey } from '@/lib/dates';
 import { createId, nowIso } from '@/lib/id';
 import { hostOf } from '@/lib/nlp';
+import { isNative } from '@/lib/native/platform';
 
 type Rec<T> = Record<ID, T>;
 
@@ -169,7 +170,12 @@ export const useWorkspace = create<WorkspaceState>((set, get) => {
       const repo = getRepository();
       let snap = await repo.load();
       if (!snap) {
-        snap = buildDemoWorkspace();
+        // A first launch of the phone app starts empty. The demo workspace is
+        // someone else's to-do list — names, companies, deadlines — and an
+        // installed app that opens on a stranger's tasks looks broken, to a
+        // reviewer and to anyone else. The desktop web build keeps it, where it
+        // is a private deployment and useful for showing the product.
+        snap = isNative() ? buildEmptyWorkspace() : buildDemoWorkspace();
         await repo.replace(snap);
       }
       hydrate(snap);

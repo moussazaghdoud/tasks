@@ -22,19 +22,20 @@
   </head>
   <body>
     <h1>Privacy Policy</h1>
-    <p class="updated">Hence — last updated 17 September 2026</p>
+    <p class="updated">Hence — last updated 22 September 2026</p>
 
     <p>
-      Hence is a task manager. It has no accounts, no advertising, no analytics and no trackers.
-      This page explains exactly what happens to what you write or say.
+      Hence keeps the thoughts you speak or type as a simple list. It has no accounts of its own,
+      no advertising, no analytics and no trackers. This page explains exactly what happens to what
+      you write or say.
     </p>
 
     <h2>What stays on your device</h2>
     <p>
-      Your tasks, projects, notes, the people you add and your settings are stored on the device
+      Your notes, the people and projects they mention, and your settings are stored on the device
       you use — in the app's own storage on iOS, or in your browser's storage on the web. They are
-      not uploaded anywhere, and we cannot read them. Deleting the app (or “Start empty” in
-      Settings) deletes them. You can export a copy at any time from Settings → Export data.
+      not uploaded anywhere, and we cannot read them. Deleting the app deletes them. In the web
+      version you can also export a copy, or clear everything, from Settings.
     </p>
 
     <h2>Turning speech into text</h2>
@@ -47,6 +48,12 @@
       <li>In a browser: that browser's speech service (for example Google in Chrome, Apple in Safari).</li>
     </ul>
     <p>We do not record, store or transmit audio ourselves.</p>
+    <p>
+      So that names are spelled correctly, the iOS app gives Apple's speech recognition a short
+      list of words it is likely to hear with each recording: the names of people and projects in
+      your list, and names that appear in your open notes. It is sent to Apple with the audio and
+      used only to transcribe it.
+    </p>
 
     <h2>Turning a memo into a task</h2>
     <p>
@@ -58,6 +65,7 @@
     </p>
     <ul>
       <li>The Hence server does not store your memo or the result. It passes them through and keeps only anonymous error logs.</li>
+      <li>Your IP address is used, in memory only, to limit how many requests one connection can make. The Hence server does not store or log it; the hosting provider may keep standard access logs.</li>
       <li>Anthropic processes the request to produce the answer. Inputs sent through their API are not used to train their models; they may be retained briefly for abuse monitoring under Anthropic's terms.</li>
       <li>If no analysis service is configured, or you are offline, the memo is analysed on your device and nothing leaves it.</li>
     </ul>
@@ -67,6 +75,20 @@
       Reminders are scheduled locally by your device and delivered by it. They are not sent through
       any server and are not shared between devices.
     </p>
+
+    <h2>Your Microsoft calendar (optional)</h2>
+    <p>
+      If you choose to connect a Microsoft 365 or Outlook account in Settings, the app can show your
+      upcoming meetings and add a note to your calendar as an event. This connection is between your
+      device and Microsoft directly; it does not pass through the Hence server.
+    </p>
+    <ul>
+      <li>You sign in on Microsoft's own page. The app never sees your password.</li>
+      <li>The app asks only for access to your calendar and your basic profile, so it can show which account is connected. It cannot read your email or files.</li>
+      <li>The key that keeps you connected is stored in your device's Keychain, encrypted by iOS and readable by no other app.</li>
+      <li>Your upcoming meetings are kept on the device so they appear instantly and offline. They are not sent anywhere else.</li>
+      <li>Disconnecting in Settings removes the key and the stored meetings from the device. You can also revoke access from your Microsoft account at any time.</li>
+    </ul>
 
     <h2>What we never do</h2>
     <ul>

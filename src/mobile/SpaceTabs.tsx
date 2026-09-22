@@ -21,7 +21,7 @@ export function SpaceTabs({ active }: { active: View }) {
   const index = TAB_IDS.indexOf(active);
 
   return (
-    <div role="tablist" aria-label={t('settings')} className="relative flex h-11 rounded-full border border-line bg-sunk p-[3px]">
+    <div role="tablist" aria-label={t('a11y_views')} className="relative flex h-11 rounded-full border border-line bg-sunk p-[3px]">
       {/* The moving third. Width is a third of the track, less the padding. */}
       <span
         aria-hidden

@@ -120,7 +120,7 @@ function ThoughtTitle({ id, title }: { id: string; title: string }) {
     <textarea
       ref={ref}
       value={value}
-      aria-label={t('capture')}
+      aria-label={t('a11y_thought')}
       rows={1}
       onChange={(e) => setValue(e.target.value.replace(/\n/g, ' '))}
       onBlur={() => (value.trim() ? ws().renameTask(id, value.trim()) : setValue(title))}

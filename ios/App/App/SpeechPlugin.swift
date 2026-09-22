@@ -54,7 +54,7 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc override public func requestPermissions(_ call: CAPPluginCall) {
         SFSpeechRecognizer.requestAuthorization { [weak self] _ in
             guard let self = self else { return }
-            AVAudioSession.sharedInstance().requestRecordPermission { _ in
+            Self.requestMicrophone {
                 DispatchQueue.main.async { call.resolve(self.currentPermissions()) }
             }
         }
@@ -67,20 +67,43 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
         case .denied, .restricted: speech = "denied"
         default: speech = "prompt"
         }
-        let mic: String
-        switch AVAudioSession.sharedInstance().recordPermission {
-        case .granted: mic = "granted"
-        case .denied: mic = "denied"
-        default: mic = "prompt"
+        return ["speech": speech, "microphone": Self.microphoneState()]
+    }
+
+    // MARK: - Microphone permission
+    //
+    // iOS 17 moved record permission from AVAudioSession to AVAudioApplication
+    // and deprecated the old calls. The app still supports iOS 15, so each
+    // asks the new API where it exists and the old one only where it must.
+
+    private static func microphoneState() -> String {
+        if #available(iOS 17.0, *) {
+            switch AVAudioApplication.shared.recordPermission {
+            case .granted: return "granted"
+            case .denied: return "denied"
+            default: return "prompt"
+            }
         }
-        return ["speech": speech, "microphone": mic]
+        switch AVAudioSession.sharedInstance().recordPermission {
+        case .granted: return "granted"
+        case .denied: return "denied"
+        default: return "prompt"
+        }
+    }
+
+    private static func requestMicrophone(_ done: @escaping () -> Void) {
+        if #available(iOS 17.0, *) {
+            AVAudioApplication.requestRecordPermission { _ in done() }
+        } else {
+            AVAudioSession.sharedInstance().requestRecordPermission { _ in done() }
+        }
     }
 
     // MARK: - Recognition
 
     @objc func start(_ call: CAPPluginCall) {
         guard SFSpeechRecognizer.authorizationStatus() == .authorized,
-              AVAudioSession.sharedInstance().recordPermission == .granted else {
+              Self.microphoneState() == "granted" else {
             call.reject("Microphone or speech permission not granted", "permission")
             return
         }
@@ -187,6 +210,52 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
         audioEngine.inputNode.removeTap(onBus: 0)
         if audioEngine.isRunning { audioEngine.stop() }
         call.resolve()
+    }
+
+    // MARK: - Interruptions
+
+    override public func load() {
+        let center = NotificationCenter.default
+        center.addObserver(self, selector: #selector(audioInterrupted(_:)),
+                           name: AVAudioSession.interruptionNotification, object: nil)
+        center.addObserver(self, selector: #selector(audioRouteChanged(_:)),
+                           name: AVAudioSession.routeChangeNotification, object: nil)
+    }
+
+    /// A phone call, a FaceTime, Siri, an alarm: the system takes the
+    /// microphone. Without this the engine died silently and the screen sat
+    /// on "Listening" with nothing listening.
+    @objc private func audioInterrupted(_ note: Notification) {
+        guard let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+              AVAudioSession.InterruptionType(rawValue: raw) == .began else { return }
+        finishEarly()
+    }
+
+    /// Headphones pulled out or AirPods disconnected mid-sentence. The input
+    /// format changes under the tap, so the only safe move is to stop.
+    @objc private func audioRouteChanged(_ note: Notification) {
+        guard let raw = note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+              AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable else { return }
+        finishEarly()
+    }
+
+    /// Stop listening but keep what was said. Ending the audio lets the
+    /// recogniser deliver its final transcript for the words it already has;
+    /// losing a half-spoken thought to an incoming call would be the worst
+    /// outcome here.
+    private func finishEarly() {
+        DispatchQueue.main.async {
+            guard self.listening else { return }
+            self.request?.endAudio()
+            self.audioEngine.inputNode.removeTap(onBus: 0)
+            if self.audioEngine.isRunning { self.audioEngine.stop() }
+
+            // If the recogniser never answers after an interruption, still hand
+            // the screen back rather than leave it listening to nothing.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                if self.listening { self.teardown(notifyEnd: true) }
+            }
+        }
     }
 
     /// Which recognition errors deserve a message, and which are just the

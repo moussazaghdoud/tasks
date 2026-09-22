@@ -169,6 +169,15 @@ export function CaptureBar() {
       },
       onError: (code) => {
         teardown();
+        // An error part-way through — a call, a lost connection — must not
+        // cost the words already heard. Keep them; only report the error when
+        // there was nothing to keep.
+        const kept = heard.current.trim();
+        if (kept) {
+          session.current = null;
+          void capture(kept);
+          return;
+        }
         setPhase('idle');
         setTranscript('');
         toast(errorText(code));
@@ -199,6 +208,18 @@ export function CaptureBar() {
       start();
     }
   }, [requested, phase, start]);
+
+  // Leaving the app mid-sentence — the home gesture, a notification tapped —
+  // suspends the microphone. Finish with what was said rather than come back
+  // to a screen still "listening" to nothing.
+  useEffect(() => {
+    if (phase !== 'listening') return;
+    const onHidden = () => {
+      if (document.visibilityState === 'hidden') finish();
+    };
+    document.addEventListener('visibilitychange', onHidden);
+    return () => document.removeEventListener('visibilitychange', onHidden);
+  }, [phase, finish]);
 
   // A long pause ends the recording on its own.
   useEffect(() => {
@@ -295,7 +316,7 @@ export function CaptureBar() {
 
 function ThinkingLine() {
   return (
-    <div className="flex h-11 items-center justify-center gap-1.5" aria-label="Working">
+    <div className="flex h-11 items-center justify-center gap-1.5" role="status" aria-label={t('thinking')}>
       {[0, 1, 2].map((i) => (
         <span
           key={i}
