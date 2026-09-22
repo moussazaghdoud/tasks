@@ -68,10 +68,16 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
             URLQueryItem(name: "scope", value: scopes),
             URLQueryItem(name: "state", value: state),
             URLQueryItem(name: "code_challenge", value: challenge),
-            URLQueryItem(name: "code_challenge_method", value: "S256"),
-            // Always show the account picker: people have more than one.
-            URLQueryItem(name: "prompt", value: "select_account")
+            URLQueryItem(name: "code_challenge_method", value: "S256")
         ]
+        // With an address, open straight on that account; the app already
+        // asked for it to choose the right registration. Without one, show
+        // the picker, because people have more than one account.
+        if let hint = call.getString("loginHint"), !hint.isEmpty {
+            components.queryItems?.append(URLQueryItem(name: "login_hint", value: hint))
+        } else {
+            components.queryItems?.append(URLQueryItem(name: "prompt", value: "select_account"))
+        }
 
         guard let authorizeURL = components.url,
               let scheme = URL(string: redirect)?.scheme else {

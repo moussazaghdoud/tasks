@@ -98,6 +98,11 @@ jobs:
           # Not secrets: a public client embeds its identifiers in the app.
           VITE_M365_CLIENT_ID: ${{ vars.M365_CLIENT_ID }}
           VITE_M365_TENANT_ID: ${{ vars.M365_TENANT_ID }}
+          # Optional: a registration inside one organisation, used only for
+          # addresses at M365_WORK_DOMAIN, where it counts as an internal app.
+          VITE_M365_WORK_CLIENT_ID: ${{ vars.M365_WORK_CLIENT_ID }}
+          VITE_M365_WORK_TENANT_ID: ${{ vars.M365_WORK_TENANT_ID }}
+          VITE_M365_WORK_DOMAIN: ${{ vars.M365_WORK_DOMAIN }}
 
       - name: Copy the web app into the native project
         if: inputs.lane != 'check_auth'

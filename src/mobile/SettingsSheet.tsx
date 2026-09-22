@@ -25,10 +25,31 @@ const THEMES: Array<{ id: Theme; icon: typeof Sun; label: 'theme_dark' | 'theme_
 function CalendarSection() {
   const { connected, account } = useMicrosoft();
   const [busy, setBusy] = useState(false);
+  // The address comes first: it decides which registration to sign in with,
+  // and Microsoft's page then opens on that account.
+  const [asking, setAsking] = useState(false);
+  const [email, setEmail] = useState('');
+  const plausible = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   useEffect(() => {
     void refreshAccount();
   }, []);
+
+  const signIn = async () => {
+    if (!plausible) return;
+    setBusy(true);
+    try {
+      await connect(email);
+      haptic('success');
+      setAsking(false);
+      setEmail('');
+    } catch (error) {
+      // A cancelled sign-in is a decision, not a failure.
+      if ((error as { code?: string })?.code !== 'cancelled') toast(t('connect_failed'));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <>
@@ -43,16 +64,7 @@ function CalendarSection() {
               haptic('light');
               return;
             }
-            setBusy(true);
-            try {
-              await connect();
-              haptic('success');
-            } catch (error) {
-              // A cancelled sign-in is a decision, not a failure.
-              if ((error as { code?: string })?.code !== 'cancelled') toast(t('connect_failed'));
-            } finally {
-              setBusy(false);
-            }
+            setAsking(true);
           }}
           className="flex h-[58px] w-full items-center gap-4 px-6 text-left transition-colors active:bg-wash-strong disabled:opacity-50"
         >
@@ -65,6 +77,38 @@ function CalendarSection() {
           </span>
           {connected && <span className="shrink-0 text-[14px] font-medium text-ember">{t('disconnect_calendar')}</span>}
         </button>
+
+        {asking && !connected && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void signIn();
+            }}
+            className="flex animate-fade flex-col gap-2 px-6 pb-2"
+          >
+            <input
+              id="calendar-email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t('calendar_email_placeholder')}
+              aria-label={t('calendar_email_placeholder')}
+              className="h-12 w-full rounded-[14px] border border-line bg-sunk px-4 text-[16px] text-ink outline-none placeholder:text-ink-4 focus:border-accent/50"
+            />
+            <button
+              type="submit"
+              disabled={!plausible || busy}
+              className="h-12 w-full rounded-[14px] bg-accent text-[16px] font-semibold text-on-accent transition-opacity disabled:opacity-35"
+            >
+              {busy ? t('connecting') : t('calendar_continue')}
+            </button>
+          </form>
+        )}
       </div>
 
       <p className="px-6 pt-3 text-[12.5px] leading-[18px] text-ink-3">{t('calendar_note')}</p>

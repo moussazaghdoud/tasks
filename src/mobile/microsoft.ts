@@ -12,7 +12,7 @@ import { isNative } from '@/lib/native/platform';
  * sign-in and asks for events; it never holds a credential.
  */
 interface MicrosoftPlugin {
-  signIn(options: { clientId: string; tenantId: string; scopes?: string }): Promise<Account>;
+  signIn(options: { clientId: string; tenantId: string; scopes?: string; loginHint?: string }): Promise<Account>;
   signOut(): Promise<{ connected: boolean }>;
   account(): Promise<Account>;
   todayEvents(options?: { days?: number }): Promise<{ events: Meeting[] }>;
@@ -42,11 +42,46 @@ export interface Account {
 
 const Microsoft = registerPlugin<MicrosoftPlugin>('Microsoft');
 
-const CLIENT_ID = (import.meta.env.VITE_M365_CLIENT_ID as string | undefined)?.trim() ?? '';
-const TENANT_ID = (import.meta.env.VITE_M365_TENANT_ID as string | undefined)?.trim() ?? '';
+// Each read written out whole: Vite substitutes build variables only where it
+// can see the literal name, and a computed one would ship empty.
+const clean = (value: string | undefined) => (value ?? '').trim();
 
-/** Whether this build was given an app registration to talk to. */
-export const calendarConfigured = (): boolean => isNative() && !!CLIENT_ID && !!TENANT_ID;
+/** An app registration: who Microsoft is asked on behalf of. */
+interface Registration {
+  clientId: string;
+  tenantId: string;
+}
+
+/**
+ * Two registrations, chosen by the address someone signs in with.
+ *
+ * The public one lives in a directory the app's owner controls and accepts
+ * any Microsoft account. The optional work one is registered inside a single
+ * organisation, where it counts as an internal app — which is what lets
+ * people there connect their calendar without their IT approving an outside
+ * publisher. It is used only for that organisation's domain, and nobody else
+ * ever sees it.
+ */
+const PUBLIC: Registration = {
+  clientId: clean(import.meta.env.VITE_M365_CLIENT_ID as string | undefined),
+  tenantId: clean(import.meta.env.VITE_M365_TENANT_ID as string | undefined),
+};
+const WORK: Registration & { domain: string } = {
+  clientId: clean(import.meta.env.VITE_M365_WORK_CLIENT_ID as string | undefined),
+  tenantId: clean(import.meta.env.VITE_M365_WORK_TENANT_ID as string | undefined),
+  domain: clean(import.meta.env.VITE_M365_WORK_DOMAIN as string | undefined).toLowerCase().replace(/^@/, ''),
+};
+
+const usable = (r: Registration) => !!r.clientId && !!r.tenantId;
+
+export function registrationFor(email: string): Registration | null {
+  const domain = email.trim().toLowerCase().split('@')[1] ?? '';
+  if (usable(WORK) && WORK.domain && domain === WORK.domain) return WORK;
+  return usable(PUBLIC) ? PUBLIC : null;
+}
+
+/** Whether this build was given any registration to talk to. */
+export const calendarConfigured = (): boolean => isNative() && (usable(PUBLIC) || usable(WORK));
 
 /* ---- connection state, shared with the interface ---- */
 
@@ -149,8 +184,14 @@ export async function isConnected(): Promise<boolean> {
   }
 }
 
-export async function connect(): Promise<Account> {
-  const result = await Microsoft.signIn({ clientId: CLIENT_ID, tenantId: TENANT_ID });
+/**
+ * Sign in with the registration that fits this address. The address also goes
+ * to Microsoft as a hint, so its page opens with the account already chosen.
+ */
+export async function connect(email: string): Promise<Account> {
+  const registration = registrationFor(email);
+  if (!registration) throw Object.assign(new Error('No Microsoft registration configured'), { code: 'unconfigured' });
+  const result = await Microsoft.signIn({ ...registration, loginHint: email.trim() });
   publish(result);
   return result;
 }

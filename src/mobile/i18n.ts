@@ -149,6 +149,8 @@ const EN = {
 
   calendar: 'Calendar',
   connect_calendar: 'Connect Outlook',
+  calendar_email_placeholder: 'Your Microsoft email',
+  calendar_continue: 'Continue',
   disconnect_calendar: 'Disconnect',
   calendar_note: 'Connected, thoughts become events in your own calendar. Otherwise they are handed to the share sheet.',
   connecting: 'Connecting…',
@@ -276,6 +278,8 @@ const FR: Record<Key, string> = {
 
   calendar: 'Calendrier',
   connect_calendar: 'Connecter Outlook',
+  calendar_email_placeholder: 'Votre adresse Microsoft',
+  calendar_continue: 'Continuer',
   disconnect_calendar: 'Déconnecter',
   calendar_note: 'Une fois connecté, les pensées deviennent des événements dans votre calendrier. Sinon elles passent par la feuille de partage.',
   connecting: 'Connexion…',
@@ -401,6 +405,8 @@ const ZH: Record<Key, string> = {
 
   calendar: '日历',
   connect_calendar: '连接 Outlook',
+  calendar_email_placeholder: '你的 Microsoft 邮箱',
+  calendar_continue: '继续',
   disconnect_calendar: '断开连接',
   calendar_note: '连接后，想法会成为你日历中的事件；否则将通过分享面板发送。',
   connecting: '正在连接…',
