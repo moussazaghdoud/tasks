@@ -1,34 +1,47 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * The app's language — one choice that drives both what you read and what the
- * recogniser listens for.
+ * Two languages: the one you read, and the one you speak.
  *
- * Those were separate before, and the recogniser took its cue from the phone's
- * locale: speak English into a French phone and you get French words back,
- * which Claude then faithfully turns into a clean, wrong thought. A person
- * knows which language they are about to speak; the phone only knows how it
- * was set up.
+ * The recogniser has to be told which language is coming. Left to the phone's
+ * locale, English spoken into a French phone comes back as French words, which
+ * Claude then faithfully turns into a clean, wrong thought. A person knows
+ * which language they are about to speak; the phone only knows how it was set
+ * up.
+ *
+ * They are separate because they change at different speeds. The interface
+ * language is set once. The spoken one changes from one thought to the next
+ * for anyone who works in two languages, so it sits in the header, one tap
+ * away, and the interface stays put.
  */
 export type Lang = 'en' | 'fr' | 'zh';
 
-export const LANGUAGES: Array<{ id: Lang; native: string; locale: string }> = [
-  { id: 'en', native: 'English', locale: 'en-US' },
-  { id: 'fr', native: 'Français', locale: 'fr-FR' },
+export const LANGUAGES: Array<{ id: Lang; native: string; short: string; locale: string }> = [
+  { id: 'en', native: 'English', short: 'EN', locale: 'en-US' },
+  { id: 'fr', native: 'Français', short: 'FR', locale: 'fr-FR' },
   // Simplified, as used in mainland China. The recogniser takes zh-CN too,
   // and Claude writes the thought back in the language it heard.
-  { id: 'zh', native: '简体中文', locale: 'zh-CN' },
+  { id: 'zh', native: '简体中文', short: '中文', locale: 'zh-CN' },
 ];
 
 const KEY = 'hence.lang';
+const SPEECH_KEY = 'hence.speech';
 
-function detect(): Lang {
+const isLang = (value: unknown): value is Lang => value === 'en' || value === 'fr' || value === 'zh';
+
+function stored(key: string): Lang | null {
   try {
-    const stored = localStorage.getItem(KEY);
-    if (stored === 'en' || stored === 'fr' || stored === 'zh') return stored;
+    const value = localStorage.getItem(key);
+    return isLang(value) ? value : null;
   } catch {
     /* private browsing */
+    return null;
   }
+}
+
+function detect(): Lang {
+  const chosen = stored(KEY);
+  if (chosen) return chosen;
   const phone = typeof navigator !== 'undefined' ? navigator.language : '';
   if (/^fr/i.test(phone)) return 'fr';
   if (/^zh/i.test(phone)) return 'zh';
@@ -36,23 +49,46 @@ function detect(): Lang {
 }
 
 let current: Lang = detect();
+/** Null until someone picks a spoken language: until then it follows the interface. */
+let spoken: Lang | null = stored(SPEECH_KEY);
 const listeners = new Set<() => void>();
 
 export const currentLang = (): Lang => current;
+export const speechLang = (): Lang => spoken ?? current;
 
 /** BCP-47 tag, for `Intl` and for the speech recogniser. */
 export const localeOf = (lang: Lang = current): string => LANGUAGES.find((l) => l.id === lang)!.locale;
 
-export function setLang(next: Lang): void {
-  if (next === current) return;
-  current = next;
+/** What the microphone listens for. */
+export const speechLocale = (): string => localeOf(speechLang());
+
+function remember(key: string, value: Lang): void {
   try {
-    localStorage.setItem(KEY, next);
+    localStorage.setItem(key, value);
   } catch {
     /* the choice simply will not outlive the session */
   }
+}
+
+export function setLang(next: Lang): void {
+  if (next === current) return;
+  current = next;
+  remember(KEY, next);
   for (const notify of listeners) notify();
 }
+
+export function setSpeechLang(next: Lang): void {
+  if (next === spoken) return;
+  spoken = next;
+  remember(SPEECH_KEY, next);
+  for (const notify of listeners) notify();
+}
+
+/** The next spoken language in the list, so one tap moves through them. */
+export const nextSpeechLang = (): Lang => {
+  const at = LANGUAGES.findIndex((l) => l.id === speechLang());
+  return LANGUAGES[(at + 1) % LANGUAGES.length].id;
+};
 
 function subscribe(onChange: () => void): () => void {
   listeners.add(onChange);
@@ -62,6 +98,7 @@ function subscribe(onChange: () => void): () => void {
 }
 
 export const useLang = (): Lang => useSyncExternalStore(subscribe, () => current, () => 'en');
+export const useSpeechLang = (): Lang => useSyncExternalStore(subscribe, speechLang, () => 'en');
 
 /* ------------------------------------------------------------------ */
 
@@ -161,8 +198,10 @@ const EN = {
   appearance: 'Appearance',
   theme_dark: 'Dark',
   theme_light: 'Light',
-  language: 'Language',
-  language_note: 'Used for what you read, and for what the microphone listens for.',
+  language: 'Interface language',
+  language_note: 'What you read. The language you speak is picked at the top of the main screen, next to search.',
+  speech_lang: 'Speaking {lang}',
+  speech_lang_now: 'Listening in {lang}',
   about: 'About',
   privacy_policy: 'Privacy policy',
   support: 'Support',
@@ -290,8 +329,10 @@ const FR: Record<Key, string> = {
   appearance: 'Apparence',
   theme_dark: 'Sombre',
   theme_light: 'Clair',
-  language: 'Langue',
-  language_note: 'Sert à l’affichage et à ce que le micro écoute.',
+  language: 'Langue de l’interface',
+  language_note: 'Ce que vous lisez. La langue parlée se choisit en haut de l’écran principal, à côté de la recherche.',
+  speech_lang: 'Je parle {lang}',
+  speech_lang_now: 'Écoute en {lang}',
   about: 'À propos',
   privacy_policy: 'Politique de confidentialité',
   support: 'Assistance',
@@ -417,8 +458,10 @@ const ZH: Record<Key, string> = {
   appearance: '外观',
   theme_dark: '深色',
   theme_light: '浅色',
-  language: '语言',
-  language_note: '用于界面文字，以及麦克风识别的语言。',
+  language: '界面语言',
+  language_note: '界面显示的语言。说话的语言在主屏幕顶部、搜索旁边选择。',
+  speech_lang: '说话语言：{lang}',
+  speech_lang_now: '正在用{lang}识别',
   about: '关于',
   privacy_policy: '隐私政策',
   support: '支持',

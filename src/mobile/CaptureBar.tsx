@@ -10,7 +10,7 @@ import { toast } from '@/store/toast';
 import { ui, useUi } from '@/store/ui';
 import { AiConsentSheet } from './AiConsentSheet';
 import { aiConsent, setAiConsent } from './aiConsent';
-import { localeOf, t } from './i18n';
+import { speechLocale, t } from './i18n';
 import { currentSpace, spaceOf } from './space';
 import { Sheet } from './Sheet';
 import { Waveform } from './Waveform';
@@ -59,8 +59,6 @@ export function CaptureBar() {
   const stopMeter = useRef<(() => void) | null>(null);
   const lastSound = useRef(0);
   const heard = useRef('');
-  /** Read per recording, so changing the language takes effect immediately. */
-  const speechLocale = () => localeOf();
   /** Explain the fallback once per session, not after every sentence. */
   const noticed = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);

@@ -1,4 +1,4 @@
-import { Search, Settings2, X } from 'lucide-react';
+import { Mic, Search, Settings2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Space, Task } from '@/domain/types';
 import { isOnDay, todayKey } from '@/lib/dates';
@@ -7,7 +7,7 @@ import { useWorkspace, ws } from '@/store/workspace';
 import { toast } from '@/store/toast';
 import { confirmAction, haptic, setStatusBarTheme } from '@/lib/native/bridge';
 import { CaptureBar } from './CaptureBar';
-import { greetingIn, t, useLang } from './i18n';
+import { greetingIn, LANGUAGES, nextSpeechLang, setSpeechLang, t, useLang, useSpeechLang } from './i18n';
 import { SettingsSheet } from './SettingsSheet';
 import { spaceOf, useView } from './space';
 import { AgendaList } from './AgendaList';
@@ -115,6 +115,7 @@ export function MobileApp() {
                   {open.length === 0 ? t('nothing_kept') : open.length === 1 ? t('thoughts_one') : t('thoughts_many', { n: open.length })}
                 </h1>
               </div>
+              <SpeechLangSwitch />
               <button
                 onClick={() => setQuery('')}
                 aria-label={t('search')}
@@ -203,6 +204,34 @@ export function MobileApp() {
       <ThoughtSheet taskId={openId} onClose={() => setOpenId(null)} />
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
+  );
+}
+
+/**
+ * The language you are about to speak, one tap from the microphone's screen.
+ *
+ * A tap moves to the next language rather than opening a list: with three of
+ * them, switching is at most two taps, and nothing covers the screen while you
+ * are about to talk. The microphone icon says which language this is about —
+ * the interface language lives in Settings and does not move with it.
+ */
+function SpeechLangSwitch() {
+  const spoken = useSpeechLang();
+  const language = LANGUAGES.find((l) => l.id === spoken)!;
+  return (
+    <button
+      onClick={() => {
+        const next = nextSpeechLang();
+        setSpeechLang(next);
+        haptic('light');
+        toast(t('speech_lang_now', { lang: LANGUAGES.find((l) => l.id === next)!.native }));
+      }}
+      aria-label={t('speech_lang', { lang: language.native })}
+      className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-line bg-sunk pr-3 pl-2.5 text-ink-2 transition-colors active:bg-wash-strong"
+    >
+      <Mic className="size-[14px] text-accent" strokeWidth={2.1} />
+      <span className="text-[13px] font-semibold tracking-[0.04em] tabular-nums">{language.short}</span>
+    </button>
   );
 }
 
