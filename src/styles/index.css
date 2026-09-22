@@ -45,6 +45,20 @@
   --color-tomorrow: #5a5fb5;
   --color-tomorrow-soft: #ecedf8;
 
+  /* The rest of the week, one hue per day after tomorrow. Chosen to stay
+     clear of the three colours that already mean something here: teal is
+     now, indigo is tomorrow, ember is important. */
+  --color-day-2: #8a4f86;
+  --color-day-2-soft: #f4ebf3;
+  --color-day-3: #6c7a2c;
+  --color-day-3-soft: #f0f3e3;
+  --color-day-4: #a26f1c;
+  --color-day-4-soft: #f8efdf;
+  --color-day-5: #2c7cad;
+  --color-day-5-soft: #e5f0f7;
+  --color-day-6: #b0507c;
+  --color-day-6-soft: #f8e8ef;
+
   --color-p-petrol: #2c7a78;
   --color-p-indigo: #4b58a3;
   --color-p-ember: #c0603e;
@@ -167,6 +181,17 @@
 
   --color-tomorrow: #a3a8ff;
   --color-tomorrow-soft: #1b1d33;
+
+  --color-day-2: #dca2d8;
+  --color-day-2-soft: #271b27;
+  --color-day-3: #c4d078;
+  --color-day-3-soft: #20231a;
+  --color-day-4: #eebf68;
+  --color-day-4-soft: #29221a;
+  --color-day-5: #8ec6ee;
+  --color-day-5-soft: #16222c;
+  --color-day-6: #f19ec4;
+  --color-day-6-soft: #2b1b23;
 
   --shadow-float: 0 0 0 1px rgb(255 255 255 / 0.06), 0 30px 70px -20px rgb(0 0 0 / 0.8);
   --shadow-sheet: 0 0 0 1px rgb(255 255 255 / 0.05), 0 10px 30px -14px rgb(0 0 0 / 0.7);

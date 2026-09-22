@@ -256,7 +256,9 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
                 URLQueryItem(name: "startDateTime", value: formatter.string(from: startOfDay)),
                 URLQueryItem(name: "endDateTime", value: formatter.string(from: endOfDay)),
                 URLQueryItem(name: "$orderby", value: "start/dateTime"),
-                URLQueryItem(name: "$top", value: "50"),
+                // A week of a busy calendar runs past fifty; Graph pages at the
+                // limit and the rest would silently not appear.
+                URLQueryItem(name: "$top", value: "250"),
                 URLQueryItem(name: "$select", value: "subject,start,end,isAllDay,showAs")
             ]
 
