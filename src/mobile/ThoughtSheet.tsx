@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Bell, BellOff, CalendarPlus, Check, Flag, Mail, Repeat, RotateCcw, Share2, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, Bell, BellOff, CalendarPlus, Check, Flag, Mail, Pencil, Repeat, RotateCcw, Share2, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { haptic } from '@/lib/native/bridge';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
@@ -19,9 +19,13 @@ import { addToCalendar, openEmail, reminderChoices, setReminder, shareThought } 
 export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClose: () => void }) {
   const task = useWorkspace((s) => (taskId ? s.tasks[taskId] : undefined));
   const [remindOpen, setRemindOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
-    if (!taskId) setRemindOpen(false);
+    if (!taskId) {
+      setRemindOpen(false);
+      setEditOpen(false);
+    }
   }, [taskId]);
 
   if (!task) return null;
@@ -36,7 +40,7 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
 
   return (
     <>
-      <Sheet open={!!taskId && !remindOpen} onClose={onClose} label={task.title}>
+      <Sheet open={!!taskId && !remindOpen && !editOpen} onClose={onClose} label={task.title}>
         <ThoughtTitle key={task.id} id={task.id} title={task.title} />
         <p className="px-6 pt-1 pb-4 text-[13px] text-ink-4">{t('captured_at', { when: relativeIn(task.createdAt) })}</p>
 
@@ -58,6 +62,7 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
             toast(important ? t('unmarked_important') : t('marked_important'));
           })}
         />
+        <SheetAction icon={Pencil} label={t('act_edit')} onClick={() => setEditOpen(true)} />
         <SheetAction
           icon={task.reminderAt ? BellOff : Bell}
           label={task.reminderAt ? t('act_change_remind') : t('act_remind')}
@@ -103,6 +108,15 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
         />
       </Sheet>
 
+      <EditSheet
+        open={editOpen}
+        task={task}
+        onClose={() => {
+          setEditOpen(false);
+          onClose();
+        }}
+      />
+
       <RemindSheet
         open={remindOpen}
         task={task}
@@ -139,6 +153,111 @@ function ThoughtTitle({ id, title }: { id: string; title: string }) {
       onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
       className="w-full resize-none bg-transparent px-6 pt-1 text-[21px] leading-[29px] font-medium tracking-[-0.015em] text-ink outline-none"
     />
+  );
+}
+
+/**
+ * Change the words.
+ *
+ * Dictation gets a name wrong, or the thought turns out to be about something
+ * slightly different. The thought's own line has always been editable where it
+ * sits, but nothing said so; this is the same edit with a door on it — Cancel
+ * and Save where iOS puts them, and the keyboard already open.
+ */
+function EditSheet({
+  open,
+  task,
+  onClose,
+}: {
+  open: boolean;
+  task: { id: string; title: string; notes: string };
+  onClose: () => void;
+}) {
+  const [title, setTitle] = useState(task.title);
+  const [notes, setNotes] = useState(task.notes);
+  const field = useRef<HTMLTextAreaElement>(null);
+
+  // Start from what the thought says now, every time the sheet opens.
+  useEffect(() => {
+    if (!open) return;
+    setTitle(task.title);
+    setNotes(task.notes);
+    // The caret goes to the end: people come here to correct the tail of a
+    // sentence far more often than the head of it.
+    const id = setTimeout(() => {
+      const el = field.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    }, 120);
+    return () => clearTimeout(id);
+  }, [open, task.title, task.notes]);
+
+  const grow = (el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    el.style.height = '0px';
+    el.style.height = `${Math.min(el.scrollHeight, 220)}px`;
+  };
+
+  const clean = title.trim();
+  const changed = clean !== task.title.trim() || notes.trim() !== task.notes.trim();
+
+  const save = () => {
+    if (!clean) return;
+    const undo = ws().transact(() => {
+      ws().renameTask(task.id, clean);
+      ws().updateTask(task.id, { notes: notes.trim() });
+    });
+    haptic('success');
+    onClose();
+    toast(t('edit_saved'), { action: { label: t('undo'), run: undo } });
+  };
+
+  return (
+    <Sheet open={open} onClose={onClose} label={t('act_edit')}>
+      <div className="flex items-center gap-3 px-6 pt-1 pb-3">
+        <button onClick={onClose} className="-ml-2 h-11 shrink-0 px-2 text-[17px] text-ink-3 active:opacity-60">
+          {t('cancel')}
+        </button>
+        <h2 className="min-w-0 flex-1 truncate text-center text-[17px] font-semibold text-ink">{t('act_edit')}</h2>
+        <button
+          onClick={save}
+          disabled={!clean || !changed}
+          className="-mr-2 h-11 shrink-0 px-2 text-[17px] font-semibold text-accent transition-opacity active:opacity-60 disabled:opacity-30"
+        >
+          {t('save')}
+        </button>
+      </div>
+
+      <div className="px-5 pb-4">
+        <textarea
+          ref={(el) => {
+            field.current = el;
+            grow(el);
+          }}
+          value={title}
+          rows={1}
+          aria-label={t('a11y_thought')}
+          onChange={(e) => {
+            setTitle(e.target.value.replace(/\n/g, ' '));
+            grow(e.currentTarget);
+          }}
+          className="w-full resize-none rounded-[16px] border border-line bg-sunk px-4 py-3 text-[17px] leading-[24px] text-ink outline-none focus:border-accent/50"
+        />
+        <textarea
+          value={notes}
+          rows={2}
+          placeholder={t('edit_note_placeholder')}
+          aria-label={t('edit_note_placeholder')}
+          onChange={(e) => {
+            setNotes(e.target.value);
+            grow(e.currentTarget);
+          }}
+          ref={grow}
+          className="mt-2.5 w-full resize-none rounded-[16px] border border-line bg-sunk px-4 py-3 text-[15px] leading-[22px] text-ink-2 outline-none placeholder:text-ink-4 focus:border-accent/50"
+        />
+      </div>
+    </Sheet>
   );
 }
 

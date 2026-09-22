@@ -142,6 +142,10 @@ const EN = {
   capture: 'Capture',
   type_placeholder: 'What’s on your mind?',
   cancel: 'Cancel',
+  save: 'Save',
+  act_edit: 'Edit',
+  edit_saved: 'Saved',
+  edit_note_placeholder: 'Note (optional)',
   done_sheet: 'Done',
 
   captured: 'Captured',
@@ -277,6 +281,10 @@ const FR: Record<Key, string> = {
   capture: 'Noter',
   type_placeholder: 'À quoi pensez-vous ?',
   cancel: 'Annuler',
+  save: 'Enregistrer',
+  act_edit: 'Modifier',
+  edit_saved: 'Enregistré',
+  edit_note_placeholder: 'Note (facultatif)',
   done_sheet: 'Terminé',
 
   captured: 'Noté',
@@ -409,6 +417,10 @@ const ZH: Record<Key, string> = {
   capture: '记录',
   type_placeholder: '在想什么？',
   cancel: '取消',
+  save: '保存',
+  act_edit: '编辑',
+  edit_saved: '已保存',
+  edit_note_placeholder: '备注（可选）',
   done_sheet: '完成',
 
   captured: '已记录',
