@@ -1,11 +1,11 @@
-import { Bell, Check, Ellipsis } from 'lucide-react';
+import { Bell, Check, Ellipsis, Repeat } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 import type { Task } from '@/domain/types';
 import { isFresh } from '@/lib/fresh';
 import { cn } from '@/lib/platform';
 import { registerCompletionAnimator, toggleComplete } from '@/actions/taskActions';
 import { useSwipe } from '@/hooks/useSwipe';
-import { relativeIn, t, timeIn } from './i18n';
+import { relativeIn, repeatLabel, t, timeIn } from './i18n';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -115,15 +115,22 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
             >
               {task.title}
             </span>
-            {task.reminderAt && !done && (
-              <span
-                className={cn(
-                  'mt-1.5 flex items-center gap-1.5 text-[11px] font-medium tracking-[0.045em] uppercase',
-                  overdue ? 'text-ember' : 'text-accent',
+            {!done && (task.reminderAt || task.recurrence) && (
+              <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium tracking-[0.045em] uppercase">
+                {task.reminderAt && (
+                  <span className={cn('flex items-center gap-1.5', overdue ? 'text-ember' : 'text-accent')}>
+                    <Bell className="size-3" strokeWidth={2.1} />
+                    {reminderLabel(task.reminderAt)}
+                  </span>
                 )}
-              >
-                <Bell className="size-3" strokeWidth={2.1} />
-                {reminderLabel(task.reminderAt)}
+                {/* A repeating thought comes back when it is completed. Without
+                    saying so, that looks like a task that refuses to go away. */}
+                {task.recurrence && (
+                  <span className="flex items-center gap-1.5 text-ink-3">
+                    <Repeat className="size-3" strokeWidth={2.1} />
+                    {repeatLabel(task.recurrence.freq)}
+                  </span>
+                )}
               </span>
             )}
           </button>

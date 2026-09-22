@@ -166,6 +166,14 @@ const EN = {
   support: 'Support',
 
   // Spoken by VoiceOver, never shown.
+  repeat_daily: 'Every day',
+  repeat_weekdays: 'Weekdays',
+  repeat_weekly: 'Every week',
+  repeat_monthly: 'Every month',
+  repeat_yearly: 'Every year',
+  act_stop_repeat: 'Stop repeating',
+  stopped_repeat: 'No longer repeats',
+
   a11y_views: 'Show',
   a11y_complete: 'Mark done: {title}',
   a11y_reopen: 'Mark not done: {title}',
@@ -284,6 +292,14 @@ const FR: Record<Key, string> = {
   privacy_policy: 'Politique de confidentialité',
   support: 'Assistance',
 
+  repeat_daily: 'Chaque jour',
+  repeat_weekdays: 'En semaine',
+  repeat_weekly: 'Chaque semaine',
+  repeat_monthly: 'Chaque mois',
+  repeat_yearly: 'Chaque année',
+  act_stop_repeat: 'Ne plus répéter',
+  stopped_repeat: 'Ne se répète plus',
+
   a11y_views: 'Afficher',
   a11y_complete: 'Marquer comme terminé : {title}',
   a11y_reopen: 'Marquer comme non terminé : {title}',
@@ -401,6 +417,14 @@ const ZH: Record<Key, string> = {
   privacy_policy: '隐私政策',
   support: '支持',
 
+  repeat_daily: '每天',
+  repeat_weekdays: '工作日',
+  repeat_weekly: '每周',
+  repeat_monthly: '每月',
+  repeat_yearly: '每年',
+  act_stop_repeat: '停止重复',
+  stopped_repeat: '已停止重复',
+
   a11y_views: '显示',
   a11y_complete: '标记为完成：{title}',
   a11y_reopen: '标记为未完成：{title}',
@@ -445,6 +469,12 @@ export function relativeIn(iso: string, now = new Date()): string {
   const hours = Math.round(mins / 60);
   if (Math.abs(hours) < 24) return fmt.format(hours, 'hour');
   return fmt.format(Math.round(hours / 24), 'day');
+}
+
+/** How often a thought comes back, in the chosen language. */
+export function repeatLabel(freq: 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'yearly'): string {
+  const key = ({ daily: 'repeat_daily', weekdays: 'repeat_weekdays', weekly: 'repeat_weekly', monthly: 'repeat_monthly', yearly: 'repeat_yearly' } as const)[freq];
+  return t(key);
 }
 
 export const timeIn = (d: Date): string => d.toLocaleTimeString(localeOf(), { hour: '2-digit', minute: '2-digit' });

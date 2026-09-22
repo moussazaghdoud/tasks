@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Bell, BellOff, CalendarPlus, Check, Flag, Mail, RotateCcw, Share2, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, Bell, BellOff, CalendarPlus, Check, Flag, Mail, Repeat, RotateCcw, Share2, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { haptic } from '@/lib/native/bridge';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
@@ -7,7 +7,7 @@ import { toast } from '@/store/toast';
 import { useWorkspace, ws } from '@/store/workspace';
 import type { Space } from '@/domain/types';
 import { Sheet, SheetAction, SheetDivider } from './Sheet';
-import { dayTimeIn, relativeIn, t, timeIn } from './i18n';
+import { dayTimeIn, relativeIn, repeatLabel, t, timeIn } from './i18n';
 import { spaceOf } from './space';
 import { addToCalendar, openEmail, reminderChoices, setReminder, shareThought } from './thoughtActions';
 
@@ -64,6 +64,18 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
           detail={task.reminderAt ? dayTimeIn(new Date(task.reminderAt)) : undefined}
           onClick={() => setRemindOpen(true)}
         />
+        {task.recurrence && (
+          <SheetAction
+            icon={Repeat}
+            label={t('act_stop_repeat')}
+            detail={repeatLabel(task.recurrence.freq)}
+            onClick={act(() => {
+              const undo = ws().transact(() => ws().setRecurrence([task.id], null));
+              haptic('light');
+              toast(t('stopped_repeat'), { action: { label: t('undo'), run: undo } });
+            })}
+          />
+        )}
         <SheetAction
           icon={ArrowLeftRight}
           label={spaceOf(task) === 'business' ? t('act_move_private') : t('act_move_business')}
