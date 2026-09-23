@@ -24,10 +24,19 @@ export const LANGUAGES: Array<{ id: Lang; native: string; short: string; locale:
   { id: 'zh', native: '简体中文', short: '中文', locale: 'zh-CN' },
 ];
 
+/**
+ * The spoken language can also be left to the app, which listens in all three
+ * at once and keeps whichever transcript reads like the language it was
+ * transcribed in. Apple's recogniser must be told a language before it hears
+ * anything, so "automatic" is a race between three of them, not a setting.
+ */
+export type SpokenChoice = Lang | 'auto';
+
 const KEY = 'hence.lang';
 const SPEECH_KEY = 'hence.speech';
 
 const isLang = (value: unknown): value is Lang => value === 'en' || value === 'fr' || value === 'zh';
+const isChoice = (value: unknown): value is SpokenChoice => isLang(value) || value === 'auto';
 
 function stored(key: string): Lang | null {
   try {
@@ -35,6 +44,15 @@ function stored(key: string): Lang | null {
     return isLang(value) ? value : null;
   } catch {
     /* private browsing */
+    return null;
+  }
+}
+
+function storedChoice(): SpokenChoice | null {
+  try {
+    const value = localStorage.getItem(SPEECH_KEY);
+    return isChoice(value) ? value : null;
+  } catch {
     return null;
   }
 }
@@ -49,12 +67,18 @@ function detect(): Lang {
 }
 
 let current: Lang = detect();
-/** Null until someone picks a spoken language: until then it follows the interface. */
-let spoken: Lang | null = stored(SPEECH_KEY);
+/**
+ * Automatic until someone says otherwise. Listening in three languages is
+ * what most people want without knowing to ask for it, and the tap that
+ * pins one language is there the moment it guesses wrong.
+ */
+let spoken: SpokenChoice = storedChoice() ?? 'auto';
 const listeners = new Set<() => void>();
 
 export const currentLang = (): Lang => current;
-export const speechLang = (): Lang => spoken ?? current;
+export const spokenChoice = (): SpokenChoice => spoken;
+/** The language the microphone leads with; under `auto`, the interface's. */
+export const speechLang = (): Lang => (spoken === 'auto' ? current : spoken);
 
 /** BCP-47 tag, for `Intl` and for the speech recogniser. */
 export const localeOf = (lang: Lang = current): string => LANGUAGES.find((l) => l.id === lang)!.locale;
@@ -62,7 +86,17 @@ export const localeOf = (lang: Lang = current): string => LANGUAGES.find((l) => 
 /** What the microphone listens for. */
 export const speechLocale = (): string => localeOf(speechLang());
 
-function remember(key: string, value: Lang): void {
+/**
+ * Every language to listen in, best guess first. One of them under a pinned
+ * choice; all three, led by the interface's, when it is left automatic.
+ */
+export function speechLocales(): string[] {
+  if (spoken !== 'auto') return [localeOf(spoken)];
+  const lead = localeOf(current);
+  return [lead, ...LANGUAGES.map((l) => l.locale).filter((l) => l !== lead)];
+}
+
+function remember(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
   } catch {
@@ -77,17 +111,19 @@ export function setLang(next: Lang): void {
   for (const notify of listeners) notify();
 }
 
-export function setSpeechLang(next: Lang): void {
+export function setSpeechLang(next: SpokenChoice): void {
   if (next === spoken) return;
   spoken = next;
   remember(SPEECH_KEY, next);
   for (const notify of listeners) notify();
 }
 
-/** The next spoken language in the list, so one tap moves through them. */
-export const nextSpeechLang = (): Lang => {
-  const at = LANGUAGES.findIndex((l) => l.id === speechLang());
-  return LANGUAGES[(at + 1) % LANGUAGES.length].id;
+/** Automatic, then each language in turn, so one tap moves through them. */
+const CYCLE: SpokenChoice[] = ['auto', ...LANGUAGES.map((l) => l.id)];
+
+export const nextSpeechLang = (): SpokenChoice => {
+  const at = CYCLE.indexOf(spoken);
+  return CYCLE[(at + 1) % CYCLE.length];
 };
 
 function subscribe(onChange: () => void): () => void {
@@ -98,7 +134,7 @@ function subscribe(onChange: () => void): () => void {
 }
 
 export const useLang = (): Lang => useSyncExternalStore(subscribe, () => current, () => 'en');
-export const useSpeechLang = (): Lang => useSyncExternalStore(subscribe, speechLang, () => 'en');
+export const useSpeechLang = (): SpokenChoice => useSyncExternalStore(subscribe, spokenChoice, () => 'auto');
 
 /* ------------------------------------------------------------------ */
 
@@ -210,6 +246,9 @@ const EN = {
   language: 'Interface language',
   language_note: 'What you read. The language you speak is picked at the top of the main screen, next to search.',
   speech_lang: 'Speaking {lang}',
+  speech_auto: 'any language',
+  speech_auto_short: 'AUTO',
+  speech_auto_now: 'Listening in any language',
   speech_lang_now: 'Listening in {lang}',
   about: 'About',
   privacy_policy: 'Privacy policy',
@@ -350,6 +389,9 @@ const FR: Record<Key, string> = {
   language: 'Langue de l’interface',
   language_note: 'Ce que vous lisez. La langue parlée se choisit en haut de l’écran principal, à côté de la recherche.',
   speech_lang: 'Je parle {lang}',
+  speech_auto: 'n’importe quelle langue',
+  speech_auto_short: 'AUTO',
+  speech_auto_now: 'Écoute dans toutes les langues',
   speech_lang_now: 'Écoute en {lang}',
   about: 'À propos',
   privacy_policy: 'Politique de confidentialité',
@@ -488,6 +530,9 @@ const ZH: Record<Key, string> = {
   language: '界面语言',
   language_note: '界面显示的语言。说话的语言在主屏幕顶部、搜索旁边选择。',
   speech_lang: '说话语言：{lang}',
+  speech_auto: '任意语言',
+  speech_auto_short: '自动',
+  speech_auto_now: '自动识别语言',
   speech_lang_now: '正在用{lang}识别',
   about: '关于',
   privacy_policy: '隐私政策',

@@ -76,14 +76,31 @@ describe('spoken language', () => {
     expect(i18n.speechLocale()).toBe('en-US');
   });
 
-  it('cycles through every language and back to the first', async () => {
+  it('cycles from automatic through every language and back', async () => {
     const i18n = await fresh();
     const seen: string[] = [];
-    for (let i = 0; i < i18n.LANGUAGES.length; i++) {
+    for (let i = 0; i < i18n.LANGUAGES.length + 1; i++) {
       const next = i18n.nextSpeechLang();
       i18n.setSpeechLang(next);
       seen.push(next);
     }
-    expect(seen).toEqual(['fr', 'zh', 'en']);
+    expect(seen).toEqual(['en', 'fr', 'zh', 'auto']);
+  });
+
+  it('listens in every language when automatic, leading with the interface', async () => {
+    const i18n = await fresh();
+    // Fresh means automatic: nobody has pinned a language yet.
+    expect(i18n.spokenChoice()).toBe('auto');
+    expect(i18n.speechLocales()).toEqual(['en-US', 'fr-FR', 'zh-CN']);
+    i18n.setLang('fr');
+    // The interface language leads, because it is the likeliest one, and its
+    // words are what appear on screen while someone speaks.
+    expect(i18n.speechLocales()).toEqual(['fr-FR', 'en-US', 'zh-CN']);
+  });
+
+  it('listens in one language only when one is pinned', async () => {
+    const i18n = await fresh();
+    i18n.setSpeechLang('zh');
+    expect(i18n.speechLocales()).toEqual(['zh-CN']);
   });
 });

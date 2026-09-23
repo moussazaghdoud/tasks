@@ -12,6 +12,8 @@ export interface SpeechCallbacks {
   /** Called on every update with the confirmed text and the in-flight guess. */
   onText: (finalText: string, interim: string) => void;
   onError: (code: SpeechErrorCode) => void;
+  /** Which language the words came back in, when several were listening. */
+  onLanguage?: (locale: string) => void;
   /** Recognition stopped (user stop, silence, or the engine ending the session). */
   onEnd: () => void;
 }

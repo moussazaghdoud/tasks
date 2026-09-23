@@ -1,6 +1,7 @@
 import AVFoundation
 import Capacitor
 import Foundation
+import NaturalLanguage
 import Speech
 
 /**
@@ -11,8 +12,14 @@ import Speech
  more accurate, handles French properly, and also gives us the microphone level
  used by the listening animation.
 
+ It can also listen in several languages at once: one microphone feeding one
+ recogniser per language, and at the end the transcript that actually reads
+ like the language it was transcribed in wins. Apple's recogniser has to be
+ told a language before it hears anything, so this race is the only way to let
+ someone speak French and then English without reaching for a setting.
+
  Events emitted to the web layer:
-   - `result` { text, isFinal }  partial and final transcripts
+   - `result` { text, isFinal, locale }  partial and final transcripts
    - `level`  { level }          0–1 microphone level, throttled
    - `error`  { code }           permission | unavailable | audio | recognition
    - `end`    {}                 recognition finished or was stopped
@@ -29,11 +36,28 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "stop", returnType: CAPPluginReturnPromise)
     ]
 
+    /// One language's attempt at the same audio.
+    private final class Track {
+        let locale: String
+        let request: SFSpeechAudioBufferRecognitionRequest
+        var task: SFSpeechRecognitionTask?
+        var text = ""
+        /// Apple's own confidence in the words, averaged over the utterance.
+        var confidence = 0.0
+        var finished = false
+
+        init(locale: String, request: SFSpeechAudioBufferRecognitionRequest) {
+            self.locale = locale
+            self.request = request
+        }
+    }
+
     private let audioEngine = AVAudioEngine()
-    private var recognizer: SFSpeechRecognizer?
-    private var request: SFSpeechAudioBufferRecognitionRequest?
-    private var task: SFSpeechRecognitionTask?
+    /// The first track is the language the interface is set to: its partial
+    /// results are what appears on screen while someone speaks.
+    private var tracks: [Track] = []
     private var listening = false
+    private var deciding = false
     private var lastLevelAt = Date.distantPast
 
     // MARK: - Availability & permissions
@@ -108,44 +132,62 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
 
-        let identifier = call.getString("locale") ?? "en-US"
         let partial = call.getBool("partialResults") ?? true
         let onDevice = call.getBool("onDevice") ?? false
 
-        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: identifier)), recognizer.isAvailable else {
-            call.reject("Speech recognition unavailable for \(identifier)", "unavailable")
+        // One language, or several to race. The first is the one whose words
+        // appear live on screen.
+        var identifiers = call.getArray("locales", String.self) ?? []
+        if identifiers.isEmpty { identifiers = [call.getString("locale") ?? "en-US"] }
+
+        // Names are where dictation fails, and they are most of what gets
+        // spoken here: people, projects, companies. Handing the recogniser the
+        // vocabulary it is about to hear is what turns "Terry" into "Thierry".
+        let contextual = call.getArray("contextualStrings", String.self) ?? []
+
+        var recognizers: [(String, SFSpeechRecognizer)] = []
+        for identifier in identifiers {
+            guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: identifier)),
+                  recognizer.isAvailable else { continue }
+            recognizers.append((identifier, recognizer))
+        }
+        guard !recognizers.isEmpty else {
+            call.reject("Speech recognition unavailable for \(identifiers.joined(separator: ", "))", "unavailable")
             return
         }
 
         // A second start (e.g. the user switched language) replaces the first.
         teardown(notifyEnd: false)
 
-        let request = SFSpeechAudioBufferRecognitionRequest()
-        request.shouldReportPartialResults = partial
+        var started: [Track] = []
+        for (identifier, recognizer) in recognizers {
+            let request = SFSpeechAudioBufferRecognitionRequest()
+            request.shouldReportPartialResults = partial
 
-        // Left alone, `requiresOnDeviceRecognition` stays false, which is
-        // deliberate: Apple's server model is markedly more accurate than the
-        // offline one, and accuracy is the whole point of this screen.
-        if onDevice, recognizer.supportsOnDeviceRecognition {
-            request.requiresOnDeviceRecognition = true
+            // Left alone, `requiresOnDeviceRecognition` stays false, which is
+            // deliberate: Apple's server model is markedly more accurate than
+            // the offline one, and accuracy is the whole point of this screen.
+            if onDevice, recognizer.supportsOnDeviceRecognition {
+                request.requiresOnDeviceRecognition = true
+            }
+
+            if !contextual.isEmpty {
+                request.contextualStrings = Array(contextual.prefix(100))
+            }
+
+            // Short spoken notes, not a conversation or a search query.
+            request.taskHint = .dictation
+
+            // Sentence breaks make the difference between one run-on thought
+            // and two separate ones once Claude reads it.
+            if #available(iOS 16.0, *) {
+                request.addsPunctuation = true
+            }
+
+            started.append(Track(locale: identifier, request: request))
         }
 
-        // Names are where dictation fails, and they are most of what gets
-        // spoken here: people, projects, companies. Handing the recogniser the
-        // vocabulary it is about to hear is what turns "Terry" into "Thierry".
-        let contextual = call.getArray("contextualStrings", String.self) ?? []
-        if !contextual.isEmpty {
-            request.contextualStrings = Array(contextual.prefix(100))
-        }
-
-        // Short spoken notes, not a conversation or a search query.
-        request.taskHint = .dictation
-
-        // Sentence breaks make the difference between one run-on thought and
-        // two separate ones once Claude reads it.
-        if #available(iOS 16.0, *) {
-            request.addsPunctuation = true
-        }
+        tracks = started
 
         do {
             let session = AVAudioSession.sharedInstance()
@@ -165,29 +207,46 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
 
         input.removeTap(onBus: 0)
         input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
-            request.append(buffer)
-            self?.emitLevel(from: buffer)
+            guard let self = self else { return }
+            // The same audio to every language listening to it.
+            for track in self.tracks { track.request.append(buffer) }
+            self.emitLevel(from: buffer)
         }
 
-        self.recognizer = recognizer
-        self.request = request
-        self.task = recognizer.recognitionTask(with: request) { [weak self] result, error in
-            guard let self = self else { return }
-            if let result = result {
-                self.notifyListeners("result", data: [
-                    "text": result.bestTranscription.formattedString,
-                    "isFinal": result.isFinal
-                ])
-                if result.isFinal { self.teardown(notifyEnd: true) }
-            }
-            if let error = error as NSError? {
-                // Ending the audio always finishes the task with an error, so
-                // most of these are ordinary end-of-recording noise rather than
-                // a failure worth showing the user.
-                if self.listening, let code = Self.reportableError(error) {
-                    self.notifyListeners("error", data: ["code": code])
+        for (index, pair) in recognizers.enumerated() {
+            let track = tracks[index]
+            let leading = index == 0
+            track.task = pair.1.recognitionTask(with: track.request) { [weak self] result, error in
+                guard let self = self else { return }
+                if let result = result {
+                    track.text = result.bestTranscription.formattedString
+                    track.confidence = Self.averageConfidence(result.bestTranscription)
+                    // Only the leading language is shown while speaking:
+                    // three transcripts fighting over one line would be
+                    // unreadable, and the choice is made at the end anyway.
+                    if leading && !result.isFinal {
+                        self.notifyListeners("result", data: [
+                            "text": track.text,
+                            "isFinal": false,
+                            "locale": track.locale
+                        ])
+                    }
+                    if result.isFinal {
+                        track.finished = true
+                        self.decideIfReady()
+                    }
                 }
-                self.teardown(notifyEnd: true)
+                if let error = error as NSError? {
+                    track.finished = true
+                    // Ending the audio always finishes the task with an error,
+                    // so most of these are ordinary end-of-recording noise
+                    // rather than a failure worth showing the user.
+                    if leading, self.listening, track.text.isEmpty,
+                       let code = Self.reportableError(error) {
+                        self.notifyListeners("error", data: ["code": code])
+                    }
+                    self.decideIfReady()
+                }
             }
         }
 
@@ -205,11 +264,92 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func stop(_ call: CAPPluginCall) {
-        // End the audio so the recognizer can deliver its final transcript.
-        request?.endAudio()
+        // End the audio so every recognizer can deliver its final transcript.
+        for track in tracks { track.request.endAudio() }
         audioEngine.inputNode.removeTap(onBus: 0)
         if audioEngine.isRunning { audioEngine.stop() }
         call.resolve()
+    }
+
+    // MARK: - Choosing between languages
+
+    /// Decide once every language has answered — or once the quick ones have
+    /// and the rest have had their moment. A language whose recogniser hangs
+    /// must not hold the thought hostage.
+    private func decideIfReady() {
+        DispatchQueue.main.async {
+            guard self.listening else { return }
+            // Everyone has answered: no reason to wait out the grace period.
+            if self.tracks.allSatisfy({ $0.finished }) {
+                self.decide()
+                return
+            }
+            guard !self.deciding else { return }
+            self.deciding = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+                self.deciding = false
+                if self.listening { self.decide() }
+            }
+        }
+    }
+
+    private func decide() {
+        guard listening else { return }
+        let winner = Self.pick(from: tracks)
+        if let winner = winner, !winner.text.isEmpty {
+            notifyListeners("result", data: [
+                "text": winner.text,
+                "isFinal": true,
+                "locale": winner.locale
+            ])
+        }
+        teardown(notifyEnd: true)
+    }
+
+    /// The transcript that reads like the language it was transcribed in.
+    ///
+    /// Confidence alone does not work: a French sentence run through the
+    /// English recogniser comes back as confident nonsense. Apple's language
+    /// detector, asked how English the English attempt looks, separates them —
+    /// and where it cannot tell, the language on screen keeps its place.
+    private static func pick(from tracks: [Track]) -> Track? {
+        let spoken = tracks.filter { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty }
+        guard let leading = tracks.first else { return nil }
+        guard spoken.count > 1 else { return spoken.first ?? leading }
+
+        var best: (track: Track, score: Double)?
+        for track in spoken {
+            let match = languageScore(track.text, locale: track.locale)
+            // The match decides; confidence only separates near-ties.
+            let score = match + track.confidence * 0.15
+            if best == nil || score > best!.score { best = (track, score) }
+        }
+        guard let winner = best else { return leading }
+
+        // Too short or too odd to judge — "ok", a single name — and the
+        // language the person is reading the app in is the better guess.
+        if winner.score < 0.55, !leading.text.isEmpty { return leading }
+        return winner.track
+    }
+
+    /// How much this text looks like that language, from 0 to 1.
+    private static func languageScore(_ text: String, locale: String) -> Double {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > 1 else { return 0 }
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(trimmed)
+        let code = String(locale.prefix(2)).lowercased()
+        var best = 0.0
+        for (language, probability) in recognizer.languageHypotheses(withMaximum: 6) {
+            if language.rawValue.lowercased().hasPrefix(code) { best = max(best, probability) }
+        }
+        return best
+    }
+
+    private static func averageConfidence(_ transcription: SFTranscription) -> Double {
+        let segments = transcription.segments.filter { $0.confidence > 0 }
+        guard !segments.isEmpty else { return 0 }
+        return Double(segments.reduce(0) { $0 + $1.confidence }) / Double(segments.count)
     }
 
     // MARK: - Interruptions
@@ -246,14 +386,14 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
     private func finishEarly() {
         DispatchQueue.main.async {
             guard self.listening else { return }
-            self.request?.endAudio()
+            for track in self.tracks { track.request.endAudio() }
             self.audioEngine.inputNode.removeTap(onBus: 0)
             if self.audioEngine.isRunning { self.audioEngine.stop() }
 
             // If the recogniser never answers after an interruption, still hand
             // the screen back rather than leave it listening to nothing.
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                if self.listening { self.teardown(notifyEnd: true) }
+                if self.listening { self.decide() }
             }
         }
     }
@@ -278,12 +418,15 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
     private func teardown(notifyEnd: Bool) {
         let wasListening = listening
         listening = false
+        deciding = false
         audioEngine.inputNode.removeTap(onBus: 0)
         if audioEngine.isRunning { audioEngine.stop() }
-        request?.endAudio()
-        task?.cancel()
-        task = nil
-        request = nil
+        for track in tracks {
+            track.request.endAudio()
+            track.task?.cancel()
+            track.task = nil
+        }
+        tracks = []
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         if notifyEnd && wasListening { notifyListeners("end", data: [:]) }
     }

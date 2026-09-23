@@ -7,7 +7,16 @@ import { useWorkspace, ws } from '@/store/workspace';
 import { toast } from '@/store/toast';
 import { confirmAction, haptic, setStatusBarTheme } from '@/lib/native/bridge';
 import { CaptureBar } from './CaptureBar';
-import { greetingIn, LANGUAGES, nextSpeechLang, setSpeechLang, t, useLang, useSpeechLang } from './i18n';
+import {
+  greetingIn,
+  LANGUAGES,
+  nextSpeechLang,
+  setSpeechLang,
+  t,
+  useLang,
+  useSpeechLang,
+  type SpokenChoice,
+} from './i18n';
 import { SettingsSheet } from './SettingsSheet';
 import { setView, spaceOf, useView } from './space';
 import { AgendaList } from './AgendaList';
@@ -246,20 +255,23 @@ const meetingCount = (n: number): string =>
  */
 function SpeechLangSwitch() {
   const spoken = useSpeechLang();
-  const language = LANGUAGES.find((l) => l.id === spoken)!;
+  const name = (choice: SpokenChoice) =>
+    choice === 'auto' ? t('speech_auto') : LANGUAGES.find((l) => l.id === choice)!.native;
+  const short = spoken === 'auto' ? t('speech_auto_short') : LANGUAGES.find((l) => l.id === spoken)!.short;
+
   return (
     <button
       onClick={() => {
         const next = nextSpeechLang();
         setSpeechLang(next);
         haptic('light');
-        toast(t('speech_lang_now', { lang: LANGUAGES.find((l) => l.id === next)!.native }));
+        toast(next === 'auto' ? t('speech_auto_now') : t('speech_lang_now', { lang: name(next) }));
       }}
-      aria-label={t('speech_lang', { lang: language.native })}
+      aria-label={t('speech_lang', { lang: name(spoken) })}
       className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-line bg-sunk pr-3 pl-2.5 text-ink-2 transition-colors active:bg-wash-strong"
     >
-      <Mic className="size-[14px] text-accent" strokeWidth={2.1} />
-      <span className="text-[13px] font-semibold tracking-[0.04em] tabular-nums">{language.short}</span>
+      <Mic className={cn('size-[14px]', spoken === 'auto' ? 'text-ink-3' : 'text-accent')} strokeWidth={2.1} />
+      <span className="text-[13px] font-semibold tracking-[0.04em] tabular-nums">{short}</span>
     </button>
   );
 }

@@ -14,9 +14,16 @@ interface SpeechPlugin {
   available(options: { locale: string }): Promise<{ available: boolean; onDevice: boolean }>;
   checkPermissions(): Promise<{ speech: string; microphone: string }>;
   requestPermissions(): Promise<{ speech: string; microphone: string }>;
-  start(options: { locale: string; partialResults: boolean; onDevice?: boolean; contextualStrings?: string[] }): Promise<void>;
+  start(options: {
+    locale: string;
+    /** Several languages to race on the same audio; the first leads. */
+    locales?: string[];
+    partialResults: boolean;
+    onDevice?: boolean;
+    contextualStrings?: string[];
+  }): Promise<void>;
   stop(): Promise<void>;
-  addListener(event: 'result', fn: (e: { text: string; isFinal: boolean }) => void): Promise<PluginListenerHandle>;
+  addListener(event: 'result', fn: (e: { text: string; isFinal: boolean; locale?: string }) => void): Promise<PluginListenerHandle>;
   addListener(event: 'level', fn: (e: { level: number }) => void): Promise<PluginListenerHandle>;
   addListener(event: 'error', fn: (e: { code: string }) => void): Promise<PluginListenerHandle>;
   addListener(event: 'end', fn: () => void): Promise<PluginListenerHandle>;
@@ -43,7 +50,8 @@ export function onNativeLevel(fn: ((level: number) => void) | null) {
   levelListener = fn;
 }
 
-export function startNativeSpeech(lang: string, cb: SpeechCallbacks): SpeechSession {
+export function startNativeSpeech(langs: string[], cb: SpeechCallbacks): SpeechSession {
+  const lang = langs[0];
   const handles: PluginListenerHandle[] = [];
   let finalText = '';
   let stopped = false;
@@ -67,10 +75,11 @@ export function startNativeSpeech(lang: string, cb: SpeechCallbacks): SpeechSess
       }
 
       handles.push(
-        await Speech.addListener('result', ({ text, isFinal }) => {
+        await Speech.addListener('result', ({ text, isFinal, locale }) => {
           // The native recognizer reports the whole utterance each time.
           if (isFinal) {
             finalText = text;
+            if (locale) cb.onLanguage?.(locale);
             cb.onText(text, '');
           } else {
             cb.onText(finalText, text.slice(finalText.length).trim() || text);
@@ -93,7 +102,7 @@ export function startNativeSpeech(lang: string, cb: SpeechCallbacks): SpeechSess
 
       // The names and projects this person actually talks about, so the
       // recogniser spells them right the first time.
-      await Speech.start({ locale: lang, partialResults: true, contextualStrings: speechHints() });
+      await Speech.start({ locale: lang, locales: langs, partialResults: true, contextualStrings: speechHints() });
     } catch (error) {
       cleanup();
       const code = (error as { code?: string })?.code;

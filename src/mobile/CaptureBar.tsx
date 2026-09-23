@@ -12,7 +12,7 @@ import { toast } from '@/store/toast';
 import { ui, useUi } from '@/store/ui';
 import { AiConsentSheet } from './AiConsentSheet';
 import { aiConsent, setAiConsent } from './aiConsent';
-import { dayTimeIn, speechLocale, t } from './i18n';
+import { dayTimeIn, speechLocale, speechLocales, t } from './i18n';
 import { currentSpace, spaceOf } from './space';
 import { setReminder } from './thoughtActions';
 import { Sheet } from './Sheet';
@@ -62,6 +62,8 @@ export function CaptureBar() {
   const stopMeter = useRef<(() => void) | null>(null);
   const lastSound = useRef(0);
   const heard = useRef('');
+  /** Which language won the race, once the transcript comes back. */
+  const heardIn = useRef<string | null>(null);
   /** Explain the fallback once per session, not after every sentence. */
   const noticed = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);
@@ -99,8 +101,9 @@ export function CaptureBar() {
       const subject = stripped || said;
 
       // Claude is told which language this was spoken in, so the thought it
-      // writes back comes out in the same one.
-      const { tasks, source, notice } = await analyzeMemo(subject, speechLocale(), { cloud });
+      // writes back comes out in the same one — the language the recogniser
+      // settled on when several were listening, not the one we guessed.
+      const { tasks, source, notice } = await analyzeMemo(subject, heardIn.current ?? speechLocale(), { cloud });
       const drafts: ConfirmedDraft[] = tasks.length
         ? tasks.map((d) => {
             // If the memo is plainly about something already on the list, it
@@ -196,11 +199,17 @@ export function CaptureBar() {
     if (phase !== 'idle') return;
     haptic('medium');
     heard.current = '';
+    heardIn.current = null;
     setTranscript('');
     setPhase('listening');
     lastSound.current = Date.now();
 
-    session.current = startSpeech(speechLocale(), {
+    // One language when the pill is pinned to one; all three, led by the one
+    // on screen, when it is left automatic.
+    session.current = startSpeech(speechLocales(), {
+      onLanguage: (locale) => {
+        heardIn.current = locale;
+      },
       onText: (final, interim) => {
         const text = [final, interim].filter(Boolean).join(' ').trim();
         heard.current = final || text;

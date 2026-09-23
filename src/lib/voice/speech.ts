@@ -15,8 +15,15 @@ export type { SpeechCallbacks, SpeechErrorCode, SpeechSession } from './speechTy
 
 export const speechSupported = (): boolean => (isNative() ? true : webSpeechSupported());
 
-export function startSpeech(lang: string, cb: SpeechCallbacks): SpeechSession {
-  return isNative() ? startNativeSpeech(lang, cb) : startWebSpeech(lang, cb);
+/**
+ * Listen. Given several languages, the native app runs one recogniser per
+ * language on the same audio and keeps the transcript that reads like the
+ * language it was transcribed in; the first is the one shown while speaking.
+ * The web falls back to the first, which is all a browser can do.
+ */
+export function startSpeech(lang: string | string[], cb: SpeechCallbacks): SpeechSession {
+  const langs = Array.isArray(lang) ? lang : [lang];
+  return isNative() ? startNativeSpeech(langs, cb) : startWebSpeech(langs[0], cb);
 }
 
 /** Microphone level for the listening animation. Native pushes it from the audio tap. */
