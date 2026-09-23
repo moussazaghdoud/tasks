@@ -20,31 +20,49 @@ const INK = [0x1d, 0x1c, 0x1a];
 const TEAL = [0x1e, 0x67, 0x6c];
 
 /**
- * The ring is centred in the square, and the dot hangs off its top-right
- * corner. It used to sit low and left so that ring and dot together balanced
- * the tile — which left the H, centred in the ring as a letter must be,
- * visibly off-centre in the icon. Composition follows the letter.
+ * A heavy H filling the square, with the dot of an i resting on its left
+ * stem: the name is iHence, and the two letters share one mark rather than
+ * standing side by side.
+ *
+ * The crossbar sits a little above the middle — where a typeface puts it,
+ * because an H with a mathematically centred bar looks bottom-heavy — and
+ * every corner is slightly rounded, which is what keeps a shape this heavy
+ * from reading as a brick at 40 pixels.
  */
-const RING = { x: 10, y: 10, r: 5.4, w: 1.85 };
-const DOT = { x: 15.2, y: 4.8, r: 2.4 };
-/**
- * The H sits in the ring, in the same ink and close to the same weight — it
- * reads as drawn by the same pen rather than typed into the middle. Its
- * corners clear the ring's inner edge by half a stroke, which is what keeps
- * the counter from looking clogged at 40 pixels.
- */
-const H = { halfWidth: 2.55, halfHeight: 2.7, stem: 1.3, bar: 1.15 };
+const H = {
+  left: 4.9,
+  right: 15.7,
+  top: 5.9,
+  bottom: 17.1,
+  stem: 3.4,
+  bar: 2.9,
+  /** Where the crossbar sits between top and bottom. */
+  barAt: 0.45,
+  radius: 0.55,
+};
+const DOT = { x: H.left + H.stem / 2, y: 4.65, r: 1.75 };
 
-const inRing = (x, y) => Math.abs(Math.hypot(x - RING.x, y - RING.y) - RING.r) <= RING.w / 2;
+/** A rectangle with rounded corners, given its centre and half-extents. */
+function inRounded(x, y, cx, cy, halfWidth, halfHeight, radius) {
+  const dx = Math.abs(x - cx);
+  const dy = Math.abs(y - cy);
+  if (dx > halfWidth || dy > halfHeight) return false;
+  const r = Math.min(radius, halfWidth, halfHeight);
+  const ox = dx - (halfWidth - r);
+  const oy = dy - (halfHeight - r);
+  if (ox <= 0 || oy <= 0) return true;
+  return Math.hypot(ox, oy) <= r;
+}
+
 const inDot = (x, y) => Math.hypot(x - DOT.x, y - DOT.y) <= DOT.r;
 
 function inH(x, y) {
-  const dx = x - RING.x;
-  const dy = y - RING.y;
-  if (Math.abs(dy) > H.halfHeight) return false;
-  const leftStem = Math.abs(dx + (H.halfWidth - H.stem / 2)) <= H.stem / 2;
-  const rightStem = Math.abs(dx - (H.halfWidth - H.stem / 2)) <= H.stem / 2;
-  const crossbar = Math.abs(dy) <= H.bar / 2 && Math.abs(dx) <= H.halfWidth;
+  const halfHeight = (H.bottom - H.top) / 2;
+  const midY = (H.top + H.bottom) / 2;
+  const barY = H.top + (H.bottom - H.top) * H.barAt;
+  const leftStem = inRounded(x, y, H.left + H.stem / 2, midY, H.stem / 2, halfHeight, H.radius);
+  const rightStem = inRounded(x, y, H.right - H.stem / 2, midY, H.stem / 2, halfHeight, H.radius);
+  const crossbar = inRounded(x, y, (H.left + H.right) / 2, barY, (H.right - H.left) / 2, H.bar / 2, H.radius);
   return leftStem || rightStem || crossbar;
 }
 
@@ -60,7 +78,7 @@ function inTile(x, y, radius) {
 function sample(x, y, radius) {
   if (!inTile(x, y, radius)) return null;
   if (inDot(x, y)) return TEAL;
-  if (inRing(x, y) || inH(x, y)) return INK;
+  if (inH(x, y)) return INK;
   return PAPER;
 }
 
@@ -212,10 +230,10 @@ function splash(size) {
   const pixels = Buffer.alloc(size * size * 4);
   // The mark's own bounding box, so it is the mark that sits centred rather
   // than the 20-unit square it was drawn in.
-  const left = RING.x - RING.r - RING.w / 2;
-  const right = Math.max(RING.x + RING.r + RING.w / 2, DOT.x + DOT.r);
-  const top = Math.min(RING.y - RING.r - RING.w / 2, DOT.y - DOT.r);
-  const bottom = RING.y + RING.r + RING.w / 2;
+  const left = Math.min(H.left, DOT.x - DOT.r);
+  const right = Math.max(H.right, DOT.x + DOT.r);
+  const top = Math.min(H.top, DOT.y - DOT.r);
+  const bottom = H.bottom;
   const box = { x: (left + right) / 2, y: (top + bottom) / 2, width: right - left };
   const share = 0.1; // of the canvas width
   const scale = box.width / (size * share);
@@ -229,7 +247,7 @@ function splash(size) {
         for (let sx = 0; sx < SUB; sx++) {
           const x = (px + (sx + 0.5) / SUB - size / 2) * scale + box.x;
           const y = (py + (sy + 0.5) / SUB - size / 2) * scale + box.y;
-          const colour = inDot(x, y) ? DARK_ACCENT : inRing(x, y) || inH(x, y) ? PAPER : GRAPHITE;
+          const colour = inDot(x, y) ? DARK_ACCENT : inH(x, y) ? PAPER : GRAPHITE;
           r += colour[0];
           g += colour[1];
           b += colour[2];
@@ -261,13 +279,11 @@ const n = (value) => Number(value.toFixed(2));
 const svg = [
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">',
   '<rect width="20" height="20" rx="5" fill="#F1EFE9"/>',
-  `<circle cx="${RING.x}" cy="${RING.y}" r="${RING.r}" fill="none" stroke="#1D1C1A" stroke-width="${RING.w}"/>`,
-  // A stroke is centred on its path, so the stems sit half a stroke inside
-  // the H's width — exactly where the rasteriser puts them.
-  `<path d="M${n(RING.x - H.halfWidth + H.stem / 2)} ${n(RING.y - H.halfHeight)}v${n(H.halfHeight * 2)}" stroke="#1D1C1A" stroke-width="${H.stem}" stroke-linecap="butt"/>`,
-  `<path d="M${n(RING.x + H.halfWidth - H.stem / 2)} ${n(RING.y - H.halfHeight)}v${n(H.halfHeight * 2)}" stroke="#1D1C1A" stroke-width="${H.stem}" stroke-linecap="butt"/>`,
-  `<path d="M${n(RING.x - H.halfWidth)} ${RING.y}h${n(H.halfWidth * 2)}" stroke="#1D1C1A" stroke-width="${H.bar}" stroke-linecap="butt"/>`,
-  `<circle cx="${DOT.x}" cy="${DOT.y}" r="${DOT.r}" fill="#1E676C"/>`,
+  // The same three rounded bars the rasteriser draws.
+  `<rect x="${n(H.left)}" y="${n(H.top)}" width="${n(H.stem)}" height="${n(H.bottom - H.top)}" rx="${H.radius}" fill="#1D1C1A"/>`,
+  `<rect x="${n(H.right - H.stem)}" y="${n(H.top)}" width="${n(H.stem)}" height="${n(H.bottom - H.top)}" rx="${H.radius}" fill="#1D1C1A"/>`,
+  `<rect x="${n(H.left)}" y="${n(H.top + (H.bottom - H.top) * H.barAt - H.bar / 2)}" width="${n(H.right - H.left)}" height="${n(H.bar)}" rx="${H.radius}" fill="#1D1C1A"/>`,
+  `<circle cx="${n(DOT.x)}" cy="${n(DOT.y)}" r="${n(DOT.r)}" fill="#1E676C"/>`,
   '</svg>',
 ].join('');
 writeFileSync('public/favicon.svg', `${svg}\n`);
