@@ -62,6 +62,8 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
     private var tracks: [Track] = []
     private var listening = false
     private var deciding = false
+    /// Set once the audio has ended, and the only time a winner may be picked.
+    private var finishing = false
     private var lastLevelAt = Date.distantPast
 
     // MARK: - Availability & permissions
@@ -212,23 +214,25 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
         input.removeTap(onBus: 0)
         input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             guard let self = self else { return }
-            // The same audio to every language listening to it.
-            for track in self.tracks { track.request.append(buffer) }
+            // The same audio to every language still listening to it.
+            for track in self.tracks where !track.finished { track.request.append(buffer) }
             self.emitLevel(from: buffer)
         }
 
         for (index, pair) in recognizers.enumerated() {
             let track = tracks[index]
-            let leading = index == 0
             track.task = pair.1.recognitionTask(with: track.request) { [weak self] result, error in
                 guard let self = self else { return }
                 if let result = result {
                     track.text = result.bestTranscription.formattedString
                     track.confidence = Self.averageConfidence(result.bestTranscription)
-                    // Only the leading language is shown while speaking:
-                    // three transcripts fighting over one line would be
-                    // unreadable, and the choice is made at the end anyway.
-                    if leading && !result.isFinal {
+                    // One language at a time is shown while speaking: three
+                    // transcripts fighting over one line would be unreadable,
+                    // and the choice is made at the end anyway. Normally the
+                    // leading one — but if it drops out, whichever is still
+                    // listening, so the words do not freeze mid-sentence.
+                    let showing = self.tracks.first(where: { !$0.finished }) ?? self.tracks.first
+                    if showing === track && !result.isFinal {
                         self.notifyListeners("result", data: [
                             "text": track.text,
                             "isFinal": false,
@@ -245,9 +249,11 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
                     if track.text.isEmpty { track.failure = "\(error.domain.suffix(12)):\(error.code)" }
                     // Ending the audio always finishes the task with an error,
                     // so most of these are ordinary end-of-recording noise
-                    // rather than a failure worth showing the user.
-                    if leading, self.listening, track.text.isEmpty,
-                       let code = Self.reportableError(error) {
+                    // rather than a failure worth showing the user. And one
+                    // language failing is not a failure at all while another
+                    // is still listening — only silence from all of them is.
+                    let everyoneGaveUp = self.tracks.allSatisfy { $0.finished && $0.text.isEmpty }
+                    if everyoneGaveUp, self.listening, let code = Self.reportableError(error) {
                         self.notifyListeners("error", data: ["code": code])
                     }
                     self.decideIfReady()
@@ -270,6 +276,7 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func stop(_ call: CAPPluginCall) {
         // End the audio so every recognizer can deliver its final transcript.
+        finishing = true
         for track in tracks { track.request.endAudio() }
         audioEngine.inputNode.removeTap(onBus: 0)
         if audioEngine.isRunning { audioEngine.stop() }
@@ -284,6 +291,18 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
     private func decideIfReady() {
         DispatchQueue.main.async {
             guard self.listening else { return }
+
+            // Nothing is decided while someone is still speaking. A language
+            // that gives up early — Chinese, with nothing Chinese to hear —
+            // is one runner dropping out, not the end of the race. Without
+            // this, its failure ended the recording a second and a half in.
+            guard self.finishing else {
+                // Unless they have all dropped out, in which case there is
+                // nothing left listening and the screen has to be handed back.
+                if self.tracks.allSatisfy({ $0.finished }) { self.decide() }
+                return
+            }
+
             // Everyone has answered: no reason to wait out the grace period.
             if self.tracks.allSatisfy({ $0.finished }) {
                 self.decide()
@@ -412,6 +431,7 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
     private func finishEarly() {
         DispatchQueue.main.async {
             guard self.listening else { return }
+            self.finishing = true
             for track in self.tracks { track.request.endAudio() }
             self.audioEngine.inputNode.removeTap(onBus: 0)
             if self.audioEngine.isRunning { self.audioEngine.stop() }
@@ -445,6 +465,7 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
         let wasListening = listening
         listening = false
         deciding = false
+        finishing = false
         audioEngine.inputNode.removeTap(onBus: 0)
         if audioEngine.isRunning { audioEngine.stop() }
         for track in tracks {
