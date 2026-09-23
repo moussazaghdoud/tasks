@@ -20,14 +20,16 @@ const INK = [0x1d, 0x1c, 0x1a];
 const TEAL = [0x1e, 0x67, 0x6c];
 
 /**
- * A heavy H filling the square, with the dot of an i resting on its left
- * stem: the name is iHence, and the two letters share one mark rather than
- * standing side by side.
+ * A heavy H filling the square, with a dot in each of its two counters.
  *
- * The crossbar sits a little above the middle — where a typeface puts it,
- * because an H with a mathematically centred bar looks bottom-heavy — and
- * every corner is slightly rounded, which is what keeps a shape this heavy
- * from reading as a brick at 40 pixels.
+ * The letter is the mark; the dots are what the app does — a thought caught
+ * above, a thought caught below, held inside the shape rather than decorating
+ * it. They sit in the holes the H already has, so nothing is added to the
+ * silhouette and the icon still reads as one letter across a home screen.
+ *
+ * The crossbar is a hair above centre, where a typeface puts it: a bar on the
+ * exact middle reads bottom-heavy. Corners are rounded just enough that a
+ * shape this heavy is not a brick at 40 pixels.
  */
 const H = {
   left: 4.9,
@@ -37,10 +39,21 @@ const H = {
   stem: 3.4,
   bar: 2.9,
   /** Where the crossbar sits between top and bottom. */
-  barAt: 0.45,
+  barAt: 0.48,
   radius: 0.55,
 };
-const DOT = { x: H.left + H.stem / 2, y: 4.65, r: 1.75 };
+
+const BAR_Y = H.top + (H.bottom - H.top) * H.barAt;
+
+/**
+ * One dot per counter, each centred in its own hole and a little wider than
+ * it is tall — the counters are not the same height, and a dot centred in
+ * each looks more even than two identical circles pinned to a shared axis.
+ */
+const DOTS = [
+  { x: (H.left + H.right) / 2, y: (H.top + (BAR_Y - H.bar / 2)) / 2, rx: 1.4, ry: 1.3 },
+  { x: (H.left + H.right) / 2, y: (BAR_Y + H.bar / 2 + H.bottom) / 2, rx: 1.4, ry: 1.3 },
+];
 
 /** A rectangle with rounded corners, given its centre and half-extents. */
 function inRounded(x, y, cx, cy, halfWidth, halfHeight, radius) {
@@ -54,15 +67,15 @@ function inRounded(x, y, cx, cy, halfWidth, halfHeight, radius) {
   return Math.hypot(ox, oy) <= r;
 }
 
-const inDot = (x, y) => Math.hypot(x - DOT.x, y - DOT.y) <= DOT.r;
+const inDot = (x, y) =>
+  DOTS.some((dot) => ((x - dot.x) / dot.rx) ** 2 + ((y - dot.y) / dot.ry) ** 2 <= 1);
 
 function inH(x, y) {
   const halfHeight = (H.bottom - H.top) / 2;
   const midY = (H.top + H.bottom) / 2;
-  const barY = H.top + (H.bottom - H.top) * H.barAt;
   const leftStem = inRounded(x, y, H.left + H.stem / 2, midY, H.stem / 2, halfHeight, H.radius);
   const rightStem = inRounded(x, y, H.right - H.stem / 2, midY, H.stem / 2, halfHeight, H.radius);
-  const crossbar = inRounded(x, y, (H.left + H.right) / 2, barY, (H.right - H.left) / 2, H.bar / 2, H.radius);
+  const crossbar = inRounded(x, y, (H.left + H.right) / 2, BAR_Y, (H.right - H.left) / 2, H.bar / 2, H.radius);
   return leftStem || rightStem || crossbar;
 }
 
@@ -230,9 +243,10 @@ function splash(size) {
   const pixels = Buffer.alloc(size * size * 4);
   // The mark's own bounding box, so it is the mark that sits centred rather
   // than the 20-unit square it was drawn in.
-  const left = Math.min(H.left, DOT.x - DOT.r);
-  const right = Math.max(H.right, DOT.x + DOT.r);
-  const top = Math.min(H.top, DOT.y - DOT.r);
+  // The dots live inside the letter, so the letter is the whole of it.
+  const left = H.left;
+  const right = H.right;
+  const top = H.top;
   const bottom = H.bottom;
   const box = { x: (left + right) / 2, y: (top + bottom) / 2, width: right - left };
   const share = 0.1; // of the canvas width
@@ -282,8 +296,8 @@ const svg = [
   // The same three rounded bars the rasteriser draws.
   `<rect x="${n(H.left)}" y="${n(H.top)}" width="${n(H.stem)}" height="${n(H.bottom - H.top)}" rx="${H.radius}" fill="#1D1C1A"/>`,
   `<rect x="${n(H.right - H.stem)}" y="${n(H.top)}" width="${n(H.stem)}" height="${n(H.bottom - H.top)}" rx="${H.radius}" fill="#1D1C1A"/>`,
-  `<rect x="${n(H.left)}" y="${n(H.top + (H.bottom - H.top) * H.barAt - H.bar / 2)}" width="${n(H.right - H.left)}" height="${n(H.bar)}" rx="${H.radius}" fill="#1D1C1A"/>`,
-  `<circle cx="${n(DOT.x)}" cy="${n(DOT.y)}" r="${n(DOT.r)}" fill="#1E676C"/>`,
+  `<rect x="${n(H.left)}" y="${n(BAR_Y - H.bar / 2)}" width="${n(H.right - H.left)}" height="${n(H.bar)}" rx="${H.radius}" fill="#1D1C1A"/>`,
+  ...DOTS.map((dot) => `<ellipse cx="${n(dot.x)}" cy="${n(dot.y)}" rx="${n(dot.rx)}" ry="${n(dot.ry)}" fill="#1E676C"/>`),
   '</svg>',
 ].join('');
 writeFileSync('public/favicon.svg', `${svg}\n`);
