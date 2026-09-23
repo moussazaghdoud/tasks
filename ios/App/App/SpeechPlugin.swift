@@ -45,6 +45,10 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
         /// Apple's own confidence in the words, averaged over the utterance.
         var confidence = 0.0
         var finished = false
+        /// Why this language never answered, if it did not. Reported with the
+        /// result: a recogniser iOS refuses to run looks exactly like a
+        /// recogniser that heard nothing, and the two need different fixes.
+        var failure = ""
 
         init(locale: String, request: SFSpeechAudioBufferRecognitionRequest) {
             self.locale = locale
@@ -238,6 +242,7 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
                 if let error = error as NSError? {
                     track.finished = true
+                    if track.text.isEmpty { track.failure = "\(error.domain.suffix(12)):\(error.code)" }
                     // Ending the audio always finishes the task with an error,
                     // so most of these are ordinary end-of-recording noise
                     // rather than a failure worth showing the user.
@@ -300,7 +305,20 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
             notifyListeners("result", data: [
                 "text": winner.text,
                 "isFinal": true,
-                "locale": winner.locale
+                "locale": winner.locale,
+                // What each language made of the same audio. The app shows
+                // this in Settings, because on a phone there is no console to
+                // read and "it picked the wrong language" is unfixable
+                // without knowing whether the others were even heard.
+                "candidates": tracks.map { track in
+                    [
+                        "locale": track.locale,
+                        "text": String(track.text.prefix(60)),
+                        "confidence": track.confidence,
+                        "match": Self.languageScore(track.text, locale: track.locale),
+                        "failure": track.failure
+                    ]
+                }
             ])
         }
         teardown(notifyEnd: true)
@@ -320,15 +338,23 @@ public class SpeechPlugin: CAPPlugin, CAPBridgedPlugin {
         var best: (track: Track, score: Double)?
         for track in spoken {
             let match = languageScore(track.text, locale: track.locale)
-            // The match decides; confidence only separates near-ties.
-            let score = match + track.confidence * 0.15
+            // Both halves matter. The detector says whether the words are
+            // that language at all; Apple's confidence says whether they were
+            // really heard — a French sentence forced through the English
+            // recogniser reads as plausible English, but the recogniser knows
+            // it was guessing.
+            var score = match * 0.6 + track.confidence * 0.4
+            // The Chinese recogniser writes Chinese characters whatever it
+            // hears, and the detector is certain about a script. Without this
+            // it would win every sentence in any language.
+            if track.locale.hasPrefix("zh"), track.confidence < 0.45 { score *= 0.3 }
             if best == nil || score > best!.score { best = (track, score) }
         }
         guard let winner = best else { return leading }
 
         // Too short or too odd to judge — "ok", a single name — and the
         // language the person is reading the app in is the better guess.
-        if winner.score < 0.55, !leading.text.isEmpty { return leading }
+        if winner.score < 0.4, !leading.text.isEmpty { return leading }
         return winner.track
     }
 

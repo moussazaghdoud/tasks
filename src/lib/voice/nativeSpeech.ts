@@ -8,6 +8,7 @@
  */
 import { registerPlugin, type PluginListenerHandle } from '@capacitor/core';
 import { speechHints } from './hints';
+import { rememberRace, type Candidate } from './lastRace';
 import type { SpeechCallbacks, SpeechErrorCode, SpeechSession } from './speechTypes';
 
 interface SpeechPlugin {
@@ -23,7 +24,10 @@ interface SpeechPlugin {
     contextualStrings?: string[];
   }): Promise<void>;
   stop(): Promise<void>;
-  addListener(event: 'result', fn: (e: { text: string; isFinal: boolean; locale?: string }) => void): Promise<PluginListenerHandle>;
+  addListener(
+    event: 'result',
+    fn: (e: { text: string; isFinal: boolean; locale?: string; candidates?: Candidate[] }) => void,
+  ): Promise<PluginListenerHandle>;
   addListener(event: 'level', fn: (e: { level: number }) => void): Promise<PluginListenerHandle>;
   addListener(event: 'error', fn: (e: { code: string }) => void): Promise<PluginListenerHandle>;
   addListener(event: 'end', fn: () => void): Promise<PluginListenerHandle>;
@@ -75,11 +79,12 @@ export function startNativeSpeech(langs: string[], cb: SpeechCallbacks): SpeechS
       }
 
       handles.push(
-        await Speech.addListener('result', ({ text, isFinal, locale }) => {
+        await Speech.addListener('result', ({ text, isFinal, locale, candidates }) => {
           // The native recognizer reports the whole utterance each time.
           if (isFinal) {
             finalText = text;
             if (locale) cb.onLanguage?.(locale);
+            if (locale && candidates?.length) rememberRace(locale, candidates);
             cb.onText(text, '');
           } else {
             cb.onText(finalText, text.slice(finalText.length).trim() || text);

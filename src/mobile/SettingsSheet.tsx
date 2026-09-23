@@ -4,6 +4,7 @@ import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
 import { apiBase, isNative } from '@/lib/native/platform';
 import { readVersion, WEB_VERSION } from '@/lib/version';
+import { describe, useLastRace } from '@/lib/voice/lastRace';
 import { setAiConsent, useAiConsent } from './aiConsent';
 import { LANGUAGES, setLang, t, useLang } from './i18n';
 import { toast } from '@/store/toast';
@@ -203,6 +204,34 @@ function AboutSection() {
 }
 
 /**
+ * What each language made of the last thing you said.
+ *
+ * Only shown after a capture with several languages listening, because that
+ * is the only case anyone needs it: it is the difference between "it picked
+ * English over French" and "French never ran at all", which from a phone is
+ * otherwise invisible. Selectable, so it can be sent to me in a message.
+ */
+function RaceSection() {
+  const race = useLastRace();
+  if (!race || race.candidates.length < 2) return null;
+  return (
+    <>
+      <p className="mt-7 px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">
+        {t('voice_diagnostics')}
+      </p>
+      <div className="mx-6 rounded-[14px] border border-line bg-sunk px-4 py-3">
+        {race.candidates.map((c) => (
+          <p key={c.locale} className="text-[12px] leading-[18px] break-words text-ink-3 select-text">
+            {describe(c, race.won)}
+          </p>
+        ))}
+      </div>
+      <p className="px-6 pt-2 text-[12.5px] leading-[18px] text-ink-4">{t('voice_diagnostics_note')}</p>
+    </>
+  );
+}
+
+/**
  * Settings.
  *
  * Grouped into named sections rather than one flat list, so the next setting
@@ -271,6 +300,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
       <AiSection />
 
       {calendarConfigured() && <CalendarSection />}
+
+      <RaceSection />
 
       <AboutSection />
     </Sheet>
