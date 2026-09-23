@@ -6,12 +6,15 @@ import { markFresh } from '@/lib/fresh';
 import { analyzeMemo } from '@/lib/voice/analyze';
 import { createFromDrafts, findTaskByTitle, type ConfirmedDraft } from '@/lib/voice/createFromDrafts';
 import { startLevelMeter, startSpeech, type SpeechErrorCode, type SpeechSession } from '@/lib/voice/speech';
+import { extractReminder } from '@/lib/voice/spokenReminder';
+import { ensureNotificationPermission } from '@/lib/native/notifications';
 import { toast } from '@/store/toast';
 import { ui, useUi } from '@/store/ui';
 import { AiConsentSheet } from './AiConsentSheet';
 import { aiConsent, setAiConsent } from './aiConsent';
-import { speechLocale, t } from './i18n';
+import { dayTimeIn, speechLocale, t } from './i18n';
 import { currentSpace, spaceOf } from './space';
+import { setReminder } from './thoughtActions';
 import { Sheet } from './Sheet';
 import { Waveform } from './Waveform';
 
@@ -89,9 +92,15 @@ export function CaptureBar() {
         setConsentAnswer(null);
       }
 
+      // "Remind me tomorrow at nine" is read here, on the phone, before
+      // anything else sees the words: the analyser is then handed the thought
+      // without the asking, so "remind me" never ends up in the title.
+      const { at: remindAt, text: stripped } = extractReminder(said);
+      const subject = stripped || said;
+
       // Claude is told which language this was spoken in, so the thought it
       // writes back comes out in the same one.
-      const { tasks, source, notice } = await analyzeMemo(said, speechLocale(), { cloud });
+      const { tasks, source, notice } = await analyzeMemo(subject, speechLocale(), { cloud });
       const drafts: ConfirmedDraft[] = tasks.length
         ? tasks.map((d) => {
             // If the memo is plainly about something already on the list, it
@@ -109,7 +118,7 @@ export function CaptureBar() {
       // and let the person decide. A messy line beats a lost thought.
       if (!drafts.length) {
         drafts.push({
-          title: said.length > 160 ? `${said.slice(0, 159)}…` : said,
+          title: subject.length > 160 ? `${subject.slice(0, 159)}…` : subject,
           notes: '',
           dueDate: null,
           dueTime: null,
@@ -131,8 +140,23 @@ export function CaptureBar() {
       setPhase('idle');
       setTranscript('');
 
-      const label =
-        made.length > 1 ? t('captured_many', { n: made.length }) : steps && !made.length ? t('captured_step') : t('captured');
+      // The reminder goes on the thought that was just made. Asking for the
+      // notification permission here is the one moment it explains itself:
+      // the person has just said out loud that they want to be reminded.
+      // When the memo joined an existing thought as a step, the reminder
+      // belongs to that thought rather than to nothing.
+      const remindOn = made[0]?.id ?? drafts.find((d) => d.stepOf)?.stepOf;
+      if (remindAt && remindOn) {
+        void ensureNotificationPermission().then(() => setReminder(remindOn, remindAt));
+      }
+
+      const label = remindAt
+        ? t('captured_reminded', { when: dayTimeIn(remindAt) })
+        : made.length > 1
+          ? t('captured_many', { n: made.length })
+          : steps && !made.length
+            ? t('captured_step')
+            : t('captured');
       // Say which engine read the memo. Without this the on-device fallback is
       // indistinguishable from Claude having a bad day, and a server that
       // quietly stopped answering looks like the app getting worse.
