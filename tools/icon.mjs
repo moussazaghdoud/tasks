@@ -19,8 +19,14 @@ const PAPER = [0xf1, 0xef, 0xe9];
 const INK = [0x1d, 0x1c, 0x1a];
 const TEAL = [0x1e, 0x67, 0x6c];
 
-const RING = { x: 9, y: 11, r: 5.6, w: 1.9 };
-const DOT = { x: 14.6, y: 5.4, r: 2.5 };
+/**
+ * The ring is centred in the square, and the dot hangs off its top-right
+ * corner. It used to sit low and left so that ring and dot together balanced
+ * the tile — which left the H, centred in the ring as a letter must be,
+ * visibly off-centre in the icon. Composition follows the letter.
+ */
+const RING = { x: 10, y: 10, r: 5.4, w: 1.85 };
+const DOT = { x: 15.2, y: 4.8, r: 2.4 };
 /**
  * The H sits in the ring, in the same ink and close to the same weight — it
  * reads as drawn by the same pen rather than typed into the middle. Its
@@ -206,7 +212,11 @@ function splash(size) {
   const pixels = Buffer.alloc(size * size * 4);
   // The mark's own bounding box, so it is the mark that sits centred rather
   // than the 20-unit square it was drawn in.
-  const box = { x: (2.45 + 17.1) / 2, y: (2.9 + 17.55) / 2, width: 17.1 - 2.45 };
+  const left = RING.x - RING.r - RING.w / 2;
+  const right = Math.max(RING.x + RING.r + RING.w / 2, DOT.x + DOT.r);
+  const top = Math.min(RING.y - RING.r - RING.w / 2, DOT.y - DOT.r);
+  const bottom = RING.y + RING.r + RING.w / 2;
+  const box = { x: (left + right) / 2, y: (top + bottom) / 2, width: right - left };
   const share = 0.1; // of the canvas width
   const scale = box.width / (size * share);
 
