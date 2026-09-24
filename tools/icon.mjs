@@ -17,15 +17,14 @@ import { writeFileSync } from 'node:fs';
 
 const PAPER = [0xf1, 0xef, 0xe9];
 const INK = [0x1d, 0x1c, 0x1a];
-const TEAL = [0x1e, 0x67, 0x6c];
+// Sky blue, and the one colour in the mark: it has to carry across a home
+// screen full of icons, which the teal of the interface does not.
+const BLUE = [0x22, 0xa8, 0xe8];
 
 /**
- * A heavy H filling the square, with a dot in each of its two counters.
- *
- * The letter is the mark; the dots are what the app does — a thought caught
- * above, a thought caught below, held inside the shape rather than decorating
- * it. They sit in the holes the H already has, so nothing is added to the
- * silhouette and the icon still reads as one letter across a home screen.
+ * A heavy H filling the square, with the dot of an i above its left stem:
+ * the name is iHence, and the two letters share one mark rather than standing
+ * side by side.
  *
  * The crossbar is a hair above centre, where a typeface puts it: a bar on the
  * exact middle reads bottom-heavy. Corners are rounded just enough that a
@@ -50,7 +49,7 @@ const BAR_Y = H.top + (H.bottom - H.top) * H.barAt;
  * it. The gap is the point: it is a dot over a letter, which is what makes
  * the mark read as iH — touching, it would just be a lump on a stem.
  */
-const DOTS = [{ x: H.left + H.stem / 2, y: H.top - 0.45 - 1.3, rx: 1.5, ry: 1.3 }];
+const DOTS = [{ x: H.left + H.stem / 2, y: H.top - 0.2 - 1.4, rx: 1.55, ry: 1.4 }];
 
 /** A rectangle with rounded corners, given its centre and half-extents. */
 function inRounded(x, y, cx, cy, halfWidth, halfHeight, radius) {
@@ -87,7 +86,7 @@ function inTile(x, y, radius) {
 /** The colour at one point of the square, or null outside the tile. */
 function sample(x, y, radius) {
   if (!inTile(x, y, radius)) return null;
-  if (inDot(x, y)) return TEAL;
+  if (inDot(x, y)) return BLUE;
   if (inH(x, y)) return INK;
   return PAPER;
 }
@@ -231,10 +230,10 @@ for (const [path, size, options] of FILES) {
  *
  * It was cream on a dark launch background, which flashed a pale square for
  * the moment before the app appeared. Same geometry, other way round: paper
- * ink on graphite, with the accent the dark theme actually uses.
+ * ink on graphite, with the same blue dot.
  */
 const GRAPHITE = [0x0b, 0x0d, 0x10];
-const DARK_ACCENT = [0x4f, 0xe3, 0xc1];
+
 
 function splash(size) {
   const pixels = Buffer.alloc(size * size * 4);
@@ -257,7 +256,7 @@ function splash(size) {
         for (let sx = 0; sx < SUB; sx++) {
           const x = (px + (sx + 0.5) / SUB - size / 2) * scale + box.x;
           const y = (py + (sy + 0.5) / SUB - size / 2) * scale + box.y;
-          const colour = inDot(x, y) ? DARK_ACCENT : inH(x, y) ? PAPER : GRAPHITE;
+          const colour = inDot(x, y) ? BLUE : inH(x, y) ? PAPER : GRAPHITE;
           r += colour[0];
           g += colour[1];
           b += colour[2];
@@ -293,7 +292,7 @@ const svg = [
   `<rect x="${n(H.left)}" y="${n(H.top)}" width="${n(H.stem)}" height="${n(H.bottom - H.top)}" rx="${H.radius}" fill="#1D1C1A"/>`,
   `<rect x="${n(H.right - H.stem)}" y="${n(H.top)}" width="${n(H.stem)}" height="${n(H.bottom - H.top)}" rx="${H.radius}" fill="#1D1C1A"/>`,
   `<rect x="${n(H.left)}" y="${n(BAR_Y - H.bar / 2)}" width="${n(H.right - H.left)}" height="${n(H.bar)}" rx="${H.radius}" fill="#1D1C1A"/>`,
-  ...DOTS.map((dot) => `<ellipse cx="${n(dot.x)}" cy="${n(dot.y)}" rx="${n(dot.rx)}" ry="${n(dot.ry)}" fill="#1E676C"/>`),
+  ...DOTS.map((dot) => `<ellipse cx="${n(dot.x)}" cy="${n(dot.y)}" rx="${n(dot.rx)}" ry="${n(dot.ry)}" fill="#22A8E8"/>`),
   '</svg>',
 ].join('');
 writeFileSync('public/favicon.svg', `${svg}\n`);
