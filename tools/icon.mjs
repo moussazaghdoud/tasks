@@ -32,28 +32,25 @@ const TEAL = [0x1e, 0x67, 0x6c];
  * shape this heavy is not a brick at 40 pixels.
  */
 const H = {
-  left: 4.9,
-  right: 15.7,
-  top: 5.9,
-  bottom: 17.1,
+  left: 4.0,
+  right: 16.0,
+  top: 5.85,
+  bottom: 17.15,
   stem: 3.4,
-  bar: 2.9,
+  bar: 3.1,
   /** Where the crossbar sits between top and bottom. */
-  barAt: 0.48,
-  radius: 0.55,
+  barAt: 0.46,
+  radius: 0.5,
 };
 
 const BAR_Y = H.top + (H.bottom - H.top) * H.barAt;
 
 /**
- * One dot per counter, each centred in its own hole and a little wider than
- * it is tall — the counters are not the same height, and a dot centred in
- * each looks more even than two identical circles pinned to a shared axis.
+ * The dot of the i, floating clear above the left stem rather than resting on
+ * it. The gap is the point: it is a dot over a letter, which is what makes
+ * the mark read as iH — touching, it would just be a lump on a stem.
  */
-const DOTS = [
-  { x: (H.left + H.right) / 2, y: (H.top + (BAR_Y - H.bar / 2)) / 2, rx: 1.4, ry: 1.3 },
-  { x: (H.left + H.right) / 2, y: (BAR_Y + H.bar / 2 + H.bottom) / 2, rx: 1.4, ry: 1.3 },
-];
+const DOTS = [{ x: H.left + H.stem / 2, y: H.top - 0.45 - 1.3, rx: 1.5, ry: 1.3 }];
 
 /** A rectangle with rounded corners, given its centre and half-extents. */
 function inRounded(x, y, cx, cy, halfWidth, halfHeight, radius) {
@@ -243,10 +240,9 @@ function splash(size) {
   const pixels = Buffer.alloc(size * size * 4);
   // The mark's own bounding box, so it is the mark that sits centred rather
   // than the 20-unit square it was drawn in.
-  // The dots live inside the letter, so the letter is the whole of it.
-  const left = H.left;
-  const right = H.right;
-  const top = H.top;
+  const left = Math.min(H.left, ...DOTS.map((d) => d.x - d.rx));
+  const right = Math.max(H.right, ...DOTS.map((d) => d.x + d.rx));
+  const top = Math.min(H.top, ...DOTS.map((d) => d.y - d.ry));
   const bottom = H.bottom;
   const box = { x: (left + right) / 2, y: (top + bottom) / 2, width: right - left };
   const share = 0.1; // of the canvas width
