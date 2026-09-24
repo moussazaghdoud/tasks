@@ -170,31 +170,35 @@
   --color-ink-3: #86857f;
   --color-ink-4: #6a6963;
 
-  /* One bright thing on a grey screen, and it is the thing you act on. Dark
-     text on top, always: yellow this strong takes ink, never white. */
-  --color-accent: #f5de50;
-  --color-accent-hover: #e8d043;
-  --color-accent-soft: #3a3520;
-  --color-accent-wash: #2b2819;
-  --color-accent-ink: #1c1a10;
-  --color-on-accent: #1c1a10;
+  /* One bright thing on a grey screen, and it is the thing you act on. The
+     light blue of the icon, so the app opens on the colour it was launched
+     from. Dark text on top, always: this blue takes ink, never white. */
+  --color-accent: #56b0f5;
+  --color-accent-hover: #47a0e6;
+  --color-accent-soft: #1f3244;
+  --color-accent-wash: #1a2733;
+  --color-accent-ink: #0d1b26;
+  --color-on-accent: #0d1b26;
 
   --color-ember: #ff8a6b;
   --color-ember-soft: #3a2621;
 
-  --color-tomorrow: #9fb4ff;
-  --color-tomorrow-soft: #26272f;
+  /* Tomorrow sits next to today on the screen, so it leans violet — close to
+     the accent's blue and it would read as another today. */
+  --color-tomorrow: #a795f5;
+  --color-tomorrow-soft: #292434;
 
-  /* Now that the accent is yellow, the week's own hues keep away from it:
-     an amber Thursday beside a yellow microphone reads as a mistake. */
+  /* The week's own hues keep away from the accent: another light blue two
+     days along would read as today, which is the one thing these colours
+     exist to prevent. */
   --color-day-2: #dca2d8;
   --color-day-2-soft: #2e2730;
   --color-day-3: #8ed39c;
   --color-day-3-soft: #232d27;
-  --color-day-4: #5ec8c6;
-  --color-day-4-soft: #202d2d;
-  --color-day-5: #8ec6ee;
-  --color-day-5-soft: #232b31;
+  --color-day-4: #eebf68;
+  --color-day-4-soft: #312c22;
+  --color-day-5: #5ec8c6;
+  --color-day-5-soft: #202d2d;
   --color-day-6: #f19ec4;
   --color-day-6-soft: #32262c;
 
@@ -216,10 +220,10 @@
 
 /* The capture orb: lit from within, the one bright object on the screen. */
 :root[data-theme='dark'] .capture-orb {
-  background: radial-gradient(circle at 34% 28%, #ffee8a, var(--color-accent) 58%, #d8bf35);
+  background: radial-gradient(circle at 34% 28%, #a5d8ff, var(--color-accent) 58%, #2f8ad4);
   box-shadow:
-    0 0 0 1px rgb(245 222 80 / 0.3),
-    0 0 42px -6px rgb(245 222 80 / 0.45),
+    0 0 0 1px rgb(86 176 245 / 0.3),
+    0 0 42px -6px rgb(86 176 245 / 0.45),
     0 14px 30px -12px rgb(0 0 0 / 0.6);
 }
 
