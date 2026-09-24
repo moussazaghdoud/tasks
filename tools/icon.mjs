@@ -13,67 +13,61 @@
 import { deflateSync } from 'node:zlib';
 import { writeFileSync } from 'node:fs';
 
+/** Two decimals is plenty, and keeps the written files readable. */
+const n = (value) => Number(value.toFixed(2));
+
 /* ---- the mark, in a 20 × 20 square ---- */
 
 const PAPER = [0xf1, 0xef, 0xe9];
-const INK = [0x1d, 0x1c, 0x1a];
-// Sky blue, and the one colour in the mark: it has to carry across a home
-// screen full of icons, which the teal of the interface does not.
-const BLUE = [0x22, 0xa8, 0xe8];
+/** Ink and accent: the two colours of the mark, deep and bright. */
+const NAVY = [0x17, 0x29, 0x3f];
+const BLUE = [0x41, 0x93, 0xe8];
 
 /**
- * A heavy H filling the square, with the dot of an i above its left stem:
- * the name is iHence, and the two letters share one mark rather than standing
- * side by side.
+ * Four petals in a square: two deep, two bright.
  *
- * The crossbar is a hair above centre, where a typeface puts it: a bar on the
- * exact middle reads bottom-heavy. Corners are rounded just enough that a
- * shape this heavy is not a brick at 40 pixels.
+ * Each is a square with one corner left sharp and the other three swept round,
+ * and each sharp corner points out to a corner of the tile — so the four
+ * together hold the square while the curves turn inwards. Not a letter: a
+ * thing you recognise across a home screen, which at that size a letter in a
+ * box rarely is.
  */
-const H = {
-  left: 4.0,
-  right: 16.0,
-  top: 5.85,
-  bottom: 17.15,
-  stem: 3.4,
-  bar: 3.1,
-  /** Where the crossbar sits between top and bottom. */
-  barAt: 0.46,
-  radius: 0.5,
-};
+const MARK = { span: 11.4, gap: 0.55, radius: 2.45 };
 
-const BAR_Y = H.top + (H.bottom - H.top) * H.barAt;
+const LEAVES = (() => {
+  const size = (MARK.span - MARK.gap) / 2;
+  const start = 10 - MARK.span / 2;
+  const far = 10 + MARK.gap / 2;
+  return [
+    { x0: start, y0: start, sharp: 'tl', colour: NAVY },
+    { x0: far, y0: start, sharp: 'tr', colour: BLUE },
+    { x0: start, y0: far, sharp: 'bl', colour: NAVY },
+    { x0: far, y0: far, sharp: 'br', colour: BLUE },
+  ].map((leaf) => ({ ...leaf, x1: leaf.x0 + size, y1: leaf.y0 + size }));
+})();
 
 /**
- * The dot of the i, floating clear above the left stem rather than resting on
- * it. The gap is the point: it is a dot over a letter, which is what makes
- * the mark read as iH — touching, it would just be a lump on a stem.
+ * A square with three corners swept round and one left square. Written as a
+ * point test rather than a path so the rasteriser and the SVG can be built
+ * from the same four numbers.
  */
-const DOTS = [{ x: H.left + H.stem / 2, y: H.top - 0.2 - 1.4, rx: 1.55, ry: 1.4 }];
-
-/** A rectangle with rounded corners, given its centre and half-extents. */
-function inRounded(x, y, cx, cy, halfWidth, halfHeight, radius) {
-  const dx = Math.abs(x - cx);
-  const dy = Math.abs(y - cy);
-  if (dx > halfWidth || dy > halfHeight) return false;
-  const r = Math.min(radius, halfWidth, halfHeight);
-  const ox = dx - (halfWidth - r);
-  const oy = dy - (halfHeight - r);
-  if (ox <= 0 || oy <= 0) return true;
-  return Math.hypot(ox, oy) <= r;
+function inLeaf(x, y, leaf) {
+  const { x0, y0, x1, y1, sharp } = leaf;
+  if (x < x0 || x > x1 || y < y0 || y > y1) return false;
+  const r = MARK.radius;
+  for (const corner of ['tl', 'tr', 'bl', 'br']) {
+    if (corner === sharp) continue;
+    // Distance into the corner's rounded quarter; outside it, the point is
+    // beyond the sweep and does not belong to the shape.
+    const dx = corner[1] === 'l' ? x0 + r - x : x - (x1 - r);
+    const dy = corner[0] === 't' ? y0 + r - y : y - (y1 - r);
+    if (dx > 0 && dy > 0 && Math.hypot(dx, dy) > r) return false;
+  }
+  return true;
 }
 
-const inDot = (x, y) =>
-  DOTS.some((dot) => ((x - dot.x) / dot.rx) ** 2 + ((y - dot.y) / dot.ry) ** 2 <= 1);
-
-function inH(x, y) {
-  const halfHeight = (H.bottom - H.top) / 2;
-  const midY = (H.top + H.bottom) / 2;
-  const leftStem = inRounded(x, y, H.left + H.stem / 2, midY, H.stem / 2, halfHeight, H.radius);
-  const rightStem = inRounded(x, y, H.right - H.stem / 2, midY, H.stem / 2, halfHeight, H.radius);
-  const crossbar = inRounded(x, y, (H.left + H.right) / 2, BAR_Y, (H.right - H.left) / 2, H.bar / 2, H.radius);
-  return leftStem || rightStem || crossbar;
-}
+/** The petal a point falls in, if any. */
+const leafAt = (x, y) => LEAVES.find((leaf) => inLeaf(x, y, leaf));
 
 /** Rounded square, for the icons nobody else masks. */
 function inTile(x, y, radius) {
@@ -86,9 +80,7 @@ function inTile(x, y, radius) {
 /** The colour at one point of the square, or null outside the tile. */
 function sample(x, y, radius) {
   if (!inTile(x, y, radius)) return null;
-  if (inDot(x, y)) return BLUE;
-  if (inH(x, y)) return INK;
-  return PAPER;
+  return leafAt(x, y)?.colour ?? PAPER;
 }
 
 /* ---- rasteriser ---- */
@@ -229,21 +221,16 @@ for (const [path, size, options] of FILES) {
  * The mark alone on the app's own graphite, small and centred.
  *
  * It was cream on a dark launch background, which flashed a pale square for
- * the moment before the app appeared. Same geometry, other way round: paper
- * ink on graphite, with the same blue dot.
+ * the moment before the app appeared. The same four petals, with the deep
+ * pair in paper: navy on graphite would be two missing petals.
  */
 const GRAPHITE = [0x0b, 0x0d, 0x10];
-
 
 function splash(size) {
   const pixels = Buffer.alloc(size * size * 4);
   // The mark's own bounding box, so it is the mark that sits centred rather
   // than the 20-unit square it was drawn in.
-  const left = Math.min(H.left, ...DOTS.map((d) => d.x - d.rx));
-  const right = Math.max(H.right, ...DOTS.map((d) => d.x + d.rx));
-  const top = Math.min(H.top, ...DOTS.map((d) => d.y - d.ry));
-  const bottom = H.bottom;
-  const box = { x: (left + right) / 2, y: (top + bottom) / 2, width: right - left };
+  const box = { x: 10, y: 10, width: MARK.span };
   const share = 0.1; // of the canvas width
   const scale = box.width / (size * share);
 
@@ -256,7 +243,8 @@ function splash(size) {
         for (let sx = 0; sx < SUB; sx++) {
           const x = (px + (sx + 0.5) / SUB - size / 2) * scale + box.x;
           const y = (py + (sy + 0.5) / SUB - size / 2) * scale + box.y;
-          const colour = inDot(x, y) ? BLUE : inH(x, y) ? PAPER : GRAPHITE;
+          const leaf = leafAt(x, y);
+          const colour = !leaf ? GRAPHITE : leaf.colour === NAVY ? PAPER : BLUE;
           r += colour[0];
           g += colour[1];
           b += colour[2];
@@ -281,18 +269,38 @@ for (const name of ['splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-27
   console.log(`ios/App/App/Assets.xcassets/Splash.imageset/${name}  2732×2732  RGB`);
 }
 
-/** Two decimals is plenty, and keeps the file readable. */
-const n = (value) => Number(value.toFixed(2));
+const hex = (colour) => `#${colour.map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+
+/**
+ * One petal as a path: the outline clockwise from the top-left, each corner
+ * either a quarter-circle or a right angle. The same four numbers the
+ * rasteriser uses, so the favicon cannot drift from the icons.
+ */
+function leafPath(leaf) {
+  const r = MARK.radius;
+  const { x0, y0, x1, y1, sharp } = leaf;
+  const at = (corner) => (corner === sharp ? 0 : r);
+  const [tl, tr, br, bl] = ['tl', 'tr', 'br', 'bl'].map(at);
+  const arc = (rr, x, y) => (rr ? `A${rr} ${rr} 0 0 1 ${n(x)} ${n(y)}` : `L${n(x)} ${n(y)}`);
+  return [
+    `M${n(x0 + tl)} ${n(y0)}`,
+    `H${n(x1 - tr)}`,
+    arc(tr, x1, y0 + tr),
+    `V${n(y1 - br)}`,
+    arc(br, x1 - br, y1),
+    `H${n(x0 + bl)}`,
+    arc(bl, x0, y1 - bl),
+    `V${n(y0 + tl)}`,
+    arc(tl, x0 + tl, y0),
+    'Z',
+  ].join('');
+}
 
 /** The favicon stays vector: the same geometry, written as SVG. */
 const svg = [
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">',
-  '<rect width="20" height="20" rx="5" fill="#F1EFE9"/>',
-  // The same three rounded bars the rasteriser draws.
-  `<rect x="${n(H.left)}" y="${n(H.top)}" width="${n(H.stem)}" height="${n(H.bottom - H.top)}" rx="${H.radius}" fill="#1D1C1A"/>`,
-  `<rect x="${n(H.right - H.stem)}" y="${n(H.top)}" width="${n(H.stem)}" height="${n(H.bottom - H.top)}" rx="${H.radius}" fill="#1D1C1A"/>`,
-  `<rect x="${n(H.left)}" y="${n(BAR_Y - H.bar / 2)}" width="${n(H.right - H.left)}" height="${n(H.bar)}" rx="${H.radius}" fill="#1D1C1A"/>`,
-  ...DOTS.map((dot) => `<ellipse cx="${n(dot.x)}" cy="${n(dot.y)}" rx="${n(dot.rx)}" ry="${n(dot.ry)}" fill="#22A8E8"/>`),
+  `<rect width="20" height="20" rx="5" fill="${hex(PAPER)}"/>`,
+  ...LEAVES.map((leaf) => `<path d="${leafPath(leaf)}" fill="${hex(leaf.colour)}"/>`),
   '</svg>',
 ].join('');
 writeFileSync('public/favicon.svg', `${svg}\n`);
