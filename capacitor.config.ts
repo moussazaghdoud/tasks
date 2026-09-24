@@ -16,14 +16,14 @@ const config: CapacitorConfig = {
     // Let the web layer handle the safe areas itself (env(safe-area-inset-*)).
     contentInset: 'never',
     // Match the app's graphite background so rubber-band scrolling doesn't flash white.
-    backgroundColor: '#0b0d10',
+    backgroundColor: '#232326',
     limitsNavigationsToAppBoundDomains: false,
   },
   plugins: {
     SplashScreen: {
       launchShowDuration: 600,
       launchAutoHide: true,
-      backgroundColor: '#0b0d10',
+      backgroundColor: '#232326',
       showSpinner: false,
     },
     Keyboard: {

@@ -31,7 +31,7 @@
   --color-accent-wash: #eef4f2;
   --color-accent-ink: #134a4e;
   /* Whatever sits on top of the accent. Teal takes white; the dark theme’s
-     mint takes near-black, so this flips with the theme and text-on-accent
+     yellow takes near-black, so this flips with the theme and text-on-accent
      stays correct in both. */
   --color-on-accent: #ffffff;
 
@@ -153,48 +153,53 @@
    portals at the end of <body>, inherit it as well.
    ------------------------------------------------------------------------ */
 :root[data-theme='dark'] {
-  --color-desk: #07090b;
-  --color-paper: #0b0d10;
-  --color-raised: #171b21;
-  --color-sunk: #12161b;
-  --color-wash: rgb(233 239 243 / 0.05);
-  --color-wash-strong: rgb(233 239 243 / 0.09);
-  --color-line: #232931;
-  --color-line-strong: #333b45;
+  /* Charcoal with a little warmth in it, not the black of a switched-off
+     screen. Cards then sit a step lighter than the page and read as objects
+     resting on it; against near-black they only looked like grey patches. */
+  --color-desk: #1c1c1f;
+  --color-paper: #232326;
+  --color-raised: #2c2c30;
+  --color-sunk: #1e1e21;
+  --color-wash: rgb(255 255 255 / 0.05);
+  --color-wash-strong: rgb(255 255 255 / 0.09);
+  --color-line: #33333a;
+  --color-line-strong: #44444d;
 
-  --color-ink: #e9eff3;
-  --color-ink-2: #a9b6c0;
-  --color-ink-3: #6f7d88;
-  --color-ink-4: #55616b;
+  --color-ink: #f2f1ee;
+  --color-ink-2: #b6b5b1;
+  --color-ink-3: #86857f;
+  --color-ink-4: #6a6963;
 
-  /* Mint reads as a signal on graphite the way teal never could. Anything
-     sitting on top of it takes --color-accent-ink, not white. */
-  --color-accent: #4fe3c1;
-  --color-accent-hover: #3fd3b1;
-  --color-accent-soft: #143029;
-  --color-accent-wash: #0f2420;
-  --color-accent-ink: #06211c;
-  --color-on-accent: #06211c;
+  /* One bright thing on a grey screen, and it is the thing you act on. Dark
+     text on top, always: yellow this strong takes ink, never white. */
+  --color-accent: #f5de50;
+  --color-accent-hover: #e8d043;
+  --color-accent-soft: #3a3520;
+  --color-accent-wash: #2b2819;
+  --color-accent-ink: #1c1a10;
+  --color-on-accent: #1c1a10;
 
   --color-ember: #ff8a6b;
-  --color-ember-soft: #38211b;
+  --color-ember-soft: #3a2621;
 
-  --color-tomorrow: #a3a8ff;
-  --color-tomorrow-soft: #1b1d33;
+  --color-tomorrow: #9fb4ff;
+  --color-tomorrow-soft: #26272f;
 
+  /* Now that the accent is yellow, the week's own hues keep away from it:
+     an amber Thursday beside a yellow microphone reads as a mistake. */
   --color-day-2: #dca2d8;
-  --color-day-2-soft: #271b27;
-  --color-day-3: #c4d078;
-  --color-day-3-soft: #20231a;
-  --color-day-4: #eebf68;
-  --color-day-4-soft: #29221a;
+  --color-day-2-soft: #2e2730;
+  --color-day-3: #8ed39c;
+  --color-day-3-soft: #232d27;
+  --color-day-4: #5ec8c6;
+  --color-day-4-soft: #202d2d;
   --color-day-5: #8ec6ee;
-  --color-day-5-soft: #16222c;
+  --color-day-5-soft: #232b31;
   --color-day-6: #f19ec4;
-  --color-day-6-soft: #2b1b23;
+  --color-day-6-soft: #32262c;
 
-  --shadow-float: 0 0 0 1px rgb(255 255 255 / 0.06), 0 30px 70px -20px rgb(0 0 0 / 0.8);
-  --shadow-sheet: 0 0 0 1px rgb(255 255 255 / 0.05), 0 10px 30px -14px rgb(0 0 0 / 0.7);
+  --shadow-float: 0 0 0 1px rgb(255 255 255 / 0.06), 0 30px 70px -20px rgb(0 0 0 / 0.65);
+  --shadow-sheet: 0 0 0 1px rgb(255 255 255 / 0.05), 0 10px 30px -14px rgb(0 0 0 / 0.55);
 
   color-scheme: dark;
 }
@@ -211,11 +216,11 @@
 
 /* The capture orb: lit from within, the one bright object on the screen. */
 :root[data-theme='dark'] .capture-orb {
-  background: radial-gradient(circle at 34% 28%, #7ff3d9, var(--color-accent) 58%, #22b394);
+  background: radial-gradient(circle at 34% 28%, #ffee8a, var(--color-accent) 58%, #d8bf35);
   box-shadow:
-    0 0 0 1px rgb(79 227 193 / 0.3),
-    0 0 42px -6px rgb(79 227 193 / 0.55),
-    0 14px 30px -12px rgb(0 0 0 / 0.8);
+    0 0 0 1px rgb(245 222 80 / 0.3),
+    0 0 42px -6px rgb(245 222 80 / 0.45),
+    0 14px 30px -12px rgb(0 0 0 / 0.6);
 }
 
 @layer base {

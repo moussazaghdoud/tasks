@@ -218,13 +218,13 @@ for (const [path, size, options] of FILES) {
 /* ---- the launch screen ---- */
 
 /**
- * The mark alone on the app's own graphite, small and centred.
+ * The mark alone on the app's own charcoal, small and centred.
  *
  * It was cream on a dark launch background, which flashed a pale square for
  * the moment before the app appeared. The same four petals, with the deep
- * pair in paper: navy on graphite would be two missing petals.
+ * pair in paper: navy on charcoal would be two missing petals.
  */
-const GRAPHITE = [0x0b, 0x0d, 0x10];
+const CHARCOAL = [0x23, 0x23, 0x26];
 
 function splash(size) {
   const pixels = Buffer.alloc(size * size * 4);
@@ -244,7 +244,7 @@ function splash(size) {
           const x = (px + (sx + 0.5) / SUB - size / 2) * scale + box.x;
           const y = (py + (sy + 0.5) / SUB - size / 2) * scale + box.y;
           const leaf = leafAt(x, y);
-          const colour = !leaf ? GRAPHITE : leaf.colour === NAVY ? PAPER : BLUE;
+          const colour = !leaf ? CHARCOAL : leaf.colour === NAVY ? PAPER : BLUE;
           r += colour[0];
           g += colour[1];
           b += colour[2];
