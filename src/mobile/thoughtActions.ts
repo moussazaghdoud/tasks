@@ -12,7 +12,7 @@ import { isNative } from '@/lib/native/platform';
 import { ws } from '@/store/workspace';
 import { toast } from '@/store/toast';
 import { t } from './i18n';
-import { calendarConfigured, createEvent, isConnected } from './microsoft';
+import { anyConnected, calendarConfigured, createEvent, refreshAccounts } from './calendar';
 
 /** Text the person can act on: the thought, plus whatever context we captured. */
 function body(task: Task): string {
@@ -49,7 +49,8 @@ export async function addToCalendar(task: Task): Promise<void> {
   // to the file and the share sheet, which needs no account at all.
   if (calendarConfigured()) {
     try {
-      if (await isConnected()) {
+      await refreshAccounts();
+      if (anyConnected()) {
         await createEvent(task);
         toast(t('added_to_calendar'));
         return;

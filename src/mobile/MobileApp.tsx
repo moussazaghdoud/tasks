@@ -20,7 +20,15 @@ import {
 import { SettingsSheet } from './SettingsSheet';
 import { setView, spaceOf, useView } from './space';
 import { AgendaList } from './AgendaList';
-import { calendarConfigured, refreshAccount, stillAhead, useAgendaMeetings, useMicrosoft } from './microsoft';
+import {
+  allChecked,
+  anyConnected,
+  calendarConfigured,
+  refreshAccounts,
+  stillAhead,
+  useAgendaMeetings,
+  useCalendars,
+} from './calendar';
 import { applyTheme, useTheme } from './theme';
 import { SpaceTabs, visibleTabs } from './SpaceTabs';
 import { ThoughtRow } from './ThoughtRow';
@@ -50,11 +58,12 @@ export function MobileApp() {
   // Ask the phone whether Outlook is connected as soon as the app opens.
   // The sign-in survives restarts in the Keychain; nothing used to ask.
   useEffect(() => {
-    void refreshAccount();
+    void refreshAccounts();
   }, []);
 
-  const { connected, checked } = useMicrosoft();
-  const hasAgenda = calendarConfigured() && connected;
+  useCalendars();
+  const checked = allChecked();
+  const hasAgenda = calendarConfigured() && anyConnected();
   const tabs = visibleTabs(hasAgenda);
   // Disconnecting while the agenda is open, or opening the app with a
   // connection that has lapsed, would otherwise leave a selected tab that is

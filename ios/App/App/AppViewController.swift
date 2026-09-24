@@ -18,5 +18,6 @@ public class AppViewController: CAPBridgeViewController {
     override public func capacitorDidLoad() {
         bridge?.registerPluginInstance(SpeechPlugin())
         bridge?.registerPluginInstance(MicrosoftPlugin())
+        bridge?.registerPluginInstance(GooglePlugin())
     }
 }

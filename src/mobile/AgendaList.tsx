@@ -5,15 +5,17 @@ import { haptic } from '@/lib/native/bridge';
 import { cn } from '@/lib/platform';
 import { localeOf, t } from './i18n';
 import {
+  allChecked,
+  anyConnected,
   calendarConfigured,
   listAgenda,
   onAgendaChanged,
   readAgendaCache,
-  refreshAccount,
-  useMicrosoft,
+  refreshAccounts,
+  useCalendars,
   writeAgendaCache,
   type Meeting,
-} from './microsoft';
+} from './calendar';
 
 /** How far ahead the agenda reads: today and the six days after it. */
 const DAYS = 7;
@@ -63,7 +65,11 @@ const clock = (iso: string) => new Date(iso).toLocaleTimeString(localeOf(), { ho
  * Saturdays would be noise. Read-only on purpose: meetings belong to Outlook.
  */
 export function AgendaList() {
-  const { connected, checked } = useMicrosoft();
+  // Subscribe, then read the connections: a calendar connecting or going
+  // away has to reach this screen.
+  useCalendars();
+  const connected = anyConnected();
+  const checked = allChecked();
   // Start from the copy on the phone, so the week is there the moment the
   // app opens; the network only has to confirm it.
   const [meetings, setMeetings] = useState<Meeting[] | null>(() => readAgendaCache()?.meetings ?? null);
@@ -117,7 +123,7 @@ export function AgendaList() {
   }, []);
 
   useEffect(() => {
-    if (!checked) void refreshAccount();
+    if (!checked) void refreshAccounts();
   }, [checked]);
 
   useEffect(() => {
@@ -139,7 +145,7 @@ export function AgendaList() {
         // Keep Microsoft's own words: "could not reach" alone cannot tell a
         // missing permission from a company policy from a dead connection.
         setFailure(error?.message || '');
-        if (error?.code === 'not_connected') void refreshAccount();
+        if (error?.code === 'not_connected') void refreshAccounts();
       })
       .finally(() => {
         if (live) setLoading(false);

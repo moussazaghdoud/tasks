@@ -1,7 +1,7 @@
 import { registerPlugin } from '@capacitor/core';
-import { useSyncExternalStore } from 'react';
 import type { Task } from '@/domain/types';
 import { isNative } from '@/lib/native/platform';
+import type { Account, Meeting } from './calendarTypes';
 
 /**
  * The Microsoft calendar connection.
@@ -24,20 +24,6 @@ interface MicrosoftPlugin {
     timeZone: string;
     allDay: boolean;
   }): Promise<{ id: string; webLink: string }>;
-}
-
-export interface Meeting {
-  subject: string;
-  /** Local wall time, no zone suffix: Graph was asked for this phone’s zone. */
-  start: string;
-  end: string;
-  allDay: boolean;
-  showAs: string;
-}
-
-export interface Account {
-  connected: boolean;
-  account: string;
 }
 
 const Microsoft = registerPlugin<MicrosoftPlugin>('Microsoft');
@@ -81,160 +67,21 @@ export function registrationFor(email: string): Registration | null {
 }
 
 /** Whether this build was given any registration to talk to. */
-export const calendarConfigured = (): boolean => isNative() && (usable(PUBLIC) || usable(WORK));
-
-/* ---- connection state, shared with the interface ---- */
-
-/**
- * `checked` separates "not connected" from "not asked yet". Without it the
- * first frames after launch read as disconnected, and the agenda told a
- * connected person to go and connect.
- */
-export interface Connection extends Account {
-  checked: boolean;
-}
-
-let state: Connection = { connected: false, account: '', checked: false };
-const listeners = new Set<() => void>();
-
-const publish = (next: Account) => {
-  state = { ...next, checked: true };
-  for (const notify of listeners) notify();
-};
-
-function subscribe(onChange: () => void): () => void {
-  listeners.add(onChange);
-  return () => {
-    listeners.delete(onChange);
-  };
-}
-
-export const useMicrosoft = (): Connection => useSyncExternalStore(subscribe, () => state, () => state);
-
-/**
- * Read the connection the phone already holds.
- *
- * The sign-in survives the app closing — it lives in the Keychain — but
- * nothing asked about it at launch, so a restarted app believed it was
- * disconnected until Settings happened to be opened.
- */
-export async function refreshAccount(): Promise<void> {
-  if (!calendarConfigured()) {
-    publish({ connected: false, account: '' });
-    return;
-  }
-  try {
-    publish(await Microsoft.account());
-  } catch {
-    publish({ connected: false, account: '' });
-  }
-}
-
-/* ---- the last agenda, kept on the phone ---- */
-
-/**
- * The most recent agenda, so it appears the instant the app opens and still
- * reads on a plane. Kept on the device rather than on a server: the phone
- * already holds the connection, so a copy elsewhere would only add a place
- * for your meeting titles to be.
- */
-const AGENDA_KEY = 'hence.agenda';
-
-export interface CachedAgenda {
-  at: number;
-  meetings: Meeting[];
-}
-
-export function readAgendaCache(): CachedAgenda | null {
-  try {
-    const raw = localStorage.getItem(AGENDA_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as CachedAgenda;
-    return Array.isArray(parsed?.meetings) && typeof parsed.at === 'number' ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-export function writeAgendaCache(meetings: Meeting[]): void {
-  try {
-    localStorage.setItem(AGENDA_KEY, JSON.stringify({ at: Date.now(), meetings }));
-  } catch {
-    /* storage full or unavailable; the agenda simply loads from the network */
-  }
-  known = meetings;
-  for (const notify of agendaStateListeners) notify();
-}
-
-/**
- * The week as last read, for anything outside the agenda that needs to say
- * something about it — the heading counting what is left of your day, for
- * one. Seeded from the copy on the phone so it is right before any network.
- */
-let known: Meeting[] = readAgendaCache()?.meetings ?? [];
-const agendaStateListeners = new Set<() => void>();
-
-export const useAgendaMeetings = (): Meeting[] =>
-  useSyncExternalStore(
-    (onChange) => {
-      agendaStateListeners.add(onChange);
-      return () => {
-        agendaStateListeners.delete(onChange);
-      };
-    },
-    () => known,
-    () => known,
-  );
-
-/** Meetings still ahead of you: what the agenda itself is showing. */
-export const stillAhead = (meetings: Meeting[], now = Date.now()): Meeting[] => {
-  const midnight = new Date(now);
-  midnight.setHours(0, 0, 0, 0);
-  return meetings.filter((m) =>
-    m.allDay ? new Date(m.start).getTime() >= midnight.getTime() : new Date(m.end).getTime() > now,
-  );
-};
-
-function clearAgendaCache(): void {
-  try {
-    localStorage.removeItem(AGENDA_KEY);
-  } catch {
-    /* nothing to clear */
-  }
-  known = [];
-  for (const notify of agendaStateListeners) notify();
-}
-
-/** Ask the phone, rather than trusting what this module last remembered. */
-export async function isConnected(): Promise<boolean> {
-  if (!calendarConfigured()) return false;
-  try {
-    const result = await Microsoft.account();
-    publish(result);
-    return result.connected;
-  } catch {
-    return false;
-  }
-}
+export const configured = (): boolean => isNative() && (usable(PUBLIC) || usable(WORK));
 
 /**
  * Sign in with the registration that fits this address. The address also goes
  * to Microsoft as a hint, so its page opens with the account already chosen.
  */
-export async function connect(email: string): Promise<Account> {
-  const registration = registrationFor(email);
+export async function signIn(email?: string): Promise<Account> {
+  const registration = registrationFor(email ?? '');
   if (!registration) throw Object.assign(new Error('No Microsoft registration configured'), { code: 'unconfigured' });
-  const result = await Microsoft.signIn({ ...registration, loginHint: email.trim() });
-  publish(result);
-  return result;
+  return Microsoft.signIn({ ...registration, ...(email ? { loginHint: email.trim() } : {}) });
 }
 
-export async function disconnect(): Promise<void> {
-  // Disconnecting means the calendar leaves the phone, the copy included.
-  clearAgendaCache();
-  await Microsoft.signOut();
-  publish({ connected: false, account: '' });
-}
+export const signOut = (): Promise<{ connected: boolean }> => Microsoft.signOut();
+
+export const account = (): Promise<Account> => Microsoft.account();
 
 /** Meetings from the start of today for `days` days, in the order they happen. */
 export async function listAgenda(days = 2): Promise<Meeting[]> {
@@ -280,22 +127,5 @@ export async function createEvent(task: Task): Promise<{ webLink: string }> {
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     allDay,
   });
-  agendaChanged();
   return { webLink: result.webLink };
-}
-
-/* ---- telling the agenda ---- */
-
-const agendaListeners = new Set<() => void>();
-
-/** The calendar changed from here, so an agenda on screen should read it again. */
-function agendaChanged(): void {
-  for (const notify of agendaListeners) notify();
-}
-
-export function onAgendaChanged(listener: () => void): () => void {
-  agendaListeners.add(listener);
-  return () => {
-    agendaListeners.delete(listener);
-  };
 }

@@ -8,7 +8,15 @@ import { describe, useLastRace } from '@/lib/voice/lastRace';
 import { setAiConsent, useAiConsent } from './aiConsent';
 import { LANGUAGES, setLang, t, useLang } from './i18n';
 import { toast } from '@/store/toast';
-import { calendarConfigured, connect, disconnect, refreshAccount, useMicrosoft } from './microsoft';
+import {
+  calendarConfigured,
+  connect,
+  disconnect,
+  providers,
+  refreshAccounts,
+  useCalendars,
+  type ProviderId,
+} from './calendar';
 import { Sheet } from './Sheet';
 import { setTheme, useTheme, type Theme } from './theme';
 
@@ -24,31 +32,30 @@ const THEMES: Array<{ id: Theme; icon: typeof Sun; label: 'theme_dark' | 'theme_
  * option that cannot work is worse than no option.
  */
 function CalendarSection() {
-  const { connected, account } = useMicrosoft();
-  const [busy, setBusy] = useState(false);
-  // The address comes first: it decides which registration to sign in with,
-  // and Microsoft's page then opens on that account.
-  const [asking, setAsking] = useState(false);
+  const calendars = useCalendars();
+  const offered = providers();
+  // Which one is signing in, and which one is asking for an address first.
+  const [busy, setBusy] = useState<ProviderId | null>(null);
+  const [asking, setAsking] = useState<ProviderId | null>(null);
   const [email, setEmail] = useState('');
   const plausible = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   useEffect(() => {
-    void refreshAccount();
+    void refreshAccounts();
   }, []);
 
-  const signIn = async () => {
-    if (!plausible) return;
-    setBusy(true);
+  const signIn = async (id: ProviderId, address?: string) => {
+    setBusy(id);
     try {
-      await connect(email);
+      await connect(id, address);
       haptic('success');
-      setAsking(false);
+      setAsking(null);
       setEmail('');
     } catch (error) {
       // A cancelled sign-in is a decision, not a failure.
       if ((error as { code?: string })?.code !== 'cancelled') toast(t('connect_failed'));
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   };
 
@@ -57,59 +64,77 @@ function CalendarSection() {
       <p className="mt-7 px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('calendar')}</p>
 
       <div className="border-t border-line">
-        <button
-          disabled={busy}
-          onClick={async () => {
-            if (connected) {
-              await disconnect();
-              haptic('light');
-              return;
-            }
-            setAsking(true);
-          }}
-          className="flex h-[58px] w-full items-center gap-4 px-6 text-left transition-colors active:bg-wash-strong disabled:opacity-50"
-        >
-          <CalendarCheck className={cn('size-[21px] shrink-0', connected ? 'text-accent' : 'text-ink-3')} strokeWidth={1.8} />
-          <span className="min-w-0 flex-1">
-            <span className={cn('block truncate text-[17px]', connected ? 'text-ink' : 'text-accent')}>
-              {busy ? t('connecting') : connected ? t('connected_as') : t('connect_calendar')}
-            </span>
-            {connected && account && <span className="mt-0.5 block truncate text-[12.5px] text-ink-3">{account}</span>}
-          </span>
-          {connected && <span className="shrink-0 text-[14px] font-medium text-ember">{t('disconnect_calendar')}</span>}
-        </button>
+        {offered.map((provider) => {
+          const state = calendars.find((c) => c.id === provider.id);
+          const connected = !!state?.connected;
+          const working = busy === provider.id;
 
-        {asking && !connected && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void signIn();
-            }}
-            className="flex animate-fade flex-col gap-2 px-6 pb-2"
-          >
-            <input
-              id="calendar-email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              autoCapitalize="none"
-              autoCorrect="off"
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t('calendar_email_placeholder')}
-              aria-label={t('calendar_email_placeholder')}
-              className="h-12 w-full rounded-[14px] border border-line bg-sunk px-4 text-[16px] text-ink outline-none placeholder:text-ink-4 focus:border-accent/50"
-            />
-            <button
-              type="submit"
-              disabled={!plausible || busy}
-              className="h-12 w-full rounded-[14px] bg-accent text-[16px] font-semibold text-on-accent transition-opacity disabled:opacity-35"
-            >
-              {busy ? t('connecting') : t('calendar_continue')}
-            </button>
-          </form>
-        )}
+          return (
+            <div key={provider.id}>
+              <button
+                disabled={!!busy}
+                onClick={async () => {
+                  if (connected) {
+                    await disconnect(provider.id);
+                    haptic('light');
+                    return;
+                  }
+                  // Microsoft needs the address before it can choose a
+                  // registration; Google asks for the account itself.
+                  if (provider.asksEmail) setAsking(provider.id);
+                  else void signIn(provider.id);
+                }}
+                className="flex h-[62px] w-full items-center gap-4 px-6 text-left transition-colors active:bg-wash-strong disabled:opacity-50"
+              >
+                <CalendarCheck
+                  className={cn('size-[21px] shrink-0', connected ? 'text-accent' : 'text-ink-3')}
+                  strokeWidth={1.8}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[17px] text-ink">{provider.label}</span>
+                  <span
+                    className={cn('mt-0.5 block truncate text-[12.5px]', connected ? 'text-ink-3' : 'text-accent')}
+                  >
+                    {working ? t('connecting') : connected ? state?.account || t('connected_as') : t('connect_calendar')}
+                  </span>
+                </span>
+                {connected && <span className="shrink-0 text-[14px] font-medium text-ember">{t('disconnect_calendar')}</span>}
+              </button>
+
+              {asking === provider.id && !connected && (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (plausible) void signIn(provider.id, email);
+                  }}
+                  className="flex animate-fade flex-col gap-2 px-6 pb-3"
+                >
+                  <input
+                    id="calendar-email"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    autoFocus
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t('calendar_email_placeholder')}
+                    aria-label={t('calendar_email_placeholder')}
+                    className="h-12 w-full rounded-[14px] border border-line bg-sunk px-4 text-[16px] text-ink outline-none placeholder:text-ink-4 focus:border-accent/50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!plausible || !!busy}
+                    className="h-12 w-full rounded-[14px] bg-accent text-[16px] font-semibold text-on-accent transition-opacity disabled:opacity-35"
+                  >
+                    {working ? t('connecting') : t('calendar_continue')}
+                  </button>
+                </form>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <p className="px-6 pt-3 text-[12.5px] leading-[18px] text-ink-3">{t('calendar_note')}</p>

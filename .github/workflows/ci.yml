@@ -32,6 +32,8 @@ jobs:
           VITE_M365_WORK_CLIENT_ID: ${{ vars.M365_WORK_CLIENT_ID }}
           VITE_M365_WORK_TENANT_ID: ${{ vars.M365_WORK_TENANT_ID }}
           VITE_M365_WORK_DOMAIN: ${{ vars.M365_WORK_DOMAIN }}
+          # Google, one identifier: an installed app takes no secret.
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
 
   fastlane:
     name: Release config is valid
@@ -74,6 +76,8 @@ jobs:
           VITE_M365_WORK_CLIENT_ID: ${{ vars.M365_WORK_CLIENT_ID }}
           VITE_M365_WORK_TENANT_ID: ${{ vars.M365_WORK_TENANT_ID }}
           VITE_M365_WORK_DOMAIN: ${{ vars.M365_WORK_DOMAIN }}
+          # Google, one identifier: an installed app takes no secret.
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
       - name: Copy the web app into the native project
         run: npx cap sync ios
       - name: Show toolchain
