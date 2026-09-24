@@ -1,4 +1,18 @@
-import { ArrowLeftRight, Bell, BellOff, CalendarPlus, Check, Flag, Mail, Pencil, Repeat, RotateCcw, Share2, Trash2 } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  Bell,
+  BellOff,
+  CalendarClock,
+  CalendarPlus,
+  Check,
+  Flag,
+  Mail,
+  Pencil,
+  Repeat,
+  RotateCcw,
+  Share2,
+  Trash2,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { haptic } from '@/lib/native/bridge';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
@@ -261,12 +275,38 @@ function EditSheet({
   );
 }
 
+/** What `datetime-local` wants: local wall time, no zone, to the minute. */
+function localInput(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function tomorrowMorning(): Date {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  d.setHours(9, 0, 0, 0);
+  return d;
+}
+
 /**
  * Reminders, offered as the four answers people actually give. A date picker
  * is a scheduler's interface; this is a promise not to let you forget.
  */
 function RemindSheet({ open, task, onClose }: { open: boolean; task: { id: string; reminderAt: string | null }; onClose: () => void }) {
   const choices = reminderChoices();
+  const [picking, setPicking] = useState(false);
+  const [when, setWhen] = useState('');
+
+  useEffect(() => {
+    if (!open) {
+      setPicking(false);
+      return;
+    }
+    // Open on the reminder it already has, or on tomorrow morning — the
+    // answer people give most often once the four quick ones do not fit.
+    const start = task.reminderAt ? new Date(task.reminderAt) : undefined;
+    setWhen(localInput(start ?? tomorrowMorning()));
+  }, [open, task.reminderAt]);
 
   const choose = async (at: Date) => {
     onClose();
@@ -292,6 +332,38 @@ function RemindSheet({ open, task, onClose }: { open: boolean; task: { id: strin
           onClick={() => void choose(c.at)}
         />
       ))}
+
+      {/* For the times the four answers above do not cover: the phone's own
+          date and time wheels, which everyone already knows how to use. */}
+      {picking ? (
+        <div className="animate-fade px-6 pt-2 pb-1">
+          <input
+            type="datetime-local"
+            value={when}
+            min={localInput(new Date())}
+            autoFocus
+            onChange={(e) => setWhen(e.target.value)}
+            aria-label={t('remind_pick')}
+            className="h-12 w-full rounded-[14px] border border-line bg-sunk px-4 text-[16px] text-ink outline-none focus:border-accent/50"
+          />
+          <button
+            onClick={() => {
+              const at = new Date(when);
+              // An impossible or past moment is a slip, not an instruction.
+              if (Number.isNaN(at.getTime()) || at.getTime() <= Date.now()) {
+                toast(t('remind_pick_past'));
+                return;
+              }
+              void choose(at);
+            }}
+            className="mt-2 h-12 w-full rounded-[14px] bg-accent text-[16px] font-semibold text-on-accent"
+          >
+            {t('remind_pick_confirm')}
+          </button>
+        </div>
+      ) : (
+        <SheetAction icon={CalendarClock} label={t('remind_pick')} onClick={() => setPicking(true)} />
+      )}
       {task.reminderAt && (
         <>
           <SheetDivider />
