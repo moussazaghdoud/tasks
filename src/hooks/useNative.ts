@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { initNative } from '@/lib/native/bridge';
 import { initNotifications, syncReminders } from '@/lib/native/notifications';
+import { sweepPhotos } from '@/lib/native/photos';
 import { isNative } from '@/lib/native/platform';
 import { hashToRoute } from '@/store/ui';
 import { ui } from '@/store/ui';
@@ -32,5 +33,15 @@ export function useNative(): void {
       },
     );
     void initNotifications();
+
+    // Photographs whose thought is gone — deleted, or undone after a capture.
+    // Swept at launch rather than at the moment of deletion, because a deleted
+    // thought can be brought back from the toast for a few seconds, and a
+    // thought that returns without its photograph is the worse failure.
+    void sweepPhotos(
+      Object.values(useWorkspace.getState().tasks)
+        .map((task) => task.photo)
+        .filter((name): name is string => !!name),
+    );
   }, [ready]);
 }

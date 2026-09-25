@@ -1,14 +1,16 @@
-import { Keyboard, Mic, X } from 'lucide-react';
+import { Camera, Keyboard, Mic, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
 import { markFresh } from '@/lib/fresh';
+import { cameraAvailable, capturePhoto, photoUrl } from '@/lib/native/photos';
 import { analyzeMemo } from '@/lib/voice/analyze';
 import { createFromDrafts, findTaskByTitle, type ConfirmedDraft } from '@/lib/voice/createFromDrafts';
 import { startLevelMeter, startSpeech, type SpeechErrorCode, type SpeechSession } from '@/lib/voice/speech';
 import { extractReminder } from '@/lib/voice/spokenReminder';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
 import { toast } from '@/store/toast';
+import { ws } from '@/store/workspace';
 import { ui, useUi } from '@/store/ui';
 import { AiConsentSheet } from './AiConsentSheet';
 import { aiConsent, setAiConsent } from './aiConsent';
@@ -64,6 +66,9 @@ export function CaptureBar() {
   const heard = useRef('');
   /** Which language won the race, once the transcript comes back. */
   const heardIn = useRef<string | null>(null);
+  /** A photograph waiting for the words that go with it. */
+  const photo = useRef<string | null>(null);
+  const [photoSrc, setPhotoSrc] = useState<string | null>(null);
   /** Explain the fallback once per session, not after every sentence. */
   const noticed = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);
@@ -79,7 +84,10 @@ export function CaptureBar() {
   const capture = useCallback(
     async (text: string) => {
       const said = text.trim();
-      if (!said) {
+      const withPhoto = photo.current;
+      // Nothing said and nothing seen is nothing to keep. A photograph with
+      // no words still is: the picture is the thought.
+      if (!said && !withPhoto) {
         setPhase('idle');
         setTranscript('');
         return;
@@ -88,8 +96,9 @@ export function CaptureBar() {
 
       // Nothing leaves the phone for Claude without a yes. Asked once, here,
       // where the question means something; the answer is remembered.
-      let cloud = aiConsent() === 'granted';
-      if (aiConsent() === 'unset') {
+      // A photograph with no words has nothing to send, so it asks nothing.
+      let cloud = said ? aiConsent() === 'granted' : false;
+      if (said && aiConsent() === 'unset') {
         cloud = await new Promise<boolean>((resolve) => setConsentAnswer(() => resolve));
         setConsentAnswer(null);
       }
@@ -103,7 +112,9 @@ export function CaptureBar() {
       // Claude is told which language this was spoken in, so the thought it
       // writes back comes out in the same one — the language the recogniser
       // settled on when several were listening, not the one we guessed.
-      const { tasks, source, notice } = await analyzeMemo(subject, heardIn.current ?? speechLocale(), { cloud });
+      const { tasks, source, notice } = said
+        ? await analyzeMemo(subject, heardIn.current ?? speechLocale(), { cloud })
+        : { tasks: [], source: 'local' as const, notice: undefined };
       const drafts: ConfirmedDraft[] = tasks.length
         ? tasks.map((d) => {
             // If the memo is plainly about something already on the list, it
@@ -121,7 +132,7 @@ export function CaptureBar() {
       // and let the person decide. A messy line beats a lost thought.
       if (!drafts.length) {
         drafts.push({
-          title: subject.length > 160 ? `${subject.slice(0, 159)}…` : subject,
+          title: subject ? (subject.length > 160 ? `${subject.slice(0, 159)}…` : subject) : t('photo_thought'),
           notes: '',
           dueDate: null,
           dueTime: null,
@@ -138,6 +149,11 @@ export function CaptureBar() {
       // Read at the moment of capture, not when this component mounted: the
       // thought belongs to whichever half was open when it was spoken.
       const { tasks: made, steps, undo } = createFromDrafts(drafts, said, currentSpace());
+      // The photograph belongs to the thought just made. Undo removes the
+      // thought, and the file it leaves behind is swept at the next launch.
+      if (withPhoto && made[0]) ws().updateTask(made[0].id, { photo: withPhoto });
+      photo.current = null;
+      setPhotoSrc(null);
       markFresh(made.map((t) => t.id));
       haptic('success');
       setPhase('idle');
@@ -193,6 +209,10 @@ export function CaptureBar() {
     setPhase('idle');
     setTranscript('');
     heard.current = '';
+    // The file stays on disk until the next launch sweeps it; the thought it
+    // was going to belong to no longer exists.
+    photo.current = null;
+    setPhotoSrc(null);
   }, [teardown]);
 
   const start = useCallback(() => {
@@ -222,7 +242,7 @@ export function CaptureBar() {
         // cost the words already heard. Keep them; only report the error when
         // there was nothing to keep.
         const kept = heard.current.trim();
-        if (kept) {
+        if (kept || photo.current) {
           session.current = null;
           void capture(kept);
           return;
@@ -247,6 +267,23 @@ export function CaptureBar() {
       else stop();
     });
   }, [phase, capture, teardown]);
+
+  /**
+   * Photograph first, then say what it is.
+   *
+   * The microphone opens by itself once the shot is taken: a photograph
+   * without a sentence is a picture in a list, and the sentence is what makes
+   * it a thought. Saying nothing is still allowed — the picture is kept.
+   */
+  const photograph = useCallback(async () => {
+    if (phase !== 'idle') return;
+    haptic('light');
+    const name = await capturePhoto();
+    if (!name) return;
+    photo.current = name;
+    setPhotoSrc(await photoUrl(name));
+    start();
+  }, [phase, start]);
 
   // The home-screen shortcut (/?capture=voice) asks for the microphone before
   // this component exists, so pick the request up once we are mounted.
@@ -309,6 +346,16 @@ export function CaptureBar() {
               </button>
             </div>
 
+            {/* The photograph, while you say what it is. Small: it is the
+                thing you are talking about, not the thing you are reading. */}
+            {photoSrc && (
+              <img
+                src={photoSrc}
+                alt={t('photo_attached')}
+                className="mt-3 max-h-[26dvh] w-full rounded-[18px] border border-line object-cover"
+              />
+            )}
+
             <div ref={scroller} className="mt-3 max-h-[34dvh] min-h-[76px] overflow-y-auto">
               <p
                 className={cn(
@@ -338,8 +385,18 @@ export function CaptureBar() {
           <div className="relative flex items-end justify-center gap-6 px-6 pb-[max(16px,env(safe-area-inset-bottom))]">
             {/* Thoughts fade out under the orb rather than colliding with it. */}
             <div className="pointer-events-none absolute inset-x-0 -top-14 bottom-0 -z-10 bg-gradient-to-t from-paper via-paper to-transparent" />
-            {/* A spacer keeps the orb centred with one control beside it. */}
-            <span className="size-12" aria-hidden />
+            {cameraAvailable() ? (
+              <button
+                onClick={() => void photograph()}
+                aria-label={t('take_photo')}
+                className="grid size-12 place-items-center rounded-full text-ink-3 transition-colors active:bg-wash-strong"
+              >
+                <Camera className="size-[22px]" strokeWidth={1.8} />
+              </button>
+            ) : (
+              /* A spacer keeps the orb centred with one control beside it. */
+              <span className="size-12" aria-hidden />
+            )}
             <button
               onPointerDown={start}
               aria-label={t('capture')}

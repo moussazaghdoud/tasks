@@ -16,6 +16,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { haptic } from '@/lib/native/bridge';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
+import { photoUrl } from '@/lib/native/photos';
 import { toggleComplete } from '@/actions/taskActions';
 import { toast } from '@/store/toast';
 import { useWorkspace, ws } from '@/store/workspace';
@@ -55,6 +56,7 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
   return (
     <>
       <Sheet open={!!taskId && !remindOpen && !editOpen} onClose={onClose} label={task.title}>
+        <ThoughtPhoto name={task.photo} />
         <ThoughtTitle key={task.id} id={task.id} title={task.title} />
         <p className="px-6 pt-1 pb-4 text-[13px] text-ink-4">{t('captured_at', { when: relativeIn(task.createdAt) })}</p>
 
@@ -140,6 +142,29 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
         }}
       />
     </>
+  );
+}
+
+/** The photograph the thought was captured with, at the top where it was. */
+function ThoughtPhoto({ name }: { name?: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    if (!name) return;
+    let live = true;
+    void photoUrl(name).then((url) => live && setSrc(url));
+    return () => {
+      live = false;
+    };
+  }, [name]);
+  if (!name || !src) return null;
+  return (
+    <div className="px-6 pb-3">
+      <img
+        src={src}
+        alt={t('photo_attached')}
+        className="max-h-[40dvh] w-full rounded-[18px] border border-line object-cover"
+      />
+    </div>
   );
 }
 

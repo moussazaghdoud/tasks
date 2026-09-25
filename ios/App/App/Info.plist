@@ -50,6 +50,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Hence uses the camera only when you tap the camera button, so a photo can be kept with the note you are about to speak. Photos stay on this iPhone.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Hence uses the microphone only while you are recording a voice note, so what you say can be saved as a line on your list.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

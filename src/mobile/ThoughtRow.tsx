@@ -2,12 +2,41 @@ import { Bell, Check, Ellipsis, Repeat } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 import type { Task } from '@/domain/types';
 import { isFresh } from '@/lib/fresh';
+import { photoUrl } from '@/lib/native/photos';
 import { cn } from '@/lib/platform';
 import { registerCompletionAnimator, toggleComplete } from '@/actions/taskActions';
 import { useSwipe } from '@/hooks/useSwipe';
 import { relativeIn, repeatLabel, t, timeIn } from './i18n';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * A thought's photograph, once the file system says where it is.
+ *
+ * Resolving the path is asynchronous, so the row renders without it and the
+ * picture arrives a frame later — better than holding the whole list back for
+ * a file that is already on the device.
+ */
+function PhotoThumb({ name }: { name?: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    if (!name) return;
+    let live = true;
+    void photoUrl(name).then((url) => live && setSrc(url));
+    return () => {
+      live = false;
+    };
+  }, [name]);
+  if (!name || !src) return null;
+  return (
+    <img
+      src={src}
+      alt={t('photo_attached')}
+      loading="lazy"
+      className="mb-2.5 h-[104px] w-full rounded-[11px] border border-line object-cover"
+    />
+  );
+}
 
 /** A short, human reminder time: "18:00", "Tomorrow 09:00". */
 function reminderLabel(iso: string): string {
@@ -107,6 +136,9 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           </button>
 
           <button onClick={onOpen} className="min-w-0 flex-1 text-left">
+            {/* The photograph, small: enough to recognise which whiteboard,
+                not so much that the list becomes a gallery. */}
+            <PhotoThumb name={task.photo} />
             <span
               className={cn(
                 'block text-[15px] leading-[21px] tracking-[-0.01em] transition-colors duration-200',

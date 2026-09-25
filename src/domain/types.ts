@@ -100,6 +100,11 @@ export interface Task {
   recurrence: RecurrenceRule | null;
   /** Fractional manual order; lower comes first. */
   position: number;
+  /**
+   * A photograph taken with the thought, by filename in the app's own
+   * storage. Absent on every thought that is only words, which is most.
+   */
+  photo?: string;
   subtasks: Subtask[];
   links: TaskLink[];
   tags: string[];
