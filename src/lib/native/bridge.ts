@@ -3,6 +3,7 @@
  * all — inside the native app. Each one falls back to the web behaviour, so
  * calling code never branches on platform.
  */
+import { registerPlugin } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Clipboard } from '@capacitor/clipboard';
 import { Dialog } from '@capacitor/dialog';
@@ -17,11 +18,19 @@ import { isIOS, isNative } from './platform';
 
 // ---- feedback ---------------------------------------------------------------
 
+/** Our own Swift plugin: which way UIKit should dress the app. */
+const Appearance = registerPlugin<{ setStyle(options: { style: 'dark' | 'light' }): Promise<void> }>('Appearance');
+
 /**
- * Draw the clock and battery to suit the palette behind them.
+ * Dress the app's own chrome to match the palette.
  *
- * Capacitor's naming is the opposite of what it reads like: Style.Dark means
- * light glyphs, for a dark background.
+ * Two different things, and both are needed. The status bar draws its clock
+ * and battery over our background — Capacitor's naming is the opposite of
+ * what it reads like, and Style.Dark means light glyphs for a dark
+ * background. And UIKit draws the controls the web view cannot: the date and
+ * time wheels, selection handles, the keyboard. Those follow the window's
+ * trait rather than any CSS, which is why a dark app on a phone set to Light
+ * opened a white date picker in the middle of a dark sheet.
  */
 export async function setStatusBarTheme(theme: 'dark' | 'light'): Promise<void> {
   if (!isNative() || !isIOS()) return;
@@ -29,6 +38,11 @@ export async function setStatusBarTheme(theme: 'dark' | 'light'): Promise<void> 
     await StatusBar.setStyle({ style: theme === 'dark' ? Style.Dark : Style.Light });
   } catch {
     /* best effort */
+  }
+  try {
+    await Appearance.setStyle({ style: theme });
+  } catch {
+    /* an older build without the plugin: the web view still looks right */
   }
 }
 

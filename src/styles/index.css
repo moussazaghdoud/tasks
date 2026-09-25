@@ -208,6 +208,16 @@
   color-scheme: dark;
 }
 
+/* Date and time fields are drawn by the browser, not by us. Telling them
+   which scheme they are in is what makes the text, the placeholder and the
+   little calendar glyph legible; the wheels iOS puts over them follow the
+   window's own trait, which the app sets natively. */
+:root[data-theme='dark'] input[type='datetime-local'],
+:root[data-theme='dark'] input[type='date'],
+:root[data-theme='dark'] input[type='time'] {
+  color-scheme: dark;
+}
+
 /* The capture orb in daylight: solid, with a shadow rather than a glow. A
    glow needs darkness around it to read as light. */
 .capture-orb {
