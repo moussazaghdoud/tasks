@@ -57,6 +57,8 @@ export function CaptureBar() {
   const [transcript, setTranscript] = useState('');
   const [level, setLevel] = useState(0);
   const [typing, setTyping] = useState(false);
+  /** What the keyboard opens with, when it takes over from the microphone. */
+  const [draft, setDraft] = useState('');
   /** Set while the one-time AI question is on screen; resolves the capture waiting on it. */
   const [consentAnswer, setConsentAnswer] = useState<((allow: boolean) => void) | null>(null);
 
@@ -269,6 +271,24 @@ export function CaptureBar() {
   }, [phase, capture, teardown]);
 
   /**
+   * Type instead, part-way through.
+   *
+   * A photograph is often taken where speaking is awkward — a meeting, a
+   * shop, a street. Cancelling to reach the keyboard would throw the picture
+   * away, so this keeps both the photograph and whatever was already heard,
+   * and hands them to the keyboard.
+   */
+  const typeInstead = useCallback(() => {
+    session.current?.abort();
+    teardown();
+    setPhase('idle');
+    setDraft(heard.current.trim());
+    heard.current = '';
+    setTranscript('');
+    setTyping(true);
+  }, [teardown]);
+
+  /**
    * Photograph first, then say what it is.
    *
    * The microphone opens by itself once the shot is taken: a photograph
@@ -337,13 +357,26 @@ export function CaptureBar() {
               <p className="pt-1 text-[11px] font-semibold tracking-[0.16em] text-accent uppercase">
                 {phase === 'listening' ? t('listening') : t('thinking')}
               </p>
-              <button
-                onClick={cancel}
-                aria-label={t('cancel')}
-                className="-mt-1.5 -mr-1.5 grid size-10 place-items-center rounded-full text-ink-3 active:bg-wash-strong"
-              >
-                <X className="size-5" />
-              </button>
+              <div className="-mt-1.5 -mr-1.5 flex items-center">
+                {/* Somewhere you cannot speak: keep the photograph and the
+                    words so far, and carry on with the keyboard. */}
+                {phase === 'listening' && (
+                  <button
+                    onClick={typeInstead}
+                    aria-label={t('type_placeholder')}
+                    className="grid size-10 place-items-center rounded-full text-ink-3 active:bg-wash-strong"
+                  >
+                    <Keyboard className="size-[21px]" strokeWidth={1.8} />
+                  </button>
+                )}
+                <button
+                  onClick={cancel}
+                  aria-label={t('cancel')}
+                  className="grid size-10 place-items-center rounded-full text-ink-3 active:bg-wash-strong"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
             </div>
 
             {/* The photograph, while you say what it is. Small: it is the
@@ -385,6 +418,26 @@ export function CaptureBar() {
           <div className="relative flex items-end justify-center gap-6 px-6 pb-[max(16px,env(safe-area-inset-bottom))]">
             {/* Thoughts fade out under the orb rather than colliding with it. */}
             <div className="pointer-events-none absolute inset-x-0 -top-14 bottom-0 -z-10 bg-gradient-to-t from-paper via-paper to-transparent" />
+
+            {/* A photograph taken but not yet spoken for — because the
+                keyboard was closed without a word. Held in plain sight, with
+                one way to let it go, rather than waiting invisibly. */}
+            {photoSrc && (
+              <div className="absolute -top-2 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-line bg-raised py-1 pr-1 pl-2 shadow-sheet">
+                <img src={photoSrc} alt={t('photo_attached')} className="size-7 rounded-full object-cover" />
+                <button
+                  onClick={() => {
+                    photo.current = null;
+                    setPhotoSrc(null);
+                    haptic('light');
+                  }}
+                  aria-label={t('cancel')}
+                  className="grid size-7 place-items-center rounded-full text-ink-3 active:bg-wash-strong"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            )}
             {cameraAvailable() ? (
               <button
                 onClick={() => void photograph()}
@@ -415,7 +468,16 @@ export function CaptureBar() {
         )}
       </div>
 
-      <TypeSheet open={typing} onClose={() => setTyping(false)} onSubmit={(text) => void capture(text)} />
+      <TypeSheet
+        open={typing}
+        initial={draft}
+        photo={photoSrc}
+        onClose={() => {
+          setTyping(false);
+          setDraft('');
+        }}
+        onSubmit={(text) => void capture(text)}
+      />
       <AiConsentSheet
         open={!!consentAnswer}
         onChoose={(allow) => {
@@ -444,26 +506,54 @@ function ThinkingLine() {
 }
 
 /** Typing is the quiet alternative, and it opens only when asked for. */
-function TypeSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () => void; onSubmit: (text: string) => void }) {
+function TypeSheet({
+  open,
+  initial = '',
+  photo,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  /** Words already heard, when typing takes over from speaking mid-sentence. */
+  initial?: string;
+  /** A photograph waiting for its words, shown so it is plainly still there. */
+  photo?: string | null;
+  onClose: () => void;
+  onSubmit: (text: string) => void;
+}) {
   const [text, setText] = useState('');
   const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (open) {
-      setText('');
-      requestAnimationFrame(() => ref.current?.focus());
+      setText(initial);
+      requestAnimationFrame(() => {
+        ref.current?.focus();
+        // The caret goes after what was already heard, not before it.
+        const end = ref.current?.value.length ?? 0;
+        ref.current?.setSelectionRange(end, end);
+      });
     }
-  }, [open]);
+  }, [open, initial]);
 
   const submit = () => {
     const value = text.trim();
     onClose();
-    if (value) onSubmit(value);
+    // A photograph is a thought on its own, so an empty line still counts
+    // when there is one waiting.
+    if (value || photo) onSubmit(value);
   };
 
   return (
     <Sheet open={open} onClose={onClose} label="Type a thought">
       <div className="px-5 pb-2">
+        {photo && (
+          <img
+            src={photo}
+            alt={t('photo_attached')}
+            className="mb-3 max-h-[22dvh] w-full rounded-[16px] border border-line object-cover"
+          />
+        )}
         <textarea
           ref={ref}
           value={text}
@@ -480,7 +570,7 @@ function TypeSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () => 
         />
         <button
           onClick={submit}
-          disabled={!text.trim()}
+          disabled={!text.trim() && !photo}
           className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-on-accent transition-opacity disabled:opacity-30"
         >
           {t('capture')}
