@@ -18,13 +18,31 @@ const n = (value) => Number(value.toFixed(2));
 
 /* ---- the mark, in a 20 × 20 square ---- */
 
-const PAPER = [0xf1, 0xef, 0xe9];
-/** Ink and accent: the two colours of the mark, deep and bright. */
-const NAVY = [0x17, 0x29, 0x3f];
-const BLUE = [0x41, 0x93, 0xe8];
+/**
+ * Ice and two blues.
+ *
+ * The petals are lit rather than flat: each carries a gradient down its own
+ * diagonal, deep opposite bright, and the tile behind them is a pale blue
+ * that lifts towards the middle. At 40 pixels the gradients read as depth;
+ * flat fills at that size read as paper.
+ */
+const DEEP = [
+  [0x0a, 0x53, 0xef],
+  [0x36, 0x9d, 0xff],
+];
+const LIGHT = [
+  [0x3a, 0xc4, 0xff],
+  [0x2b, 0x7f, 0xf2],
+];
+const ICE = [
+  [0xf7, 0xfb, 0xff],
+  [0xe2, 0xef, 0xfc],
+];
+/** Where the pale tile is at its lightest, and how far the lift reaches. */
+const GLOW = { x: 10, y: 9, radius: 11 };
 
 /**
- * Four petals in a square: two deep, two bright.
+ * Four petals in a square: deep and bright on each diagonal.
  *
  * Each is a square with one corner left sharp and the other three swept round,
  * and each sharp corner points out to a corner of the tile — so the four
@@ -39,12 +57,25 @@ const LEAVES = (() => {
   const start = 10 - MARK.span / 2;
   const far = 10 + MARK.gap / 2;
   return [
-    { x0: start, y0: start, sharp: 'tl', colour: NAVY },
-    { x0: far, y0: start, sharp: 'tr', colour: BLUE },
-    { x0: start, y0: far, sharp: 'bl', colour: NAVY },
-    { x0: far, y0: far, sharp: 'br', colour: BLUE },
+    { x0: start, y0: start, sharp: 'tl', ramp: DEEP },
+    { x0: far, y0: start, sharp: 'tr', ramp: LIGHT },
+    { x0: start, y0: far, sharp: 'bl', ramp: LIGHT },
+    { x0: far, y0: far, sharp: 'br', ramp: DEEP },
   ].map((leaf) => ({ ...leaf, x1: leaf.x0 + size, y1: leaf.y0 + size }));
 })();
+
+/** Two colours mixed, `t` from 0 to 1. */
+const mix = (from, to, t) => {
+  const k = Math.min(1, Math.max(0, t));
+  return [0, 1, 2].map((i) => Math.round(from[i] + (to[i] - from[i]) * k));
+};
+
+/** A petal's colour at a point: along its own top-left to bottom-right. */
+const leafColour = (x, y, leaf) =>
+  mix(leaf.ramp[0], leaf.ramp[1], (x - leaf.x0 + (y - leaf.y0)) / ((leaf.x1 - leaf.x0) * 2));
+
+/** The tile behind the petals: pale blue, lifted towards the middle. */
+const iceAt = (x, y) => mix(ICE[0], ICE[1], Math.hypot(x - GLOW.x, y - GLOW.y) / GLOW.radius);
 
 /**
  * A square with three corners swept round and one left square. Written as a
@@ -80,7 +111,8 @@ function inTile(x, y, radius) {
 /** The colour at one point of the square, or null outside the tile. */
 function sample(x, y, radius) {
   if (!inTile(x, y, radius)) return null;
-  return leafAt(x, y)?.colour ?? PAPER;
+  const leaf = leafAt(x, y);
+  return leaf ? leafColour(x, y, leaf) : iceAt(x, y);
 }
 
 /* ---- rasteriser ---- */
@@ -113,7 +145,7 @@ function draw(size, { radius = 0, inset = 0 } = {}) {
             x = (x - 10) / (1 - inset / 10) + 10;
             y = (y - 10) / (1 - inset / 10) + 10;
           }
-          const colour = inset && (x < 0 || x > 20 || y < 0 || y > 20) ? PAPER : sample(x, y, radius);
+          const colour = inset && (x < 0 || x > 20 || y < 0 || y > 20) ? ICE[1] : sample(x, y, radius);
           if (!colour) continue;
           r += colour[0];
           g += colour[1];
@@ -221,8 +253,9 @@ for (const [path, size, options] of FILES) {
  * The mark alone on the app's own charcoal, small and centred.
  *
  * It was cream on a dark launch background, which flashed a pale square for
- * the moment before the app appeared. The same four petals, with the deep
- * pair in paper: navy on charcoal would be two missing petals.
+ * the moment before the app appeared. The same four petals, in the same
+ * blues, with the pale tile left out: on charcoal the mark is the only lit
+ * thing, which is what a launch screen should be.
  */
 const CHARCOAL = [0x23, 0x23, 0x26];
 
@@ -244,7 +277,7 @@ function splash(size) {
           const x = (px + (sx + 0.5) / SUB - size / 2) * scale + box.x;
           const y = (py + (sy + 0.5) / SUB - size / 2) * scale + box.y;
           const leaf = leafAt(x, y);
-          const colour = !leaf ? CHARCOAL : leaf.colour === NAVY ? PAPER : BLUE;
+          const colour = leaf ? leafColour(x, y, leaf) : CHARCOAL;
           r += colour[0];
           g += colour[1];
           b += colour[2];
@@ -299,8 +332,20 @@ function leafPath(leaf) {
 /** The favicon stays vector: the same geometry, written as SVG. */
 const svg = [
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">',
-  `<rect width="20" height="20" rx="5" fill="${hex(PAPER)}"/>`,
-  ...LEAVES.map((leaf) => `<path d="${leafPath(leaf)}" fill="${hex(leaf.colour)}"/>`),
+  // The same ramps the rasteriser mixes, declared once and pointed at.
+  '<defs>',
+  `<radialGradient id="ice" cx="${n(GLOW.x / 20)}" cy="${n(GLOW.y / 20)}" r="${n(GLOW.radius / 20)}">`,
+  `<stop offset="0" stop-color="${hex(ICE[0])}"/><stop offset="1" stop-color="${hex(ICE[1])}"/>`,
+  '</radialGradient>',
+  ...LEAVES.map(
+    (leaf, i) =>
+      `<linearGradient id="p${i}" x1="${n(leaf.x0)}" y1="${n(leaf.y0)}" x2="${n(leaf.x1)}" y2="${n(leaf.y1)}" gradientUnits="userSpaceOnUse">` +
+      `<stop offset="0" stop-color="${hex(leaf.ramp[0])}"/><stop offset="1" stop-color="${hex(leaf.ramp[1])}"/>` +
+      '</linearGradient>',
+  ),
+  '</defs>',
+  '<rect width="20" height="20" rx="5" fill="url(#ice)"/>',
+  ...LEAVES.map((leaf, i) => `<path d="${leafPath(leaf)}" fill="url(#p${i})"/>`),
   '</svg>',
 ].join('');
 writeFileSync('public/favicon.svg', `${svg}\n`);
