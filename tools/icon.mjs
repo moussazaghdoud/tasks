@@ -239,6 +239,8 @@ const FILES = [
   // Android crops this one to whatever shape the launcher likes, so the mark
   // sits well inside it.
   ['public/icon-maskable-512.png', 512, { inset: 2.2 }],
+  // Google's OAuth consent screen asks for exactly this size, opaque.
+  ['docs/store/google-oauth-logo-120.png', 120, { alpha: false }],
 ];
 
 for (const [path, size, options] of FILES) {
