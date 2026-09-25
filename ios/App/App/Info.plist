@@ -50,6 +50,10 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Hence does not read your photo library. The camera component it uses requires this permission to be declared; photos you take in the app are kept privately inside the app and never added to your library.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Hence does not save anything to your photo library. Photos you take in the app are kept privately inside the app.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Hence uses the camera only when you tap the camera button, so a photo can be kept with the note you are about to speak. Photos stay on this iPhone.</string>
 	<key>NSMicrophoneUsageDescription</key>
