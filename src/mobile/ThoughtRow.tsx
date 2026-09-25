@@ -1,10 +1,13 @@
-import { Bell, Check, Ellipsis, Repeat } from 'lucide-react';
+import { Bell, Check, Repeat, Trash2 } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 import type { Task } from '@/domain/types';
 import { isFresh } from '@/lib/fresh';
 import { photoUrl } from '@/lib/native/photos';
 import { cn } from '@/lib/platform';
 import { registerCompletionAnimator, toggleComplete } from '@/actions/taskActions';
+import { haptic } from '@/lib/native/bridge';
+import { toast } from '@/store/toast';
+import { ws } from '@/store/workspace';
 import { useSwipe } from '@/hooks/useSwipe';
 import { relativeIn, repeatLabel, t, timeIn } from './i18n';
 
@@ -78,7 +81,14 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
   const swipe = useSwipe({
     enabled: !done,
     onRight: () => toggleComplete(task.id),
-    onLeft: onOpen,
+    // Throwing a thought off the left is how it is thrown away. No
+    // confirmation: the undo in the toast is the confirmation, and asking
+    // twice for something reversible is its own kind of rude.
+    onLeft: () => {
+      const undo = ws().transact(() => ws().remove([task.id]));
+      haptic('medium');
+      toast(t('deleted'), { action: { label: t('undo'), run: undo } });
+    },
   });
 
   const checked = done || completing;
@@ -91,11 +101,17 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           <div
             className={cn(
               'absolute inset-0 flex items-center rounded-[15px] px-6',
-              swipe.dx > 0 ? 'justify-start text-on-accent' : 'justify-end text-ink',
-              swipe.dx > 0 ? (swipe.armed ? 'bg-accent' : 'bg-accent/40') : swipe.armed ? 'bg-line-strong' : 'bg-line',
+              swipe.dx > 0 ? 'justify-start text-on-accent' : 'justify-end text-white',
+              swipe.dx > 0
+                ? swipe.armed
+                  ? 'bg-accent'
+                  : 'bg-accent/40'
+                : swipe.armed
+                  ? 'bg-ember'
+                  : 'bg-ember/40',
             )}
           >
-            {swipe.dx > 0 ? <Check className="size-[22px]" strokeWidth={2.4} /> : <Ellipsis className="size-[22px]" />}
+            {swipe.dx > 0 ? <Check className="size-[22px]" strokeWidth={2.4} /> : <Trash2 className="size-[22px]" strokeWidth={2.2} />}
           </div>
         )}
 

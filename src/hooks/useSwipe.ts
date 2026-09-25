@@ -4,8 +4,8 @@ import { haptic } from '@/lib/native/bridge';
 const THRESHOLD = 76;
 
 /**
- * Horizontal swipe for touch rows. Right → primary (complete), left → secondary
- * (actions). Vertical scrolling wins as soon as the gesture looks vertical.
+ * Horizontal swipe for touch rows. Right → keep it (complete), left → throw it
+ * away (delete). Vertical scrolling wins as soon as the gesture looks vertical.
  */
 export function useSwipe({ onRight, onLeft, enabled }: { onRight: () => void; onLeft: () => void; enabled: boolean }) {
   const [dx, setDx] = useState(0);
