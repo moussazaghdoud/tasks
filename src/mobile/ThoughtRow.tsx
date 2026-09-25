@@ -8,7 +8,7 @@ import { registerCompletionAnimator, toggleComplete } from '@/actions/taskAction
 import { haptic } from '@/lib/native/bridge';
 import { toast } from '@/store/toast';
 import { ws } from '@/store/workspace';
-import { useSwipe } from '@/hooks/useSwipe';
+import { ACTION_WIDTH, useSwipe } from '@/hooks/useSwipe';
 import { relativeIn, repeatLabel, t, timeIn } from './i18n';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -78,40 +78,44 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
     });
   }, [task.id, done]);
 
-  const swipe = useSwipe({
-    enabled: !done,
-    onRight: () => toggleComplete(task.id),
-    // Throwing a thought off the left is how it is thrown away. No
-    // confirmation: the undo in the toast is the confirmation, and asking
-    // twice for something reversible is its own kind of rude.
-    onLeft: () => {
-      const undo = ws().transact(() => ws().remove([task.id]));
-      haptic('medium');
-      toast(t('deleted'), { action: { label: t('undo'), run: undo } });
-    },
-  });
+  const swipe = useSwipe({ enabled: !done, onRight: () => toggleComplete(task.id) });
+
+  const remove = () => {
+    swipe.close();
+    const undo = ws().transact(() => ws().remove([task.id]));
+    haptic('medium');
+    toast(t('deleted'), { action: { label: t('undo'), run: undo } });
+  };
 
   const checked = done || completing;
 
   return (
     <div className="collapse-row" data-collapsed={collapsed}>
       <div className="relative mb-2">
-        {/* What the swipe is about to do, revealed underneath the row. */}
-        {swipe.dx !== 0 && (
+        {/* Completing is a throw: what it will do, shown while you pull. */}
+        {swipe.dx > 0 && (
           <div
             className={cn(
-              'absolute inset-0 flex items-center rounded-[15px] px-6',
-              swipe.dx > 0 ? 'justify-start text-on-accent' : 'justify-end text-white',
-              swipe.dx > 0
-                ? swipe.armed
-                  ? 'bg-accent'
-                  : 'bg-accent/40'
-                : swipe.armed
-                  ? 'bg-ember'
-                  : 'bg-ember/40',
+              'absolute inset-0 flex items-center justify-start rounded-[15px] px-6 text-on-accent',
+              swipe.armed ? 'bg-accent' : 'bg-accent/40',
             )}
           >
-            {swipe.dx > 0 ? <Check className="size-[22px]" strokeWidth={2.4} /> : <Trash2 className="size-[22px]" strokeWidth={2.2} />}
+            <Check className="size-[22px]" strokeWidth={2.4} />
+          </div>
+        )}
+
+        {/* Deleting is a button, behind the row, waiting to be pressed. */}
+        {swipe.dx < 0 && (
+          <div className="absolute inset-y-0 right-0 flex items-stretch overflow-hidden rounded-[15px]">
+            <button
+              onClick={remove}
+              aria-label={t('act_delete')}
+              style={{ width: ACTION_WIDTH }}
+              className="flex flex-col items-center justify-center gap-1 bg-ember text-white active:brightness-90"
+            >
+              <Trash2 className="size-[21px]" strokeWidth={2.1} />
+              <span className="text-[11px] font-semibold tracking-[0.04em]">{t('act_delete')}</span>
+            </button>
           </div>
         )}
 
@@ -120,9 +124,15 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           onTouchMove={swipe.handlers.onTouchMove}
           onTouchEnd={swipe.handlers.onTouchEnd}
           onTouchCancel={swipe.handlers.onTouchCancel}
-          style={{ transform: swipe.dx ? `translateX(${swipe.dx}px)` : undefined, touchAction: 'pan-y' }}
+          style={{
+            transform: swipe.dx ? `translateX(${swipe.dx}px)` : undefined,
+            // Only the snap back or open is animated; a finger drag must not
+            // lag behind the finger.
+            transition: swipe.open || !swipe.dx ? 'transform 180ms var(--ease-out)' : undefined,
+            touchAction: 'pan-y',
+          }}
           className={cn(
-            'flex items-start gap-3.5 rounded-[15px] border px-4 py-3.5 transition-colors duration-200',
+            'relative flex items-start gap-3.5 rounded-[15px] border px-4 py-3.5 transition-colors duration-200',
             // Important thoughts carry the red themselves rather than wearing a
             // badge: the card, its edge and the words all shift together, so it
             // reads from across the room without adding anything to the row.
@@ -151,7 +161,10 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
             </span>
           </button>
 
-          <button onClick={onOpen} className="min-w-0 flex-1 text-left">
+          {/* With Delete showing, a tap puts the row back rather than opening
+              the menu: the first tap after a swipe is almost always a
+              change of mind. */}
+          <button onClick={() => (swipe.open ? swipe.close() : onOpen())} className="min-w-0 flex-1 text-left">
             {/* The photograph, small: enough to recognise which whiteboard,
                 not so much that the list becomes a gallery. */}
             <PhotoThumb name={task.photo} />
