@@ -35,7 +35,7 @@ const message = (text: string, stop_reason = 'end_turn') => ({
   id: 'msg_test',
   type: 'message',
   role: 'assistant',
-  model: 'claude-opus-5',
+  model: 'claude-sonnet-5',
   content: [{ type: 'text', text }],
   stop_reason,
   stop_sequence: null,
@@ -43,13 +43,12 @@ const message = (text: string, stop_reason = 'end_turn') => ({
 });
 
 describe('analyzeTranscript', () => {
-  it('sends a structured-output request to Claude Opus 5 with refusal fallbacks', async () => {
+  it('sends a structured-output request to Claude Sonnet 5', async () => {
     const { client, seen } = stubClient({ body: message(JSON.stringify({ tasks: [] })) });
     await analyzeTranscript(ctx, client);
     expect(seen.url).toContain('/v1/messages');
-    expect(seen.headers?.get('anthropic-beta')).toContain('server-side-fallback-2026-07-01');
-    expect(seen.body?.model).toBe('claude-opus-5');
-    expect(seen.body?.fallbacks).toBe('default');
+    expect(seen.body?.model).toBe('claude-sonnet-5');
+    expect(seen.body?.fallbacks).toBeUndefined();
     const output = seen.body?.output_config as { effort: string; format: { type: string } };
     expect(output.effort).toBe('low');
     expect(output.format.type).toBe('json_schema');

@@ -55,7 +55,7 @@ the center of the bottom bar). `V` opens it from anywhere.
 Voice needs Chrome, Edge or Safari. Firefox can use *Type instead*.
 
 **Connecting Claude (recommended).** The analysis uses Claude
-(`claude-opus-5`) through the app's own server route, so your API key never
+(`claude-sonnet-5`) through the app's own server route, so your API key never
 reaches the browser. Copy `.env.example` to `.env.local`, set
 `ANTHROPIC_API_KEY`, and restart `npm run dev`. Without a key, Hence falls back
 to on-device analysis, which handles English framing, dates, times, urgency and

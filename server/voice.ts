@@ -10,7 +10,9 @@ import Anthropic from '@anthropic-ai/sdk';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { VoiceApiResponse, VoiceContext, VoiceTaskDraft } from '../src/lib/voice/types.ts';
 
-const MODEL = 'claude-opus-5';
+// Tidying one spoken note is a small job: Sonnet does it about as well as
+// Opus for well under half the cost per note.
+const MODEL = 'claude-sonnet-5';
 const MAX_TRANSCRIPT = 4000;
 
 const nullable = (schema: Record<string, unknown>) => ({ anyOf: [schema, { type: 'null' }] });
@@ -145,9 +147,6 @@ export async function analyzeTranscript(ctx: VoiceContext, client: Anthropic = (
       max_tokens: 8000,
       // A quick extraction: low effort keeps latency to a few seconds.
       output_config: { effort: 'low', format: { type: 'json_schema', schema: TASKS_SCHEMA } },
-      // If a safety classifier declines, re-run on Anthropic's recommended fallback model.
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
       system: SYSTEM,
       messages: [{ role: 'user', content: userPrompt({ ...ctx, transcript: ctx.transcript.slice(0, MAX_TRANSCRIPT) }) }],
     });
@@ -164,6 +163,11 @@ export async function analyzeTranscript(ctx: VoiceContext, client: Anthropic = (
     }
     throw new VoiceAnalysisError('upstream', error instanceof Error ? error.message : 'Unknown error');
   }
+
+  // Token counts only — never the memo — so the real cost per note can be read
+  // from the logs without anything the privacy policy says is not kept.
+  const { input_tokens, output_tokens, cache_read_input_tokens } = response.usage;
+  console.log(`[hence] voice tokens model=${response.model} in=${input_tokens} out=${output_tokens} cached=${cache_read_input_tokens ?? 0}`);
 
   if (response.stop_reason === 'refusal') throw new VoiceAnalysisError('refused', 'The request was declined.');
   const text = response.content.find((b): b is Anthropic.Beta.BetaTextBlock => b.type === 'text')?.text;
