@@ -13,7 +13,7 @@ Upload them in this order. The first two or three are all most people see.
 | 3 | `03-actions.png` | What a thought can become — done, a reminder, an event |
 | 4 | `04-agenda.png` | The week, a colour per day |
 | 5 | `05-photo.png` | A thought captured as a photograph |
-| 6 | `06-settings.png` | Three languages, the Claude switch, both calendars |
+| 6 | `06-settings.png` | Three languages, the LLM switch, both calendars |
 | 7 | `07-light-thoughts.png` | The same list in daylight |
 | 8 | `08-light-agenda.png` | The same week in daylight |
 

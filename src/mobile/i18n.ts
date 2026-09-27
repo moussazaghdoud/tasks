@@ -283,8 +283,8 @@ const EN = {
   ai_decline: 'Keep it on my iPhone',
   ai_change_later: 'You can change this at any time in Settings.',
   ai_section: 'Voice notes',
-  ai_toggle: 'Tidy notes with Claude',
-  ai_setting_note: 'When on, the text of each note is sent to Anthropic’s Claude to be cleaned up. When off, notes are read on your iPhone and nothing leaves it.',
+  ai_toggle: 'Tidy notes with LLM',
+  ai_setting_note: 'When on, the text of each note is sent to an LLM to be cleaned up. When off, notes are read only on your iPhone and nothing leaves it.',
 } as const;
 
 type Key = keyof typeof EN;
@@ -433,8 +433,8 @@ const FR: Record<Key, string> = {
   ai_decline: 'Garder sur mon iPhone',
   ai_change_later: 'Modifiable à tout moment dans les Réglages.',
   ai_section: 'Notes vocales',
-  ai_toggle: 'Mise au propre par Claude',
-  ai_setting_note: 'Activé, le texte de chaque note est envoyé à Claude, d’Anthropic, pour être mis au propre. Désactivé, les notes sont lues sur votre iPhone et rien n’en sort.',
+  ai_toggle: 'Mise au propre par LLM',
+  ai_setting_note: 'Activé, le texte de chaque note est envoyé à un LLM pour être mis au propre. Désactivé, les notes sont lues uniquement sur votre iPhone et rien n’en sort.',
 };
 
 const ZH: Record<Key, string> = {
@@ -582,8 +582,8 @@ const ZH: Record<Key, string> = {
   ai_decline: '仅保留在我的 iPhone 上',
   ai_change_later: '你可以随时在“设置”中更改。',
   ai_section: '语音笔记',
-  ai_toggle: '用 Claude 整理笔记',
-  ai_setting_note: '开启后，每条笔记的文字会发送给 Anthropic 的 Claude 进行整理。关闭后，笔记只在你的 iPhone 上处理，不会离开设备。',
+  ai_toggle: '用 LLM 整理笔记',
+  ai_setting_note: '开启后，每条笔记的文字会发送给 LLM 进行整理。关闭后，笔记只在你的 iPhone 上处理，不会离开设备。',
 };
 
 const DICTIONARIES: Record<Lang, Record<Key, string>> = { en: EN, fr: FR, zh: ZH };
