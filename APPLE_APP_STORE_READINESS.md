@@ -20,8 +20,8 @@ cannot proceed without a decision
 
 | # | Action | Why it blocks |
 |---|---|---|
-| 1 | **Replace `REPLACE_WITH_YOUR_EMAIL`** in `public/privacy.html` and `public/support.html` | A privacy policy and support page with a placeholder contact are an automatic rejection. Your email is not written in by the audit because it publishes on a public page. |
-| 2 | **Retake the screenshots.** The six in `docs/store/` show the original light design, which no longer exists. | Screenshots must show the app as it is (Guideline 2.3.3). |
+| 1 | ~~Replace `REPLACE_WITH_YOUR_EMAIL`~~ **Done** — `iHenceteam@gmail.com` in `public/privacy.html` and `public/support.html` | A privacy policy and support page with a placeholder contact are an automatic rejection. |
+| 2 | ~~Retake the screenshots.~~ **Done** — eight in `docs/store/`, see its README | Screenshots must show the app as it is (Guideline 2.3.3). |
 | 3 | **Decide how a reviewer tests the Agenda** — see *Review notes* below. | The feature needs a Microsoft 365 account a reviewer does not have. |
 | 4 | **Fill the App Privacy answers** in App Store Connect exactly as listed in section 3. | They must match the privacy manifest and policy. |
 | 5 | **Confirm the week agenda** shows days after tomorrow on your phone (open question, section 9). | A feature that silently shows less than it claims is a reliability defect. |
@@ -59,7 +59,7 @@ cannot proceed without a decision
 | Release does not point to development servers | **PASS** | Release reads `API_BASE_URL` = the production Railway server. `grep` for `localhost`, `127.0.0.1`, `:5173`, `:3000` in shipped code finds only a code comment |
 | No debug menus in Release | **PASS** | `CAPACITOR_DEBUG = true` lives in `ios/debug.xcconfig`, attached to the two **Debug** configurations only; Release has no base configuration, so the web inspector is off |
 | No sample data shown to users | **FIXED** | A first launch seeded **29 demo tasks naming real people** (*"Call Nicolas about candidate"*). The phone app now starts empty. `src/store/workspace.ts` — `init` |
-| No placeholder text | **MANUAL** | `REPLACE_WITH_YOUR_EMAIL` in `public/privacy.html` and `public/support.html`. See action 1 |
+| No placeholder text | **FIXED** | Contact is `iHenceteam@gmail.com` on the privacy and support pages |
 | No unfinished screen or "coming soon" | **PASS** | No `coming soon`, `TODO` or `lorem` in `src/`, `public/`, `server/` |
 | Version and build number valid and documented | **PASS** | See summary. The `1.0` / `1` defaults in `project.pbxproj` are overridden on every release build |
 | Bundle identifier consistent | **PASS** | Same value in Capacitor config, both Xcode configurations, Fastfile, workflow, and the Entra redirect `msauth.com.moussazaghdoud.hence://auth` |
