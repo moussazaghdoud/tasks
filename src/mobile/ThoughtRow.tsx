@@ -173,7 +173,8 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
             <PhotoThumb name={task.photo} />
             <span
               className={cn(
-                'block text-[15px] leading-[21px] tracking-[-0.01em] transition-colors duration-200',
+                // pre-line: a dictated "new line" shows as one.
+                'block text-[15px] leading-[21px] tracking-[-0.01em] whitespace-pre-line transition-colors duration-200',
                 checked ? 'text-ink-3 line-through' : important ? 'font-medium text-ember' : 'text-ink',
               )}
             >

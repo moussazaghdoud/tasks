@@ -1,34 +1,32 @@
 import { describe, expect, it } from 'vitest';
-import { splitThoughts } from './spokenCommands';
+import { withLineBreaks } from './spokenCommands';
 
-describe('splitThoughts', () => {
-  it('starts a new thought on "new line" in each language', () => {
-    expect(splitThoughts('Call Paul new line buy bread')).toEqual(['Call Paul', 'Buy bread']);
-    expect(splitThoughts('Appeler Paul à la ligne acheter du pain')).toEqual(['Appeler Paul', 'Acheter du pain']);
-    expect(splitThoughts('Appeler Paul, retour à la ligne, acheter du pain.')).toEqual(['Appeler Paul', 'Acheter du pain']);
-    expect(splitThoughts('Appeler Paul nouvelle ligne acheter du pain')).toEqual(['Appeler Paul', 'Acheter du pain']);
-    expect(splitThoughts('给保罗打电话换行买面包')).toEqual(['给保罗打电话', '买面包']);
-    expect(splitThoughts('给保罗打电话，另起一行，买面包')).toEqual(['给保罗打电话', '买面包']);
+describe('withLineBreaks', () => {
+  it('turns "new line" into a line break, in each language', () => {
+    expect(withLineBreaks('Shopping list new line bread new line milk')).toBe('Shopping list\nBread\nMilk');
+    expect(withLineBreaks('Liste de courses à la ligne pain à la ligne lait')).toBe('Liste de courses\nPain\nLait');
+    expect(withLineBreaks('Liste de courses, retour à la ligne, pain.')).toBe('Liste de courses\nPain');
+    expect(withLineBreaks('Liste de courses nouvelle ligne pain')).toBe('Liste de courses\nPain');
+    expect(withLineBreaks('购物清单换行面包')).toBe('购物清单\n面包');
+    expect(withLineBreaks('购物清单，另起一行，面包')).toBe('购物清单\n面包');
   });
 
-  it('treats "enter" and "entrée" as the same, when they stand alone', () => {
-    expect(splitThoughts('Call Paul. Enter. Buy bread')).toEqual(['Call Paul', 'Buy bread']);
-    expect(splitThoughts('Call Paul, enter')).toEqual(['Call Paul']);
-    expect(splitThoughts('Appeler Paul entrée acheter du pain')).toEqual(['Appeler Paul', 'Acheter du pain']);
+  it('treats "enter" and "entrée" the same, when they stand alone', () => {
+    expect(withLineBreaks('Call Paul. Enter. About the contract')).toBe('Call Paul\nAbout the contract');
+    expect(withLineBreaks('Appeler Paul entrée pour le contrat')).toBe('Appeler Paul\nPour le contrat');
   });
 
   it('leaves "enter" and "entrée" alone when they are part of the sentence', () => {
-    expect(splitThoughts('Enter the figures in the budget')).toEqual(['Enter the figures in the budget']);
-    expect(splitThoughts('Réserver une table près de l’entrée')).toEqual(['Réserver une table près de l’entrée']);
-    expect(splitThoughts('Choisir une entrée pour samedi')).toEqual(['Choisir une entrée pour samedi']);
+    expect(withLineBreaks('Enter the figures in the budget')).toBe('Enter the figures in the budget');
+    expect(withLineBreaks('Réserver une table près de l’entrée')).toBe('Réserver une table près de l’entrée');
+    expect(withLineBreaks('Choisir une entrée pour samedi')).toBe('Choisir une entrée pour samedi');
   });
 
-  it('keeps a thought with no command in one piece', () => {
-    expect(splitThoughts('Call Paul about the contract')).toEqual(['Call Paul about the contract']);
-    expect(splitThoughts('')).toEqual([]);
+  it('keeps a thought with no command exactly as said', () => {
+    expect(withLineBreaks('Call Paul about the contract.')).toBe('Call Paul about the contract.');
   });
 
-  it('ignores a command said at the start, the end, or twice', () => {
-    expect(splitThoughts('new line Call Paul new line new line')).toEqual(['Call Paul']);
+  it('drops empty lines from a command said at the start, the end, or twice', () => {
+    expect(withLineBreaks('new line Call Paul new line new line')).toBe('Call Paul');
   });
 });

@@ -187,9 +187,14 @@ function ThoughtTitle({ id, title }: { id: string; title: string }) {
       value={value}
       aria-label={t('a11y_thought')}
       rows={1}
-      onChange={(e) => setValue(e.target.value.replace(/\n/g, ' '))}
+      // Line breaks already in the thought are kept; Return here means done.
+      onChange={(e) => setValue(e.target.value)}
       onBlur={() => (value.trim() ? ws().renameTask(id, value.trim()) : setValue(title))}
-      onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        e.currentTarget.blur();
+      }}
       className="w-full resize-none bg-transparent px-6 pt-1 text-[21px] leading-[29px] font-medium tracking-[-0.015em] text-ink outline-none"
     />
   );
@@ -278,7 +283,8 @@ function EditSheet({
           rows={1}
           aria-label={t('a11y_thought')}
           onChange={(e) => {
-            setTitle(e.target.value.replace(/\n/g, ' '));
+            // Return adds a line, as a dictated "new line" does.
+            setTitle(e.target.value);
             grow(e.currentTarget);
           }}
           className="w-full resize-none rounded-[16px] border border-line bg-sunk px-4 py-3 text-[17px] leading-[24px] text-ink outline-none focus:border-accent/50"

@@ -7,7 +7,7 @@ import { cameraAvailable, capturePhoto, photoUrl } from '@/lib/native/photos';
 import { analyzeMemo } from '@/lib/voice/analyze';
 import { createFromDrafts, findTaskByTitle, type ConfirmedDraft } from '@/lib/voice/createFromDrafts';
 import { startLevelMeter, startSpeech, type SpeechErrorCode, type SpeechSession } from '@/lib/voice/speech';
-import { splitThoughts } from '@/lib/voice/spokenCommands';
+import { withLineBreaks } from '@/lib/voice/spokenCommands';
 import { extractReminder } from '@/lib/voice/spokenReminder';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
 import { toast } from '@/store/toast';
@@ -106,57 +106,56 @@ export function CaptureBar() {
         setConsentAnswer(null);
       }
 
-      // "New line", "à la ligne", "换行" start another thought. Each part is
-      // read on its own, with its own reminder, all at once.
-      const parts = said ? splitThoughts(said) : [''];
-      const read = await Promise.all(
-        parts.map(async (part) => {
-          // "Remind me tomorrow at nine" is read here, on the phone, before
-          // anything else sees the words: the analyser is then handed the
-          // thought without the asking, so "remind me" never ends up in the title.
-          const { at: remindAt, text: stripped } = extractReminder(part);
-          const subject = stripped || part;
+      // "New line", "à la ligne", "换行" become real line breaks in the thought.
+      const spoken = withLineBreaks(said);
 
-          // Claude is told which language this was spoken in, so the thought it
-          // writes back comes out in the same one — the language the recogniser
-          // settled on when several were listening, not the one we guessed.
-          const { tasks, source, notice } = part
-            ? await analyzeMemo(subject, heardIn.current ?? speechLocale(), { cloud })
-            : { tasks: [], source: 'local' as const, notice: undefined };
-          const drafts: ConfirmedDraft[] = tasks.map((d) => {
+      // "Remind me tomorrow at nine" is read here, on the phone, before
+      // anything else sees the words: the analyser is then handed the thought
+      // without the asking, so "remind me" never ends up in the title.
+      const { at: remindAt, text: stripped } = extractReminder(spoken);
+      const subject = stripped || spoken;
+      // Someone who dictated line breaks has laid the thought out themselves.
+      // The analyser would fold it into one line, so it is kept as said.
+      const laidOut = subject.includes('\n');
+
+      // Claude is told which language this was spoken in, so the thought it
+      // writes back comes out in the same one — the language the recogniser
+      // settled on when several were listening, not the one we guessed.
+      const { tasks, source, notice } =
+        said && !laidOut
+          ? await analyzeMemo(subject, heardIn.current ?? speechLocale(), { cloud })
+          : { tasks: [], source: 'local' as const, notice: undefined };
+      const drafts: ConfirmedDraft[] = tasks.length
+        ? tasks.map((d) => {
             // If the memo is plainly about something already on the list, it
             // belongs there as a step — intelligence that costs no interaction.
             // Only within this half, though: quietly filing a private thought
             // onto a work task would be the worst kind of helpful.
             const related = d.relatedTo ? findTaskByTitle(d.relatedTo) : undefined;
             return related && spaceOf(related) === currentSpace() ? { ...d, stepOf: related.id } : d;
-          });
+          })
+        : [];
 
-          // The analyser sometimes finds nothing actionable — a half sentence, a
-          // language it was not expecting, pure thinking aloud. Throwing the words
-          // away is the one thing this app must never do, so keep them verbatim
-          // and let the person decide. A messy line beats a lost thought.
-          if (!drafts.length) {
-            drafts.push({
-              title: subject ? (subject.length > 160 ? `${subject.slice(0, 159)}…` : subject) : t('photo_thought'),
-              notes: '',
-              dueDate: null,
-              dueTime: null,
-              priority: 'normal',
-              project: null,
-              assignee: null,
-              subtasks: [],
-              recurrence: null,
-              estimatedMinutes: null,
-              relatedTo: null,
-            });
-          }
-          return { remindAt, drafts, source, notice };
-        }),
-      );
-      const drafts = read.flatMap((r) => r.drafts);
-      const source = read.some((r) => r.source === 'local') ? 'local' : 'claude';
-      const notice = read.find((r) => r.notice)?.notice;
+      // The analyser sometimes finds nothing actionable — a half sentence, a
+      // language it was not expecting, pure thinking aloud. Throwing the words
+      // away is the one thing this app must never do, so keep them verbatim
+      // and let the person decide. A messy line beats a lost thought.
+      if (!drafts.length) {
+        const limit = laidOut ? 600 : 160;
+        drafts.push({
+          title: subject ? (subject.length > limit ? `${subject.slice(0, limit - 1)}…` : subject) : t('photo_thought'),
+          notes: '',
+          dueDate: null,
+          dueTime: null,
+          priority: 'normal',
+          project: null,
+          assignee: null,
+          subtasks: [],
+          recurrence: null,
+          estimatedMinutes: null,
+          relatedTo: null,
+        });
+      }
 
       // Read at the moment of capture, not when this component mounted: the
       // thought belongs to whichever half was open when it was spoken.
@@ -171,25 +170,16 @@ export function CaptureBar() {
       setPhase('idle');
       setTranscript('');
 
-      // Each reminder goes on the thought its own part made. The new thoughts
-      // come back in the order the parts were said, so walk them together.
-      // When a part joined an existing thought as a step, the reminder
-      // belongs to that thought rather than to nothing. Asking for the
+      // The reminder goes on the thought that was just made. Asking for the
       // notification permission here is the one moment it explains itself:
       // the person has just said out loud that they want to be reminded.
-      const reminders: Array<{ id: string; at: Date }> = [];
-      let next = 0;
-      for (const r of read) {
-        const fresh = r.drafts.filter((d) => !d.stepOf).length;
-        const on = fresh ? made[next]?.id : r.drafts.find((d) => d.stepOf)?.stepOf;
-        next += fresh;
-        if (r.remindAt && on) reminders.push({ id: on, at: r.remindAt });
-      }
-      if (reminders.length) {
-        void ensureNotificationPermission().then(() => reminders.forEach((r) => setReminder(r.id, r.at)));
+      // When the memo joined an existing thought as a step, the reminder
+      // belongs to that thought rather than to nothing.
+      const remindOn = made[0]?.id ?? drafts.find((d) => d.stepOf)?.stepOf;
+      if (remindAt && remindOn) {
+        void ensureNotificationPermission().then(() => setReminder(remindOn, remindAt));
       }
 
-      const remindAt = reminders.length === 1 && made.length <= 1 ? reminders[0].at : null;
       const label = remindAt
         ? t('captured_reminded', { when: dayTimeIn(remindAt) })
         : made.length > 1
@@ -202,7 +192,8 @@ export function CaptureBar() {
       // quietly stopped answering looks like the app getting worse.
       // Mark on-device results only when that was not the person's own
       // choice: someone who said "keep it on my iPhone" does not need telling.
-      const chosenLocal = !cloud;
+      // A laid-out thought was kept as said on purpose, not for want of Claude.
+      const chosenLocal = !cloud || laidOut;
       toast(source === 'local' && !chosenLocal ? `${label} · ${t('on_device_suffix')}` : label, {
         action: { label: t('undo'), run: undo },
       });

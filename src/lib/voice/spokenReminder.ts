@@ -334,8 +334,10 @@ export function spokenNumbers(text: string): string {
 
 /** Tidy the sentence left behind: no double spaces, no dangling comma. */
 function tidy(text: string): string {
+  // Line breaks the person asked for stay; only runs of spaces collapse.
   const out = text
-    .replace(/\s{2,}/g, ' ')
+    .replace(/[^\S\n]{2,}/g, ' ')
+    .replace(/[^\S\n]*\n[^\S\n]*/g, '\n')
     .replace(/\s+([,.;:!?])/g, '$1')
     .replace(/^[\s,;:.\-–—·、，。]+/, '')
     .replace(/[\s,;:\-–—]+$/, '')

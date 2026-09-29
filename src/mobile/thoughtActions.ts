@@ -7,6 +7,7 @@
  */
 import type { Task } from '@/domain/types';
 import { todayKey } from '@/lib/dates';
+import { afterFirstLine, firstLine } from '@/lib/lines';
 import { exportFile } from '@/lib/native/bridge';
 import { isNative } from '@/lib/native/platform';
 import { ws } from '@/store/workspace';
@@ -16,7 +17,7 @@ import { anyConnected, calendarConfigured, createEvent, refreshAccounts } from '
 
 /** Text the person can act on: the thought, plus whatever context we captured. */
 function body(task: Task): string {
-  const lines = [task.notes?.trim()].filter(Boolean) as string[];
+  const lines = [afterFirstLine(task.title), task.notes?.trim()].filter(Boolean) as string[];
   const steps = task.subtasks.filter((s) => !s.done).map((s) => `• ${s.title}`);
   if (steps.length) lines.push(steps.join('\n'));
   return lines.join('\n\n');
@@ -29,7 +30,7 @@ function body(task: Task): string {
  * their signature, and nothing leaves the device until they press send.
  */
 export function openEmail(task: Task): void {
-  const url = `mailto:?subject=${encodeURIComponent(task.title)}&body=${encodeURIComponent(body(task))}`;
+  const url = `mailto:?subject=${encodeURIComponent(firstLine(task.title))}&body=${encodeURIComponent(body(task))}`;
   window.location.href = url;
 }
 
@@ -80,7 +81,7 @@ export async function addToCalendar(task: Task): Promise<void> {
     `UID:${task.id}@hence`,
     `DTSTAMP:${stamp(new Date())}`,
     when,
-    `SUMMARY:${esc(task.title)}`,
+    `SUMMARY:${esc(firstLine(task.title))}`,
     body(task) ? `DESCRIPTION:${esc(body(task))}` : '',
     'END:VEVENT',
     'END:VCALENDAR',
@@ -88,20 +89,21 @@ export async function addToCalendar(task: Task): Promise<void> {
     .filter(Boolean)
     .join('\n');
 
-  await exportFile(`${task.title.slice(0, 40).replace(/[^\w ]+/g, '') || 'event'}.ics`, ics, 'text/calendar');
+  await exportFile(`${firstLine(task.title).slice(0, 40).replace(/[^\w ]+/g, '') || 'event'}.ics`, ics, 'text/calendar');
 }
 
 /** The system share sheet, so a thought can go anywhere the phone can send it. */
 export async function shareThought(task: Task): Promise<void> {
-  const text = [task.title, body(task)].filter(Boolean).join('\n\n');
+  // The body already carries any lines after the first.
+  const text = [firstLine(task.title), body(task)].filter(Boolean).join('\n\n');
   try {
     if (isNative()) {
       const { Share } = await import('@capacitor/share');
-      await Share.share({ text, title: task.title, dialogTitle: 'Share' });
+      await Share.share({ text, title: firstLine(task.title), dialogTitle: 'Share' });
       return;
     }
     if (navigator.share) {
-      await navigator.share({ text, title: task.title });
+      await navigator.share({ text, title: firstLine(task.title) });
       return;
     }
     await navigator.clipboard.writeText(text);

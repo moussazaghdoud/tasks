@@ -129,6 +129,11 @@ describe('extractReminder', () => {
     expect(left('Rappelle-moi lundi prochain à 10h')).toBe('');
   });
 
+  it('keeps the line breaks of a thought laid out on several lines', () => {
+    expect(stamp(when('Remind me tomorrow at 9 to buy\nBread\nMilk'))).toBe('2026-09-24 09:00');
+    expect(left('Remind me tomorrow at 9 to buy\nBread\nMilk')).toBe('Buy\nBread\nMilk');
+  });
+
   it('reads Chinese numerals and delays', () => {
     expect(stamp(when('提醒我明天早上九点给牙医打电话'))).toBe('2026-09-24 09:00');
     expect(left('提醒我明天早上九点给牙医打电话')).toBe('给牙医打电话');

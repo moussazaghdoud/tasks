@@ -1,6 +1,7 @@
 import { registerPlugin } from '@capacitor/core';
 import type { Task } from '@/domain/types';
 import { isNative } from '@/lib/native/platform';
+import { afterFirstLine, firstLine } from '@/lib/lines';
 import type { Account, Meeting } from './calendarTypes';
 
 /**
@@ -117,10 +118,10 @@ export async function createEvent(task: Task): Promise<{ webLink: string }> {
 
   const end = new Date(start.getTime() + (task.estimatedMinutes ?? 60) * 60_000);
   const steps = task.subtasks.filter((s) => !s.done).map((s) => `• ${s.title}`);
-  const body = [task.notes?.trim(), steps.join('\n')].filter(Boolean).join('\n\n');
+  const body = [afterFirstLine(task.title), task.notes?.trim(), steps.join('\n')].filter(Boolean).join('\n\n');
 
   const result = await Microsoft.createEvent({
-    subject: task.title,
+    subject: firstLine(task.title),
     body,
     start: wall(start),
     end: wall(end),

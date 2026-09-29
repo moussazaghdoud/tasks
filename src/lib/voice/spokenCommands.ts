@@ -1,9 +1,9 @@
 /**
- * "New line" — one breath, several thoughts.
+ * "New line" — a line break inside the thought.
  *
- * Saying "new line", "à la ligne" or "换行" between two things starts another
- * thought, the way the Return key would if you were typing a list. The words
- * themselves never reach the thought.
+ * Saying "new line", "à la ligne" or "换行" puts the next words on a line of
+ * their own, the way the Return key would if you were typing. It is still one
+ * thought; the command words themselves never reach it.
  *
  * "Enter" and "entrée" count too, but only where they cannot be part of the
  * sentence: "enter the figures" and "réserver l'entrée" stay as they are.
@@ -29,17 +29,23 @@ const ENTER_FR = /(?<![’'\p{L}])(?<!\b(?:une|en|les|des|son|sa|mon|ma|ton|ta|v
 
 const MARK = '\u0000';
 
-/** Split what was said into the thoughts it holds, commands removed. */
-export function splitThoughts(said: string): string[] {
-  let marked = said.replace(/\r?\n/g, MARK);
+/**
+ * What was said, with each spoken "new line" turned into a real one. Lines
+ * left empty — a command said twice, or at either end — are dropped.
+ */
+export function withLineBreaks(said: string): string {
+  let marked = said;
   for (const re of ALWAYS) marked = marked.replace(re, MARK);
   marked = marked.replace(ENTER_EN, MARK).replace(ENTER_FR, MARK);
+  if (!marked.includes(MARK)) return said.trim();
 
-  const parts = marked
-    .split(MARK)
-    // What the recogniser left around the command: a comma, a full stop.
-    .map((p) => p.replace(/^[\s,;:.·、，。]+/, '').replace(/[\s,;:.·、，。]+$/, '').trim())
-    .filter(Boolean)
-    .map((p) => p.charAt(0).toUpperCase() + p.slice(1));
-  return parts.length ? parts : said.trim() ? [said.trim()] : [];
+  return (
+    marked
+      .split(MARK)
+      // What the recogniser left around the command: a comma, a full stop.
+      .map((line) => line.replace(/^[\s,;:.·、，。]+/, '').replace(/[\s,;:.·、，。]+$/, '').trim())
+      .filter(Boolean)
+      .map((line) => line.charAt(0).toUpperCase() + line.slice(1))
+      .join('\n')
+  );
 }
