@@ -65,7 +65,9 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
   const important = task.priority === 'important';
   const [completing, setCompleting] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [enter] = useState(() => isFresh(task.id));
+  // Dropped once the entry has played: the animation holds its last frame,
+  // and that frame's `transform` would pin the row against every swipe.
+  const [enter, setEnter] = useState(() => isFresh(task.id));
   const overdue = !!task.reminderAt && !task.reminderFiredAt && new Date(task.reminderAt) < new Date();
 
   useEffect(() => {
@@ -124,6 +126,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           onTouchMove={swipe.handlers.onTouchMove}
           onTouchEnd={swipe.handlers.onTouchEnd}
           onTouchCancel={swipe.handlers.onTouchCancel}
+          onAnimationEnd={(e) => e.target === e.currentTarget && setEnter(false)}
           style={{
             transform: swipe.dx ? `translateX(${swipe.dx}px)` : undefined,
             // Only the snap back or open is animated; a finger drag must not

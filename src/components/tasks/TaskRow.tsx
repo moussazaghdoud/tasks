@@ -38,7 +38,9 @@ function TaskRowImpl({ task, ctx, listId, index, sortable = true, groupDate }: T
 
   const [completing, setCompleting] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [enter] = useState(() => isFresh(task.id));
+  // Dropped once the entry has played: the animation holds its last frame,
+  // and that frame's `transform` would pin the row against every swipe.
+  const [enter, setEnter] = useState(() => isFresh(task.id));
   const rowRef = useRef<HTMLDivElement>(null);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -160,6 +162,7 @@ function TaskRowImpl({ task, ctx, listId, index, sortable = true, groupDate }: T
             onTouchMove={swipe.handlers.onTouchMove}
             onTouchEnd={swipe.handlers.onTouchEnd}
             onTouchCancel={swipe.handlers.onTouchCancel}
+            onAnimationEnd={(e) => e.target === e.currentTarget && setEnter(false)}
             style={{ transform: swipe.dx ? `translateX(${swipe.dx}px)` : undefined, touchAction: 'pan-y' }}
             className={cn(
               'group/row relative flex h-10 cursor-default items-center gap-1 rounded-row pr-2 pl-1 outline-none select-none max-md:h-14 max-md:gap-1.5',
