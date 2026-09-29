@@ -96,4 +96,47 @@ describe('extractReminder', () => {
   it('gives back nothing for an empty memo', () => {
     expect(extractReminder('   ', NOW)).toEqual({ at: null, text: '' });
   });
+
+  it('reads English numbers written out as words', () => {
+    expect(stamp(when('Remind me tomorrow at nine to call the dentist'))).toBe('2026-09-24 09:00');
+    expect(left('Remind me tomorrow at nine to call the dentist')).toBe('Call the dentist');
+    expect(stamp(when('Remind me tomorrow at nine thirty'))).toBe('2026-09-24 09:30');
+    expect(stamp(when('Remind me at half past four to call Paul'))).toBe('2026-09-23 16:30');
+    expect(stamp(when('Remind me in twenty minutes'))).toBe('2026-09-23 10:20');
+    expect(stamp(when('Remind me in half an hour'))).toBe('2026-09-23 10:30');
+    expect(stamp(when('Remind me at noon to call Paul'))).toBe('2026-09-23 12:00');
+    expect(stamp(when('Set a reminder for tomorrow at 8 am to pay rent'))).toBe('2026-09-24 08:00');
+    expect(left('Set a reminder for tomorrow at 8 am to pay rent')).toBe('Pay rent');
+  });
+
+  it('leaves numbers alone when no reminder was asked for', () => {
+    expect(extractReminder('I have one idea for the launch', NOW)).toEqual({ at: null, text: 'I have one idea for the launch' });
+  });
+
+  it('reads the French ways of saying an hour and of asking', () => {
+    expect(stamp(when('Rappelle-moi demain à 9 h 30 d’appeler Paul'))).toBe('2026-09-24 09:30');
+    expect(left('Rappelle-moi demain à 9 h 30 d’appeler Paul')).toBe('D’appeler Paul');
+    expect(stamp(when('Rappelle-moi demain à neuf heures'))).toBe('2026-09-24 09:00');
+    expect(stamp(when('Rappelle-moi demain à neuf heures et demie'))).toBe('2026-09-24 09:30');
+    expect(stamp(when('Rappelle-moi à quinze heures trente'))).toBe('2026-09-23 15:30');
+    expect(stamp(when('Rappelle-moi à midi'))).toBe('2026-09-23 12:00');
+    expect(stamp(when('Rappelez-moi demain à 9h'))).toBe('2026-09-24 09:00');
+    expect(stamp(when('N’oublie pas de me rappeler demain à 9h d’appeler Paul'))).toBe('2026-09-24 09:00');
+    expect(stamp(when('Rappelle-moi dans une heure'))).toBe('2026-09-23 11:00');
+    expect(stamp(when('Rappelle-moi dans deux heures'))).toBe('2026-09-23 12:00');
+    expect(stamp(when('Rappelle-moi dans une demi-heure'))).toBe('2026-09-23 10:30');
+    expect(stamp(when('Rappelle-moi lundi prochain à 10h'))).toBe('2026-09-28 10:00');
+    expect(left('Rappelle-moi lundi prochain à 10h')).toBe('');
+  });
+
+  it('reads Chinese numerals and delays', () => {
+    expect(stamp(when('提醒我明天早上九点给牙医打电话'))).toBe('2026-09-24 09:00');
+    expect(left('提醒我明天早上九点给牙医打电话')).toBe('给牙医打电话');
+    expect(stamp(when('提醒我明天下午三点二十开会'))).toBe('2026-09-24 15:20');
+    expect(stamp(when('提醒我一小时后检查烤箱'))).toBe('2026-09-23 11:00');
+    expect(stamp(when('提醒我两个小时后检查烤箱'))).toBe('2026-09-23 12:00');
+    expect(stamp(when('提醒我半小时后检查烤箱'))).toBe('2026-09-23 10:30');
+    expect(stamp(when('请提醒我晚上八点吃药'))).toBe('2026-09-23 20:00');
+    expect(left('明天早上9点提醒我给牙医打电话')).toBe('明天早上9点给牙医打电话');
+  });
 });

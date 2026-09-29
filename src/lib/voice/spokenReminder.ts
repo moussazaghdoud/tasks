@@ -22,9 +22,14 @@ export interface SpokenReminder {
 /** The ask itself, in each language the app speaks. */
 const TRIGGERS = [
   /\b(?:please\s+)?remind me\b/i,
-  /\brappelle[-\s]?(?:le[-\s]?)?moi\b/i,
-  /\bfais[-\s]moi\s+penser\b/i,
-  /提醒我/,
+  /\bset (?:me )?a reminder(?: for)?\b/i,
+  /\bn['’]oubliez?\s+pas\s+de\s+me\s+rappeler\b/i,
+  /\b(?:peux[-\s]tu|pouvez[-\s]vous)\s+me\s+rappeler\b/i,
+  /\brappel(?:le|ez)[-\s]?(?:le[-\s]?)?moi\b/i,
+  /\bfai(?:s|tes)[-\s]moi\s+penser\b/i,
+  /\bmet(?:s|tez)[-\s]moi\s+un\s+rappel(?:\s+pour)?\b/i,
+  /(?:请|记得)?提醒(?:一下)?我/,
+  /设(?:置|定)?(?:一?个)?提醒/,
 ];
 
 const DAY_WORDS: Array<{ re: RegExp; days?: number; weekday?: number; hour?: number }> = [
@@ -54,13 +59,13 @@ const DAY_WORDS: Array<{ re: RegExp; days?: number; weekday?: number; hour?: num
   { re: /^ce matin/i, days: 0, hour: 9 },
   { re: /^cet après[-\s]?midi/i, days: 0, hour: 14 },
   { re: /^aujourd'?hui/i, days: 0 },
-  { re: /^lundi/i, weekday: 1 },
-  { re: /^mardi/i, weekday: 2 },
-  { re: /^mercredi/i, weekday: 3 },
-  { re: /^jeudi/i, weekday: 4 },
-  { re: /^vendredi/i, weekday: 5 },
-  { re: /^samedi/i, weekday: 6 },
-  { re: /^dimanche/i, weekday: 0 },
+  { re: /^lundi(?:\s+prochain)?/i, weekday: 1 },
+  { re: /^mardi(?:\s+prochain)?/i, weekday: 2 },
+  { re: /^mercredi(?:\s+prochain)?/i, weekday: 3 },
+  { re: /^jeudi(?:\s+prochain)?/i, weekday: 4 },
+  { re: /^vendredi(?:\s+prochain)?/i, weekday: 5 },
+  { re: /^samedi(?:\s+prochain)?/i, weekday: 6 },
+  { re: /^dimanche(?:\s+prochain)?/i, weekday: 0 },
   // Chinese
   { re: /^明早/, days: 1, hour: 9 },
   { re: /^明晚/, days: 1, hour: 19 },
@@ -86,6 +91,16 @@ const DAY_WORDS: Array<{ re: RegExp; days?: number; weekday?: number; hour?: num
  */
 const TIMES: Array<{ re: RegExp; read: (m: RegExpMatchArray) => { hour: number; minute: number } | null }> = [
   {
+    // noon, midnight, midi, minuit — a time with no number in it.
+    re: /^(?:at\s+|à\s+)?(noon|midday|midnight|midi|minuit)\b/i,
+    read: (m) => ({ hour: /^(midnight|minuit)$/i.test(m[1]) ? 0 : 12, minute: 0 }),
+  },
+  {
+    // "9 h 30", "9 heures 30": the French hour with a space before the minutes.
+    re: /^(?:à\s+)?(\d{1,2})\s*(?:h|heures?)\s*(\d{2})\b/i,
+    read: (m) => ({ hour: Number(m[1]), minute: Number(m[2]) }),
+  },
+  {
     // 9am, 9:30 pm, at 9, at 9.30, 9 o'clock
     re: /^(?:at\s+|à\s+)?(\d{1,2})(?:[:.h](\d{2}))?\s*(a\.?m\.?|p\.?m\.?|o'clock|heures?|h)\b/i,
     read: (m) => {
@@ -103,14 +118,15 @@ const TIMES: Array<{ re: RegExp; read: (m: RegExpMatchArray) => { hour: number; 
     read: (m) => ({ hour: Number(m[1]), minute: Number(m[2] ?? 0) }),
   },
   {
-    // 早上9点, 下午3点半, 晚上八点
-    re: /^(早上|上午|中午|下午|晚上)?\s*(\d{1,2})\s*[点:：]\s*(\d{2}|半)?/,
+    // 早上9点, 下午3点半, 晚上八点, 九点一刻
+    re: /^(早上|上午|中午|下午|晚上)?\s*(\d{1,2})\s*[点:：]\s*(\d{2}|半|一刻|三刻)?/,
     read: (m) => {
       let hour = Number(m[2]);
       const part = m[1] ?? '';
       if ((part === '下午' || part === '晚上') && hour < 12) hour += 12;
       if (part === '中午' && hour < 12) hour = 12;
-      return { hour, minute: m[3] === '半' ? 30 : Number(m[3] ?? 0) };
+      const minute = m[3] === '半' ? 30 : m[3] === '一刻' ? 15 : m[3] === '三刻' ? 45 : Number(m[3] ?? 0);
+      return { hour, minute };
     },
   },
 ];
@@ -126,14 +142,14 @@ const DELAYS: Array<{ re: RegExp; minutes: (m: RegExpMatchArray) => number }> = 
     minutes: (m) => scale(m[1] ? Number(m[1]) : 1, m[2]),
   },
   {
-    re: /^(\d{1,3})\s*(分钟|小时|天)后/,
+    re: /^(\d{1,3})\s*个?\s*(分钟|小时|钟头|天)(?:以?后|之后)/,
     minutes: (m) => scale(Number(m[1]), m[2]),
   },
 ];
 
 function scale(count: number, unit: string): number {
   const u = unit.toLowerCase();
-  if (/^(hour|hrs?|heure|小时)/.test(u)) return count * 60;
+  if (/^(hour|hrs?|heure|小时|钟头)/.test(u)) return count * 60;
   if (/^(day|jour|天)/.test(u)) return count * 60 * 24;
   return count;
 }
@@ -216,6 +232,106 @@ function readClause(rest: string, now: Date): { at: Date; length: number } | nul
   return { at, length: skipped + cursor };
 }
 
+/* ---- numbers the recogniser wrote out as words ---- */
+
+const EN_HOURS: Record<string, number> = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
+};
+const EN_MINUTES: Record<string, number> = { fifteen: 15, thirty: 30, 'forty-five': 45, 'forty five': 45 };
+const EN_COUNTS: Record<string, number> = {
+  ...EN_HOURS, fifteen: 15, twenty: 20, thirty: 30, 'forty-five': 45, 'forty five': 45, forty: 40, fifty: 50, ninety: 90,
+};
+
+const FR_HOURS: Record<string, number> = {
+  un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6, sept: 7, huit: 8, neuf: 9, dix: 10, onze: 11,
+  douze: 12, treize: 13, quatorze: 14, quinze: 15, seize: 16, 'dix-sept': 17, 'dix-huit': 18, 'dix-neuf': 19,
+  vingt: 20, 'vingt et une': 21, 'vingt-et-une': 21, 'vingt-deux': 22, 'vingt-trois': 23,
+};
+const FR_MINUTES: Record<string, number> = {
+  cinq: 5, dix: 10, quinze: 15, vingt: 20, 'vingt-cinq': 25, trente: 30, 'trente-cinq': 35, quarante: 40,
+  'quarante-cinq': 45, cinquante: 50, 'cinquante-cinq': 55, 'et quart': 15, 'et demie': 30,
+};
+const FR_COUNTS: Record<string, number> = { ...FR_HOURS, trente: 30, quarante: 40, 'quarante-cinq': 45, cinquante: 50 };
+
+const words = (table: Record<string, number>) =>
+  Object.keys(table)
+    .sort((a, b) => b.length - a.length)
+    .map((w) => w.replace(/[-\s]/g, '[-\\s]'))
+    .join('|');
+const lookup = (table: Record<string, number>, said: string) => table[said.toLowerCase().replace(/\s+/g, ' ')] ?? table[said.toLowerCase().replace(/[-\s]+/g, '-')];
+const two = (n: number) => String(n).padStart(2, '0');
+
+/** 一 … 二十四, 两; enough for hours, minutes and short delays. */
+function chinese(numeral: string): number | null {
+  const digit: Record<string, number> = { 零: 0, 〇: 0, 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 };
+  if (numeral === '十') return 10;
+  const [tens, units] = numeral.split('十');
+  if (units === undefined) return numeral.length === 1 ? (digit[numeral] ?? null) : null;
+  const t = tens === '' ? 1 : digit[tens];
+  const u = units === '' ? 0 : digit[units];
+  return t === undefined || u === undefined ? null : t * 10 + u;
+}
+
+/**
+ * Put digits where the recogniser spelled a number out, so the rules above
+ * can read it — "at nine thirty", "à neuf heures et demie", "九点一刻",
+ * "半小时后". Only numbers standing where a time or a delay goes are
+ * touched; "one idea" stays as it was said.
+ */
+export function spokenNumbers(text: string): string {
+  const enH = words(EN_HOURS);
+  const enM = words(EN_MINUTES);
+  const frH = words(FR_HOURS);
+  const frM = words(FR_MINUTES);
+  return (
+    text
+      // English: "half past nine", "quarter past/to nine"
+      .replace(new RegExp(`\\b(half|quarter)\\s+(past|to)\\s+(${enH})\\b`, 'gi'), (_, part: string, dir: string, h: string) => {
+        const hour = lookup(EN_HOURS, h);
+        if (/^half/i.test(part)) return `${hour}:30`;
+        return /^past/i.test(dir) ? `${hour}:15` : `${hour === 1 ? 12 : hour - 1}:45`;
+      })
+      // "at nine", "at nine thirty", "nine thirty pm", "nine o'clock"
+      .replace(
+        new RegExp(`\\b(at\\s+)?(${enH})(?:\\s+(${enM}))?(?=\\s*(?:a\\.?m\\.?|p\\.?m\\.?|o'clock)|\\b)`, 'gi'),
+        (whole, at: string | undefined, h: string, m: string | undefined, offset: number, all: string) => {
+          const rest = all.slice(offset + whole.length);
+          if (!at && !/^\s*(?:a\.?m\.?|p\.?m\.?|o'clock)/i.test(rest)) return whole;
+          const hour = lookup(EN_HOURS, h);
+          return `${at ?? ''}${m ? `${hour}:${two(lookup(EN_MINUTES, m))}` : hour}`;
+        },
+      )
+      // "in twenty minutes", "in half an hour"
+      .replace(/\bin\s+half\s+an\s+hour\b/gi, 'in 30 minutes')
+      .replace(new RegExp(`\\bin\\s+(${words(EN_COUNTS)})\\s+(minutes?|hours?|days?)\\b`, 'gi'), (_, n: string, unit: string) => `in ${lookup(EN_COUNTS, n)} ${unit}`)
+      // French: "neuf heures", "neuf heures et demie", "quinze heures trente", "9 heures et quart"
+      .replace(
+        // Not after "dans": "dans deux heures" is a delay, read further down.
+        new RegExp(`(?<!\\bdans\\s+)\\b(${frH}|\\d{1,2})\\s+heures?(?:\\s+(${frM}|\\d{2}))?(?![\\p{L}-])`, 'giu'),
+        (_, h: string, m: string | undefined) => {
+          const hour = /^\d/.test(h) ? Number(h) : lookup(FR_HOURS, h);
+          const minute = m === undefined ? 0 : /^\d/.test(m) ? Number(m) : lookup(FR_MINUTES, m);
+          return minute ? `${hour}h${two(minute)}` : `${hour}h`;
+        },
+      )
+      .replace(/\bdans\s+une\s+demi[-\s]heure\b/gi, 'dans 30 minutes')
+      .replace(/\bdans\s+un\s+quart\s+d['’]heure\b/gi, 'dans 15 minutes')
+      .replace(new RegExp(`\\bdans\\s+(${words(FR_COUNTS)})\\s+(minutes?|heures?|jours?)\\b`, 'gi'), (whole, n: string, unit: string) =>
+        /^une?$/i.test(n) ? whole : `dans ${lookup(FR_COUNTS, n)} ${unit}`,
+      )
+      // Chinese: 半小时后, 九点, 三点二十, 两个小时后
+      .replace(/半个?(?:小时|钟头)/g, '30分钟')
+      .replace(/([零〇一二两三四五六七八九十]{1,3})(?=\s*(?:点|个?\s*(?:小时|钟头)|分钟|天))/g, (whole, n: string) => {
+        const value = chinese(n);
+        return value === null ? whole : String(value);
+      })
+      .replace(/点([零〇一二三四五六七八九十]{1,3})分?/g, (whole, n: string) => {
+        const value = chinese(n);
+        return value === null || value > 59 ? whole : `点${two(value)}`;
+      })
+  );
+}
+
 /** Tidy the sentence left behind: no double spaces, no dangling comma. */
 function tidy(text: string): string {
   const out = text
@@ -236,8 +352,13 @@ function tidy(text: string): string {
  * untouched and nothing is scheduled.
  */
 export function extractReminder(transcript: string, now: Date = new Date()): SpokenReminder {
-  const said = transcript.trim();
-  if (!said) return { at: null, text: '' };
+  const original = transcript.trim();
+  if (!original) return { at: null, text: '' };
+  // Read with the numbers as digits; hand back the original words whenever
+  // no reminder is found, so nothing else about the thought changes.
+  const said = spokenNumbers(original);
+  // Chinese runs its words together: no space where the request is cut out.
+  const join = (a: string, b: string) => (/[一-鿿]$/.test(a.trim()) || /^[一-鿿]/.test(b.trim()) ? `${a.trim()}${b.trim()}` : `${a} ${b}`);
 
   for (const trigger of TRIGGERS) {
     const m = said.match(trigger);
@@ -248,11 +369,11 @@ export function extractReminder(transcript: string, now: Date = new Date()): Spo
 
     // The usual shape: the hour follows the request. Then both go.
     const attached = readClause(rest, now);
-    if (attached) return { at: attached.at, text: tidy(`${before} ${rest.slice(attached.length)}`) };
+    if (attached) return { at: attached.at, text: tidy(join(before, rest.slice(attached.length))) };
 
     // "Call Paul tomorrow at nine, remind me": the request is bare, so the
     // hour is somewhere in the sentence. Keep the sentence, take the hour.
-    const whole = `${before} ${rest}`;
+    const whole = join(before, rest);
     for (let i = 0; i < whole.length; i++) {
       const found = readClause(whole.slice(i), now);
       if (found) return { at: found.at, text: tidy(whole) };
@@ -260,8 +381,8 @@ export function extractReminder(transcript: string, now: Date = new Date()): Spo
 
     // A request with no hour in sight is not a reminder, only a turn of
     // phrase. Leave the words alone.
-    return { at: null, text: said };
+    return { at: null, text: original };
   }
 
-  return { at: null, text: said };
+  return { at: null, text: original };
 }
