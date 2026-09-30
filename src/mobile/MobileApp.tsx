@@ -98,7 +98,12 @@ export function MobileApp() {
     const live = Object.values(tasks).filter((t) => !t.archivedAt);
     const today = todayKey();
     const q = query?.trim().toLowerCase();
-    const matches = (t: Task) => !q || t.title.toLowerCase().includes(q) || t.notes.toLowerCase().includes(q);
+    // The words in a photograph count: searching "Dupont" finds the business card.
+    const matches = (t: Task) =>
+      !q ||
+      t.title.toLowerCase().includes(q) ||
+      t.notes.toLowerCase().includes(q) ||
+      !!t.photoText?.toLowerCase().includes(q);
     const all = live.filter((t) => spaceOf(t) === space);
     return {
       // Important first, then newest: what you just said is what you are

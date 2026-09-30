@@ -56,7 +56,7 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
   return (
     <>
       <Sheet open={!!taskId && !remindOpen && !editOpen} onClose={onClose} label={task.title}>
-        <ThoughtPhoto name={task.photo} />
+        <ThoughtPhoto name={task.photo} text={task.photoText} />
         <ThoughtTitle key={task.id} id={task.id} title={task.title} />
         <p className="px-6 pt-1 pb-4 text-[13px] text-ink-4">{t('captured_at', { when: relativeIn(task.createdAt) })}</p>
 
@@ -146,7 +146,7 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
 }
 
 /** The photograph the thought was captured with, at the top where it was. */
-function ThoughtPhoto({ name }: { name?: string }) {
+function ThoughtPhoto({ name, text }: { name?: string; text?: string }) {
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
     if (!name) return;
@@ -164,6 +164,16 @@ function ThoughtPhoto({ name }: { name?: string }) {
         alt={t('photo_attached')}
         className="max-h-[40dvh] w-full rounded-[18px] border border-line object-cover"
       />
+      {/* What the phone read in it: selectable, so a number or an address
+          can be copied without retyping it. */}
+      {text && (
+        <div className="mt-3 rounded-[14px] border border-line bg-sunk px-4 py-3">
+          <p className="text-[11px] font-semibold tracking-[0.12em] text-ink-4 uppercase">{t('photo_text')}</p>
+          <p className="mt-1.5 max-h-[22dvh] overflow-y-auto text-[14px] leading-[20px] whitespace-pre-line text-ink-2 select-text">
+            {text}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

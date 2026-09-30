@@ -1,7 +1,8 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { createId } from '@/lib/id';
+import { ws } from '@/store/workspace';
 import { isNative } from './platform';
 
 /**
@@ -14,7 +15,8 @@ import { isNative } from './platform';
  * The photograph never leaves the phone. It is written into the app's own
  * storage — not the camera roll, which would put your whiteboards among your
  * holidays — and the thought keeps only its filename. Nothing is uploaded,
- * and Claude is only ever told the sentence you spoke.
+ * and Claude is only ever told the sentence you spoke. The words in the
+ * picture are read on the phone too, and stay there.
  */
 
 const FOLDER = 'photos';
@@ -65,6 +67,36 @@ export async function photoUrl(name: string): Promise<string | null> {
     return Capacitor.convertFileSrc(uri);
   } catch {
     return null;
+  }
+}
+
+const TextReader = registerPlugin<{ read(options: { name: string }): Promise<{ text: string }> }>('TextReader');
+
+/**
+ * The words in a photograph, read on the phone — a whiteboard, a business
+ * card, a label. Empty when there are none or the phone cannot read them.
+ */
+export async function readPhotoText(name: string): Promise<string> {
+  if (!isNative()) return '';
+  try {
+    const { text } = await TextReader.read({ name });
+    return text.trim();
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Read the photographs no one has read yet: those taken before the phone
+ * could, and any whose reading was interrupted. One at a time, in the
+ * background, so launching the app stays quick.
+ */
+export async function readUnreadPhotos(): Promise<void> {
+  if (!isNative()) return;
+  const unread = Object.values(ws().tasks).filter((task) => task.photo && task.photoText === undefined);
+  for (const task of unread) {
+    const photoText = await readPhotoText(task.photo!);
+    if (ws().tasks[task.id]) ws().updateTask(task.id, { photoText });
   }
 }
 

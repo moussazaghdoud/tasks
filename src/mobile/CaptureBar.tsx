@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
 import { markFresh } from '@/lib/fresh';
-import { cameraAvailable, capturePhoto, photoUrl } from '@/lib/native/photos';
+import { cameraAvailable, capturePhoto, photoUrl, readPhotoText } from '@/lib/native/photos';
 import { analyzeMemo } from '@/lib/voice/analyze';
 import { createFromDrafts, findTaskByTitle, type ConfirmedDraft } from '@/lib/voice/createFromDrafts';
 import { startLevelMeter, startSpeech, type SpeechErrorCode, type SpeechSession } from '@/lib/voice/speech';
@@ -162,7 +162,13 @@ export function CaptureBar() {
       const { tasks: made, steps, undo } = createFromDrafts(drafts, said, currentSpace());
       // The photograph belongs to the thought just made. Undo removes the
       // thought, and the file it leaves behind is swept at the next launch.
-      if (withPhoto && made[0]) ws().updateTask(made[0].id, { photo: withPhoto });
+      if (withPhoto && made[0]) {
+        const id = made[0].id;
+        ws().updateTask(id, { photo: withPhoto });
+        // Read the words in it, on the phone, so the photograph can be found by
+        // searching for them. The thought may have been undone by then.
+        void readPhotoText(withPhoto).then((photoText) => ws().tasks[id] && ws().updateTask(id, { photoText }));
+      }
       photo.current = null;
       setPhotoSrc(null);
       markFresh(made.map((t) => t.id));

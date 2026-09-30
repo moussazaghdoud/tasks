@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { initNative } from '@/lib/native/bridge';
 import { initNotifications, syncReminders } from '@/lib/native/notifications';
-import { sweepPhotos } from '@/lib/native/photos';
+import { readUnreadPhotos, sweepPhotos } from '@/lib/native/photos';
 import { isNative } from '@/lib/native/platform';
 import { hashToRoute } from '@/store/ui';
 import { ui } from '@/store/ui';
@@ -43,5 +43,7 @@ export function useNative(): void {
         .map((task) => task.photo)
         .filter((name): name is string => !!name),
     );
+    // Photographs taken before the phone read their words, read now.
+    void readUnreadPhotos();
   }, [ready]);
 }

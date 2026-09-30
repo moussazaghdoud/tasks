@@ -105,6 +105,11 @@ export interface Task {
    * storage. Absent on every thought that is only words, which is most.
    */
   photo?: string;
+  /**
+   * The words the phone read in the photograph, so it can be searched.
+   * Empty when it holds none; absent until it has been read.
+   */
+  photoText?: string;
   subtasks: Subtask[];
   links: TaskLink[];
   tags: string[];
