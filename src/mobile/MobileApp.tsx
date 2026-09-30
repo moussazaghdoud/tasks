@@ -33,6 +33,7 @@ import { applyTheme, useTheme } from './theme';
 import { SpaceTabs, visibleTabs } from './SpaceTabs';
 import { ThoughtRow } from './ThoughtRow';
 import { ThoughtSheet } from './ThoughtSheet';
+import { WhatsNewSheet } from './WhatsNewSheet';
 
 /**
  * The whole application on a phone.
@@ -247,6 +248,7 @@ export function MobileApp() {
       <CaptureBar />
       <ThoughtSheet taskId={openId} onClose={() => setOpenId(null)} />
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <WhatsNewSheet />
     </div>
   );
 }
