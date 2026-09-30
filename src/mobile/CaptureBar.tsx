@@ -1,4 +1,4 @@
-import { Camera, Keyboard, Mic, X } from 'lucide-react';
+import { Camera, Keyboard, LoaderCircle, Mic, ScanText, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
@@ -72,6 +72,9 @@ export function CaptureBar() {
   /** A photograph waiting for the words that go with it. */
   const photo = useRef<string | null>(null);
   const [photoSrc, setPhotoSrc] = useState<string | null>(null);
+  /** The words in the photograph, being read while you speak about it. */
+  const photoText = useRef<Promise<string> | null>(null);
+  const [reading, setReading] = useState<'idle' | 'reading' | 'found' | 'none'>('idle');
   /** Explain the fallback once per session, not after every sentence. */
   const noticed = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);
@@ -88,6 +91,9 @@ export function CaptureBar() {
     async (text: string) => {
       const said = text.trim();
       const withPhoto = photo.current;
+      const textJob = photoText.current;
+      photoText.current = null;
+      setReading('idle');
       // Nothing said and nothing seen is nothing to keep. A photograph with
       // no words still is: the picture is the thought.
       if (!said && !withPhoto) {
@@ -165,9 +171,9 @@ export function CaptureBar() {
       if (withPhoto && made[0]) {
         const id = made[0].id;
         ws().updateTask(id, { photo: withPhoto });
-        // Read the words in it, on the phone, so the photograph can be found by
-        // searching for them. The thought may have been undone by then.
-        void readPhotoText(withPhoto).then((photoText) => ws().tasks[id] && ws().updateTask(id, { photoText }));
+        // The words in it, read on the phone since the photograph was taken —
+        // usually done by now. The thought may have been undone by then.
+        void (textJob ?? readPhotoText(withPhoto)).then((found) => ws().tasks[id] && ws().updateTask(id, { photoText: found }));
       }
       photo.current = null;
       setPhotoSrc(null);
@@ -231,6 +237,8 @@ export function CaptureBar() {
     // was going to belong to no longer exists.
     photo.current = null;
     setPhotoSrc(null);
+    photoText.current = null;
+    setReading('idle');
   }, [teardown]);
 
   const start = useCallback(() => {
@@ -317,6 +325,14 @@ export function CaptureBar() {
     const name = await capturePhoto();
     if (!name) return;
     photo.current = name;
+    // Start reading its words now, while the person speaks, so there is
+    // something to watch and the text is ready when they finish.
+    const job = readPhotoText(name);
+    photoText.current = job;
+    setReading('reading');
+    void job.then((found) => {
+      if (photoText.current === job) setReading(found ? 'found' : 'none');
+    });
     setPhotoSrc(await photoUrl(name));
     start();
   }, [phase, start]);
@@ -398,11 +414,29 @@ export function CaptureBar() {
             {/* The photograph, while you say what it is. Small: it is the
                 thing you are talking about, not the thing you are reading. */}
             {photoSrc && (
-              <img
-                src={photoSrc}
-                alt={t('photo_attached')}
-                className="mt-3 max-h-[26dvh] w-full rounded-[18px] border border-line object-cover"
-              />
+              <div className="mt-3">
+                <div className="relative overflow-hidden rounded-[18px] border border-line">
+                  <img src={photoSrc} alt={t('photo_attached')} className="max-h-[26dvh] w-full object-cover" />
+                  {/* While its words are read: a line passing over it, the
+                      way a scanner reads a page. */}
+                  {reading === 'reading' && (
+                    <span
+                      aria-hidden
+                      className="absolute inset-x-0 h-[3px] -translate-y-1/2 animate-scan bg-accent shadow-[0_0_14px_4px_var(--color-accent)]"
+                    />
+                  )}
+                </div>
+                {(reading === 'reading' || reading === 'found') && (
+                  <p className="mt-2 flex items-center gap-1.5 text-[12px] text-ink-3" role="status">
+                    {reading === 'reading' ? (
+                      <LoaderCircle className="size-3.5 animate-spin text-accent" strokeWidth={2.2} />
+                    ) : (
+                      <ScanText className="size-3.5 text-accent" strokeWidth={2.2} />
+                    )}
+                    {t(reading === 'reading' ? 'photo_reading' : 'photo_read')}
+                  </p>
+                )}
+              </div>
             )}
 
             <div ref={scroller} className="mt-3 max-h-[34dvh] min-h-[76px] overflow-y-auto">
@@ -445,6 +479,8 @@ export function CaptureBar() {
                   onClick={() => {
                     photo.current = null;
                     setPhotoSrc(null);
+                    photoText.current = null;
+                    setReading('idle');
                     haptic('light');
                   }}
                   aria-label={t('cancel')}

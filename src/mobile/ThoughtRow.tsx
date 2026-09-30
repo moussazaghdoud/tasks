@@ -3,6 +3,7 @@ import { memo, useEffect, useState } from 'react';
 import type { Task } from '@/domain/types';
 import { isFresh } from '@/lib/fresh';
 import { photoUrl } from '@/lib/native/photos';
+import { isNative } from '@/lib/native/platform';
 import { cn } from '@/lib/platform';
 import { registerCompletionAnimator, toggleComplete } from '@/actions/taskActions';
 import { haptic } from '@/lib/native/bridge';
@@ -20,7 +21,7 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * picture arrives a frame later — better than holding the whole list back for
  * a file that is already on the device.
  */
-function PhotoThumb({ name }: { name?: string }) {
+function PhotoThumb({ name, reading }: { name?: string; reading: boolean }) {
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
     if (!name) return;
@@ -32,12 +33,16 @@ function PhotoThumb({ name }: { name?: string }) {
   }, [name]);
   if (!name || !src) return null;
   return (
-    <img
-      src={src}
-      alt={t('photo_attached')}
-      loading="lazy"
-      className="mb-2.5 h-[104px] w-full rounded-[11px] border border-line object-cover"
-    />
+    <span className="relative mb-2.5 block overflow-hidden rounded-[11px] border border-line">
+      <img src={src} alt={t('photo_attached')} loading="lazy" className="block h-[104px] w-full object-cover" />
+      {/* Its words are still being read: the same scan as while capturing. */}
+      {reading && (
+        <span
+          aria-hidden
+          className="absolute inset-x-0 h-[2px] -translate-y-1/2 animate-scan bg-accent shadow-[0_0_10px_3px_var(--color-accent)]"
+        />
+      )}
+    </span>
   );
 }
 
@@ -170,7 +175,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           <button onClick={() => (swipe.open ? swipe.close() : onOpen())} className="min-w-0 flex-1 text-left">
             {/* The photograph, small: enough to recognise which whiteboard,
                 not so much that the list becomes a gallery. */}
-            <PhotoThumb name={task.photo} />
+            <PhotoThumb name={task.photo} reading={isNative() && task.photoText === undefined} />
             <span
               className={cn(
                 // pre-line: a dictated "new line" shows as one.
