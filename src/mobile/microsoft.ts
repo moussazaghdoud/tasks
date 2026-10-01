@@ -2,7 +2,7 @@ import { registerPlugin } from '@capacitor/core';
 import type { Task } from '@/domain/types';
 import { isNative } from '@/lib/native/platform';
 import { afterFirstLine, firstLine } from '@/lib/lines';
-import type { Account, Meeting } from './calendarTypes';
+import type { Account, Meeting, MeetingAction } from './calendarTypes';
 
 /**
  * The Microsoft calendar connection.
@@ -25,6 +25,7 @@ interface MicrosoftPlugin {
     timeZone: string;
     allDay: boolean;
   }): Promise<{ id: string; webLink: string }>;
+  respond(options: { id: string; action: MeetingAction; comment?: string }): Promise<void>;
 }
 
 const Microsoft = registerPlugin<MicrosoftPlugin>('Microsoft');
@@ -88,6 +89,11 @@ export const account = (): Promise<Account> => Microsoft.account();
 export async function listAgenda(days = 2): Promise<Meeting[]> {
   const { events } = await Microsoft.todayEvents({ days });
   return events;
+}
+
+/** Cancel a meeting you organise, or decline an invitation; the others are told. */
+export async function respond(id: string, action: MeetingAction): Promise<void> {
+  await Microsoft.respond({ id, action });
 }
 
 /* ---- events ---- */

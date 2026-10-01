@@ -33,7 +33,8 @@ public class GooglePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "account", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "createEvent", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "todayEvents", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "todayEvents", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "respond", returnType: CAPPluginReturnPromise)
     ]
 
     private var session: ASWebAuthenticationSession?
@@ -300,6 +301,10 @@ public class GooglePlugin: CAPPlugin, CAPBridgedPlugin {
                 let events: [[String: Any]] = items.compactMap { item in
                     // A declined or cancelled occurrence is not a meeting.
                     if (item["status"] as? String) == "cancelled" { return nil }
+                    let attendees = (item["attendees"] as? [[String: Any]]) ?? []
+                    let me = attendees.first { ($0["self"] as? Bool) == true }
+                    if (me?["responseStatus"] as? String) == "declined" { return nil }
+                    let organizer = item["organizer"] as? [String: Any]
                     let start = item["start"] as? [String: Any]
                     let end = item["end"] as? [String: Any]
                     let allDay = (start?["date"] as? String) != nil
@@ -312,16 +317,101 @@ public class GooglePlugin: CAPPlugin, CAPBridgedPlugin {
                         ? "\((end?["date"] as? String) ?? "")T00:00:00"
                         : (end?["dateTime"] as? String) ?? ""
                     return [
+                        "id": (item["id"] as? String) ?? "",
                         "subject": (item["summary"] as? String) ?? "(no title)",
                         "start": startValue,
                         "end": endValue,
                         "allDay": allDay,
-                        "showAs": (item["transparency"] as? String) == "transparent" ? "free" : "busy"
+                        "showAs": (item["transparency"] as? String) == "transparent" ? "free" : "busy",
+                        // Google marks the organiser that is you with "self".
+                        "isOrganizer": (organizer?["self"] as? Bool) ?? false,
+                        "organizerName": (organizer?["displayName"] as? String) ?? "",
+                        "organizerEmail": (organizer?["email"] as? String) ?? ""
                     ]
                 }
                 call.resolve(["events": events])
             }.resume()
         }
+    }
+
+    /// Cancel a meeting you organise, or decline one you were invited to.
+    ///
+    /// Cancelling deletes the event and tells every attendee. Declining sets
+    /// your own answer to "declined" and tells the organiser — which means
+    /// reading the guest list first, because Google takes the list whole.
+    @objc func respond(_ call: CAPPluginCall) {
+        guard let id = call.getString("id"), !id.isEmpty,
+              let action = call.getString("action"), action == "cancel" || action == "decline" else {
+            call.reject("Which meeting, and what to do with it", "bad_request")
+            return
+        }
+        let comment = call.getString("comment") ?? ""
+        let safe = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~")
+        let path = id.addingPercentEncoding(withAllowedCharacters: safe) ?? id
+        let url = "https://www.googleapis.com/calendar/v3/calendars/primary/events/\(path)"
+
+        accessToken { token in
+            guard let token = token else {
+                call.reject(self.lastAuthError.isEmpty ? "Not connected to Google" : self.lastAuthError, "not_connected")
+                return
+            }
+            if action == "cancel" {
+                self.send(token: token, url: "\(url)?sendUpdates=all", method: "DELETE", body: nil) { status, _, detail in
+                    // 410: already gone, which is what was asked for.
+                    if (200..<300).contains(status) || status == 410 {
+                        call.resolve()
+                    } else {
+                        call.reject(detail, status == 401 ? "not_connected" : "failed")
+                    }
+                }
+                return
+            }
+            self.send(token: token, url: url, method: "GET", body: nil) { status, event, detail in
+                guard (200..<300).contains(status), let event = event else {
+                    call.reject(detail, status == 401 ? "not_connected" : "failed")
+                    return
+                }
+                var attendees = (event["attendees"] as? [[String: Any]]) ?? []
+                guard let mine = attendees.firstIndex(where: { ($0["self"] as? Bool) == true }) else {
+                    call.reject("You are not on this meeting's guest list", "failed")
+                    return
+                }
+                attendees[mine]["responseStatus"] = "declined"
+                if !comment.isEmpty { attendees[mine]["comment"] = comment }
+                self.send(token: token, url: "\(url)?sendUpdates=all", method: "PATCH", body: ["attendees": attendees]) { status, _, detail in
+                    if (200..<300).contains(status) {
+                        call.resolve()
+                    } else {
+                        call.reject(detail, status == 401 ? "not_connected" : "failed")
+                    }
+                }
+            }
+        }
+    }
+
+    private func send(token: String, url: String, method: String, body: [String: Any]?,
+                      done: @escaping (Int, [String: Any]?, String) -> Void) {
+        guard let target = URL(string: url) else {
+            done(0, nil, "Bad meeting id")
+            return
+        }
+        var request = URLRequest(url: target)
+        request.httpMethod = method
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let body = body {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        }
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                done(0, nil, error.localizedDescription)
+                return
+            }
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            let json = data.flatMap { (try? JSONSerialization.jsonObject(with: $0)) as? [String: Any] }
+            let message = ((json?["error"] as? [String: Any])?["message"] as? String) ?? "HTTP \(status)"
+            done(status, json, message)
+        }.resume()
     }
 
     // MARK: - Tokens

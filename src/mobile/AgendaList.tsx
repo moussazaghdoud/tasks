@@ -4,6 +4,7 @@ import { toKey } from '@/lib/dates';
 import { haptic } from '@/lib/native/bridge';
 import { cn } from '@/lib/platform';
 import { localeOf, t } from './i18n';
+import { MeetingSheet } from './MeetingSheet';
 import {
   allChecked,
   anyConnected,
@@ -62,7 +63,9 @@ const clock = (iso: string) => new Date(iso).toLocaleTimeString(localeOf(), { ho
  *
  * Today and tomorrow always appear, because "nothing left today" is worth
  * knowing. Later days appear only when they hold something; a run of empty
- * Saturdays would be noise. Read-only on purpose: meetings belong to Outlook.
+ * Saturdays would be noise. A tap offers the few answers worth giving from
+ * here — cancel yours, decline theirs, write to the organiser; anything
+ * more belongs to the calendar itself.
  */
 export function AgendaList() {
   // Subscribe, then read the connections: a calendar connecting or going
@@ -77,6 +80,9 @@ export function AgendaList() {
   const [failure, setFailure] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [loading, setLoading] = useState(false);
+  /** The meeting tapped, kept while its sheet slides away. */
+  const [selected, setSelected] = useState<Meeting | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
   // Re-evaluated each minute, so a meeting leaves the list when it ends
   // rather than when you next reopen the tab.
   const [now, setNow] = useState(() => Date.now());
@@ -220,7 +226,18 @@ export function AgendaList() {
             {items.length ? (
               <ul>
                 {items.map((m, i) => (
-                  <MeetingRow key={`${offset}-${m.start}-${i}`} meeting={m} now={now} today={offset === 0} tone={tone} />
+                  <MeetingRow
+                    key={`${offset}-${m.start}-${i}`}
+                    meeting={m}
+                    now={now}
+                    today={offset === 0}
+                    tone={tone}
+                    onOpen={() => {
+                      haptic('light');
+                      setSelected(m);
+                      setSheetOpen(true);
+                    }}
+                  />
                 ))}
               </ul>
             ) : (
@@ -250,6 +267,14 @@ export function AgendaList() {
     <div {...pull.handlers} className="min-h-full">
       <PullIndicator distance={pull.distance} spinning={pull.pulled && loading} />
       {body()}
+      <MeetingSheet
+        meeting={selected}
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onGone={(gone) =>
+          setMeetings((list) => list?.filter((k) => !(k.id === gone.id && k.provider === gone.provider)) ?? list)
+        }
+      />
     </div>
   );
 }
@@ -335,11 +360,13 @@ function MeetingRow({
   now,
   today,
   tone,
+  onOpen,
 }: {
   meeting: Meeting;
   now: number;
   today: boolean;
   tone: (typeof TONES)[number];
+  onOpen: () => void;
 }) {
   const start = new Date(meeting.start).getTime();
   const end = new Date(meeting.end).getTime();
@@ -347,18 +374,28 @@ function MeetingRow({
   const length = duration(meeting.start, meeting.end);
 
   return (
-    <li className={cn('mb-2 flex items-start gap-3.5 rounded-[15px] border px-4 py-3.5', tone.card, happening && 'border-accent/40')}>
-      <span className={cn('w-[52px] shrink-0 pt-[1px] text-[13px] font-semibold tabular-nums', tone.ink)}>
-        {meeting.allDay ? t('agenda_all_day') : happening ? t('agenda_now') : clock(meeting.start)}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[15px] leading-[21px] tracking-[-0.01em] text-ink">{meeting.subject}</span>
-        {!meeting.allDay && length && (
-          <span className="mt-1 block text-[12px] text-ink-3 tabular-nums">
-            {happening ? `${clock(meeting.start)} – ${clock(meeting.end)}` : length}
-          </span>
+    <li className="mb-2">
+      {/* A tap opens what can be done: cancel, decline, write to the organiser. */}
+      <button
+        onClick={onOpen}
+        className={cn(
+          'flex w-full items-start gap-3.5 rounded-[15px] border px-4 py-3.5 text-left transition-transform active:scale-[0.99]',
+          tone.card,
+          happening && 'border-accent/40',
         )}
-      </span>
+      >
+        <span className={cn('w-[52px] shrink-0 pt-[1px] text-[13px] font-semibold tabular-nums', tone.ink)}>
+          {meeting.allDay ? t('agenda_all_day') : happening ? t('agenda_now') : clock(meeting.start)}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] leading-[21px] tracking-[-0.01em] text-ink">{meeting.subject}</span>
+          {!meeting.allDay && length && (
+            <span className="mt-1 block text-[12px] text-ink-3 tabular-nums">
+              {happening ? `${clock(meeting.start)} – ${clock(meeting.end)}` : length}
+            </span>
+          )}
+        </span>
+      </button>
     </li>
   );
 }

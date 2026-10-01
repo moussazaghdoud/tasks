@@ -33,7 +33,8 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "account", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "createEvent", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "todayEvents", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "todayEvents", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "respond", returnType: CAPPluginReturnPromise)
     ]
 
     private var session: ASWebAuthenticationSession?
@@ -265,7 +266,7 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
                 // A week of a busy calendar runs past fifty; Graph pages at the
                 // limit and the rest would silently not appear.
                 URLQueryItem(name: "$top", value: "250"),
-                URLQueryItem(name: "$select", value: "subject,start,end,isAllDay,showAs")
+                URLQueryItem(name: "$select", value: "id,subject,start,end,isAllDay,showAs,isOrganizer,organizer")
             ]
 
             // URLComponents leaves "+" alone, and a query string reads "+" as a
@@ -302,17 +303,89 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
                 let items = (json?["value"] as? [[String: Any]]) ?? []
 
                 let events: [[String: Any]] = items.map { item in
-                    [
+                    // Who called the meeting: they are the one to write to
+                    // with a question, and only they can cancel it.
+                    let organizer = (item["organizer"] as? [String: Any])?["emailAddress"] as? [String: Any]
+                    return [
+                        "id": (item["id"] as? String) ?? "",
                         "subject": (item["subject"] as? String) ?? "(no title)",
                         "start": ((item["start"] as? [String: Any])?["dateTime"] as? String) ?? "",
                         "end": ((item["end"] as? [String: Any])?["dateTime"] as? String) ?? "",
                         "allDay": (item["isAllDay"] as? Bool) ?? false,
-                        "showAs": (item["showAs"] as? String) ?? ""
+                        "showAs": (item["showAs"] as? String) ?? "",
+                        "isOrganizer": (item["isOrganizer"] as? Bool) ?? false,
+                        "organizerName": (organizer?["name"] as? String) ?? "",
+                        "organizerEmail": (organizer?["address"] as? String) ?? ""
                     ]
                 }
                 call.resolve(["events": events])
             }.resume()
         }
+    }
+
+    /// Cancel a meeting you organise, or decline one you were invited to.
+    ///
+    /// Either way the other people are told: a cancellation goes to every
+    /// attendee, a decline goes to the organiser. An event of your own with
+    /// nobody invited cannot be "cancelled" in Graph's sense, so it is
+    /// deleted instead.
+    @objc func respond(_ call: CAPPluginCall) {
+        guard let id = call.getString("id"), !id.isEmpty,
+              let action = call.getString("action"), action == "cancel" || action == "decline" else {
+            call.reject("Which meeting, and what to do with it", "bad_request")
+            return
+        }
+        let comment = call.getString("comment") ?? ""
+        let safe = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~")
+        let path = id.addingPercentEncoding(withAllowedCharacters: safe) ?? id
+        let base = "https://graph.microsoft.com/v1.0/me/events/\(path)"
+
+        accessToken { token in
+            guard let token = token else {
+                call.reject(self.lastAuthError.isEmpty ? "Not connected to Microsoft" : self.lastAuthError, "not_connected")
+                return
+            }
+            let body: [String: Any] = action == "cancel"
+                ? ["comment": comment]
+                : ["comment": comment, "sendResponse": true]
+            self.send(token: token, url: "\(base)/\(action)", method: "POST", body: body) { status, detail in
+                if (200..<300).contains(status) {
+                    call.resolve()
+                } else if action == "cancel" && status == 400 {
+                    // No attendees to tell: an appointment, not a meeting.
+                    self.send(token: token, url: base, method: "DELETE", body: nil) { status, detail in
+                        if (200..<300).contains(status) { call.resolve() } else { call.reject(detail, "failed") }
+                    }
+                } else {
+                    call.reject(detail, status == 401 ? "not_connected" : "failed")
+                }
+            }
+        }
+    }
+
+    private func send(token: String, url: String, method: String, body: [String: Any]?,
+                      done: @escaping (Int, String) -> Void) {
+        guard let target = URL(string: url) else {
+            done(0, "Bad meeting id")
+            return
+        }
+        var request = URLRequest(url: target)
+        request.httpMethod = method
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let body = body {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        }
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                done(0, error.localizedDescription)
+                return
+            }
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            let json = data.flatMap { (try? JSONSerialization.jsonObject(with: $0)) as? [String: Any] }
+            let message = ((json?["error"] as? [String: Any])?["message"] as? String) ?? "HTTP \(status)"
+            done(status, message)
+        }.resume()
     }
 
     // MARK: - Tokens

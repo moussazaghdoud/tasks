@@ -1,10 +1,10 @@
 import { useSyncExternalStore } from 'react';
 import type { Task } from '@/domain/types';
-import type { Account, Meeting, ProviderId } from './calendarTypes';
+import type { Account, Meeting, MeetingAction, ProviderId } from './calendarTypes';
 import * as google from './google';
 import * as microsoft from './microsoft';
 
-export type { Meeting, Account, ProviderId } from './calendarTypes';
+export type { Meeting, MeetingAction, Account, ProviderId } from './calendarTypes';
 
 /**
  * Every calendar the app can connect to, behind one door.
@@ -34,6 +34,7 @@ export interface Provider {
   account(): Promise<Account>;
   listAgenda(days: number): Promise<Meeting[]>;
   createEvent(task: Task): Promise<{ webLink: string }>;
+  respond(id: string, action: MeetingAction): Promise<void>;
 }
 
 const PROVIDERS: Provider[] = [
@@ -153,6 +154,22 @@ export async function listAgenda(days = 2): Promise<Meeting[]> {
     if (failure && failure.status === 'rejected') throw failure.reason;
   }
   return meetings.sort((a, b) => a.start.localeCompare(b.start));
+}
+
+/**
+ * Whether a meeting can be answered from here: it needs the id and calendar
+ * an agenda stored by an older build did not keep. Reading the week again
+ * brings them.
+ */
+export const answerable = (m: Meeting): boolean => !!m.id && !!m.provider;
+
+/** Cancel the meeting (yours) or decline it (theirs), then read the week again. */
+export async function respondToMeeting(m: Meeting, action: MeetingAction): Promise<void> {
+  if (!m.id || !m.provider) throw Object.assign(new Error('Meeting cannot be answered'), { code: 'failed' });
+  await providerOf(m.provider).respond(m.id, action);
+  // Gone from the screen at once rather than at the next read.
+  writeAgendaCache(known.filter((k) => !(k.id === m.id && k.provider === m.provider)));
+  agendaChanged();
 }
 
 /** Add the thought to the first connected calendar. */

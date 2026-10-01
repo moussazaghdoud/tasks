@@ -7,13 +7,24 @@
  */
 
 export interface Meeting {
+  /** The calendar's own id; absent in an agenda stored by an older build. */
+  id?: string;
   subject: string;
   /** Local wall time, no zone suffix: the calendar was asked for this phone's zone. */
   start: string;
   end: string;
   allDay: boolean;
   showAs: string;
+  /** Yours to cancel; otherwise an invitation, yours to decline. */
+  isOrganizer?: boolean;
+  organizerName?: string;
+  organizerEmail?: string;
+  /** Which calendar it came from; added on this side, the plugins do not send it. */
+  provider?: ProviderId;
 }
+
+/** What can be done with a meeting from the agenda. */
+export type MeetingAction = 'cancel' | 'decline';
 
 export interface Account {
   connected: boolean;

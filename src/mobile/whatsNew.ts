@@ -23,6 +23,7 @@ const RELEASES: Array<{ version: string; notes: Note[] }> = [
     version: '1.0.1',
     notes: [
       { icon: ScanText, title: 'wn_photo_text_title', body: 'wn_photo_text_body' },
+      { icon: CalendarCheck, title: 'wn_meeting_title', body: 'wn_meeting_body' },
       { icon: CornerDownLeft, title: 'wn_newline_title', body: 'wn_newline_body' },
       { icon: Bell, title: 'wn_reminders_title', body: 'wn_reminders_body' },
       { icon: Trash2, title: 'wn_swipe_title', body: 'wn_swipe_body' },
