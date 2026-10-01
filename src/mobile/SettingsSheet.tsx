@@ -1,14 +1,15 @@
-import { ArrowUpRight, CalendarCheck, Check, Download, Moon, Sun, Upload } from 'lucide-react';
+import { ArrowUpRight, CalendarCheck, Check, Cloud, Download, Moon, Sun, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '@/store/workspace';
 import { backUp, restore } from './backup';
+import { useCloudState } from './icloud';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
 import { apiBase, isNative } from '@/lib/native/platform';
 import { readVersion, WEB_VERSION } from '@/lib/version';
 import { describe, useLastRace } from '@/lib/voice/lastRace';
 import { setAiConsent, useAiConsent } from './aiConsent';
-import { LANGUAGES, setLang, t, useLang } from './i18n';
+import { LANGUAGES, localeOf, setLang, t, useLang } from './i18n';
 import { toast } from '@/store/toast';
 import {
   calendarConfigured,
@@ -253,8 +254,29 @@ function BackupSection() {
           onChange={(e) => e.target.files?.[0] && void bringBack(e.target.files[0])}
         />
       </div>
-      <p className="px-6 pt-3 text-[12.5px] leading-[18px] text-ink-3">{t('backup_note')}</p>
+      <CloudLine />
+      <p className="px-6 pt-2 text-[12.5px] leading-[18px] text-ink-3">{t('backup_note')}</p>
     </>
+  );
+}
+
+/** Where the copy in iCloud stands, in one line. */
+function CloudLine() {
+  const cloud = useCloudState();
+  if (!isNative() || cloud.kind === 'unknown') return null;
+  const text =
+    cloud.kind === 'saved'
+      ? t('icloud_saved', { time: new Date(cloud.at).toLocaleTimeString(localeOf(), { hour: '2-digit', minute: '2-digit' }) })
+      : cloud.kind === 'saving'
+        ? t('icloud_saving')
+        : cloud.kind === 'off'
+          ? t('icloud_off')
+          : t('icloud_error');
+  return (
+    <p className="flex items-center gap-1.5 px-6 pt-3 text-[13px] text-ink-2">
+      <Cloud className={cn('size-4 shrink-0', cloud.kind === 'saved' ? 'text-accent' : 'text-ink-4')} strokeWidth={2} />
+      {text}
+    </p>
   );
 }
 

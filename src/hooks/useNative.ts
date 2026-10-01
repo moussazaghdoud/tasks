@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { initNative } from '@/lib/native/bridge';
 import { initNotifications, syncReminders } from '@/lib/native/notifications';
 import { readUnreadPhotos, sweepPhotos } from '@/lib/native/photos';
+import { initICloud } from '@/mobile/icloud';
 import { isNative } from '@/lib/native/platform';
 import { hashToRoute } from '@/store/ui';
 import { ui } from '@/store/ui';
@@ -45,5 +46,8 @@ export function useNative(): void {
     );
     // Photographs taken before the phone read their words, read now.
     void readUnreadPhotos();
+    // A copy in the person's own iCloud: brought back after a reinstall,
+    // kept up to date after that.
+    void initICloud();
   }, [ready]);
 }

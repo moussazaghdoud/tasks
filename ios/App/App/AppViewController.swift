@@ -21,5 +21,6 @@ public class AppViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(GooglePlugin())
         bridge?.registerPluginInstance(AppearancePlugin())
         bridge?.registerPluginInstance(TextReaderPlugin())
+        bridge?.registerPluginInstance(ICloudPlugin())
     }
 }
