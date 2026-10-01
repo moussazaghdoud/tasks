@@ -1,5 +1,7 @@
-import { ArrowUpRight, CalendarCheck, Check, Moon, Sun } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ArrowUpRight, CalendarCheck, Check, Download, Moon, Sun, Upload } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useWorkspace } from '@/store/workspace';
+import { backUp, restore } from './backup';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
 import { apiBase, isNative } from '@/lib/native/platform';
@@ -191,6 +193,71 @@ function AiSection() {
  * Store listing. Links open in Safari: a page loaded into this web view would
  * replace the app, with no way back.
  */
+/**
+ * Thoughts live only on this iPhone and leave with the app when it is
+ * deleted. A backup is the file that brings them back.
+ */
+function BackupSection() {
+  const count = useWorkspace((s) => Object.keys(s.tasks).length);
+  const [busy, setBusy] = useState(false);
+  const picker = useRef<HTMLInputElement>(null);
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      await backUp();
+    } catch {
+      toast(t('backup_failed'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const bringBack = async (file: File) => {
+    setBusy(true);
+    try {
+      const added = await restore(file);
+      if (added === null) toast(t('restore_not_backup'));
+      else if (added === 0) toast(t('restore_nothing'));
+      else {
+        haptic('success');
+        toast(t('restore_done', { n: added }));
+      }
+    } catch {
+      toast(t('backup_failed'));
+    } finally {
+      setBusy(false);
+      if (picker.current) picker.current.value = '';
+    }
+  };
+
+  const row = 'flex h-[58px] w-full items-center gap-4 px-6 text-left text-[17px] text-ink transition-colors active:bg-wash-strong disabled:opacity-40';
+  return (
+    <>
+      <p className="mt-7 px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('backup_section')}</p>
+      <div className="border-t border-line">
+        <button onClick={() => void save()} disabled={busy || !count} className={row}>
+          <Download className="size-[20px] shrink-0 text-accent" strokeWidth={1.9} />
+          <span className="flex-1">{t('backup_save')}</span>
+          <span className="text-[14px] text-ink-4 tabular-nums">{t('thoughts_many', { n: count })}</span>
+        </button>
+        <button onClick={() => picker.current?.click()} disabled={busy} className={cn(row, 'border-t border-line')}>
+          <Upload className="size-[20px] shrink-0 text-accent" strokeWidth={1.9} />
+          <span className="flex-1">{t('backup_restore')}</span>
+        </button>
+        <input
+          ref={picker}
+          type="file"
+          accept="application/json,.json"
+          hidden
+          onChange={(e) => e.target.files?.[0] && void bringBack(e.target.files[0])}
+        />
+      </div>
+      <p className="px-6 pt-3 text-[12.5px] leading-[18px] text-ink-3">{t('backup_note')}</p>
+    </>
+  );
+}
+
 function AboutSection() {
   const [version, setVersion] = useState(WEB_VERSION);
   useEffect(() => {
@@ -327,6 +394,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
       {calendarConfigured() && <CalendarSection />}
 
       <RaceSection />
+
+      <BackupSection />
 
       <AboutSection />
     </Sheet>
