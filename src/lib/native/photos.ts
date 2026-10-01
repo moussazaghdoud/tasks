@@ -86,6 +86,39 @@ export async function readPhotoText(name: string): Promise<string> {
   }
 }
 
+/** What a photograph captured without a word is called until its text is read. */
+const UNNAMED = new Set(['Photo', '照片']);
+
+/**
+ * The first words read in a photograph, short enough to stand as a thought's
+ * line: the first line that holds a letter or a digit, eight words at most.
+ */
+export function headlineOf(text: string): string {
+  const line = text
+    .split('\n')
+    .map((l) => l.trim())
+    .find((l) => /[\p{L}\p{N}]/u.test(l));
+  if (!line) return '';
+  const words = line.split(/\s+/);
+  let out = words.slice(0, 8).join(' ');
+  if (out.length > 48) return `${out.slice(0, 47).trimEnd()}…`;
+  if (words.length > 8) out += '…';
+  return out;
+}
+
+/**
+ * Keep what was read with the thought. A photograph taken without a word is
+ * named "Photo" until now; it takes the first words it holds instead — a
+ * business card becomes the name on it. A thought already named by its
+ * owner keeps its name.
+ */
+export function keepPhotoText(id: string, photoText: string): void {
+  const task = ws().tasks[id];
+  if (!task) return; // undone in the meantime
+  const headline = headlineOf(photoText);
+  ws().updateTask(id, headline && UNNAMED.has(task.title) ? { photoText, title: headline } : { photoText });
+}
+
 /**
  * Read the photographs no one has read yet: those taken before the phone
  * could, and any whose reading was interrupted. One at a time, in the
@@ -94,10 +127,7 @@ export async function readPhotoText(name: string): Promise<string> {
 export async function readUnreadPhotos(): Promise<void> {
   if (!isNative()) return;
   const unread = Object.values(ws().tasks).filter((task) => task.photo && task.photoText === undefined);
-  for (const task of unread) {
-    const photoText = await readPhotoText(task.photo!);
-    if (ws().tasks[task.id]) ws().updateTask(task.id, { photoText });
-  }
+  for (const task of unread) keepPhotoText(task.id, await readPhotoText(task.photo!));
 }
 
 /**

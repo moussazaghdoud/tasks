@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
 import { markFresh } from '@/lib/fresh';
-import { cameraAvailable, capturePhoto, photoUrl, readPhotoText } from '@/lib/native/photos';
+import { cameraAvailable, capturePhoto, keepPhotoText, photoUrl, readPhotoText } from '@/lib/native/photos';
 import { analyzeMemo } from '@/lib/voice/analyze';
 import { createFromDrafts, findTaskByTitle, type ConfirmedDraft } from '@/lib/voice/createFromDrafts';
 import { startLevelMeter, startSpeech, type SpeechErrorCode, type SpeechSession } from '@/lib/voice/speech';
@@ -173,7 +173,8 @@ export function CaptureBar() {
         ws().updateTask(id, { photo: withPhoto });
         // The words in it, read on the phone since the photograph was taken —
         // usually done by now. The thought may have been undone by then.
-        void (textJob ?? readPhotoText(withPhoto)).then((found) => ws().tasks[id] && ws().updateTask(id, { photoText: found }));
+        // A photograph with no words spoken takes the first words it holds as its name.
+        void (textJob ?? readPhotoText(withPhoto)).then((found) => keepPhotoText(id, found));
       }
       photo.current = null;
       setPhotoSrc(null);
