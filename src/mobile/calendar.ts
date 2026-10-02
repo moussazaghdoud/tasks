@@ -34,7 +34,8 @@ export interface Provider {
   account(): Promise<Account>;
   listAgenda(days: number): Promise<Meeting[]>;
   createEvent(task: Task): Promise<{ webLink: string }>;
-  respond(id: string, action: MeetingAction): Promise<void>;
+  /** `comment` reaches the organiser with a decline, the attendees with a cancellation. */
+  respond(id: string, action: MeetingAction, comment?: string): Promise<void>;
 }
 
 const PROVIDERS: Provider[] = [
@@ -168,9 +169,9 @@ export async function listAgenda(days = 2): Promise<Meeting[]> {
 export const answerable = (m: Meeting): boolean => !!m.id && !!m.provider;
 
 /** Cancel the meeting (yours) or decline it (theirs), then read the week again. */
-export async function respondToMeeting(m: Meeting, action: MeetingAction): Promise<void> {
+export async function respondToMeeting(m: Meeting, action: MeetingAction, comment?: string): Promise<void> {
   if (!m.id || !m.provider) throw Object.assign(new Error('Meeting cannot be answered'), { code: 'failed' });
-  await providerOf(m.provider).respond(m.id, action);
+  await providerOf(m.provider).respond(m.id, action, comment);
   // Gone from the screen at once rather than at the next read.
   writeAgendaCache(known.filter((k) => !(k.id === m.id && k.provider === m.provider)));
   agendaChanged();

@@ -37,7 +37,8 @@ export function MeetingSheet({
     if (!ok) return;
     onClose();
     try {
-      await respondToMeeting(m, action);
+      // A decline goes with a short apology, in the language the app speaks.
+      await respondToMeeting(m, action, action === 'decline' ? t('meeting_decline_message') : undefined);
       haptic('success');
       onGone(m);
       toast(t(action === 'cancel' ? 'meeting_cancelled' : 'meeting_declined'));

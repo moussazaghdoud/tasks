@@ -55,8 +55,8 @@ export async function listAgenda(days: number): Promise<Meeting[]> {
 }
 
 /** Cancel a meeting you organise, or decline an invitation; the others are told. */
-export async function respond(id: string, action: MeetingAction): Promise<void> {
-  await Google.respond({ id, action });
+export async function respond(id: string, action: MeetingAction, comment?: string): Promise<void> {
+  await Google.respond({ id, action, comment });
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');

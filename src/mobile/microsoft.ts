@@ -92,8 +92,8 @@ export async function listAgenda(days = 2): Promise<Meeting[]> {
 }
 
 /** Cancel a meeting you organise, or decline an invitation; the others are told. */
-export async function respond(id: string, action: MeetingAction): Promise<void> {
-  await Microsoft.respond({ id, action });
+export async function respond(id: string, action: MeetingAction, comment?: string): Promise<void> {
+  await Microsoft.respond({ id, action, comment });
 }
 
 /* ---- events ---- */
