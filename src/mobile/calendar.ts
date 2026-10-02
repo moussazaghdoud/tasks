@@ -144,7 +144,11 @@ export async function listAgenda(days = 2): Promise<Meeting[]> {
   const live = connected();
   if (!live.length) throw Object.assign(new Error('No calendar connected'), { code: 'not_connected' });
 
-  const results = await Promise.allSettled(live.map((c) => providerOf(c.id).listAgenda(days)));
+  // Each meeting remembers its calendar: cancelling or declining it has to
+  // go back to the one it came from.
+  const results = await Promise.allSettled(
+    live.map((c) => providerOf(c.id).listAgenda(days).then((list) => list.map((m) => ({ ...m, provider: c.id })))),
+  );
   const meetings = results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
 
   // One calendar failing while another answers is not worth an error screen —
