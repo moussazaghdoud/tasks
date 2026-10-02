@@ -22,7 +22,7 @@
   </head>
   <body>
     <h1>Privacy Policy</h1>
-    <p class="updated">Hence — last updated 22 September 2026</p>
+    <p class="updated">Hence — last updated 2 October 2026</p>
 
     <p>
       Hence keeps the thoughts you speak or type as a simple list. It has no accounts of its own,
@@ -34,9 +34,23 @@
     <p>
       Your notes, the people and projects they mention, and your settings are stored on the device
       you use — in the app's own storage on iOS, or in your browser's storage on the web. They are
-      not uploaded anywhere, and we cannot read them. Deleting the app deletes them. In the web
-      version you can also export a copy, or clear everything, from Settings.
+      never sent to us, and we cannot read them. On iOS a copy can also be kept in your own iCloud
+      (see below). Deleting the app deletes what is on the device. In Settings you can also save a
+      backup file, which you keep wherever you choose, and restore from it.
     </p>
+
+    <h2>A copy in your iCloud (iOS)</h2>
+    <p>
+      If iCloud Drive is on for your iPhone, the app keeps a copy of your notes and their photos in
+      your own iCloud account, so they come back if you reinstall the app or change iPhone.
+    </p>
+    <ul>
+      <li>The copy is stored in the app's private folder of <em>your</em> iCloud, under your Apple ID, by Apple. It counts against your iCloud storage, not ours.</li>
+      <li>It never passes through the Hence server, and we have no access to it.</li>
+      <li>It is updated a few seconds after each change. It is only read when the app starts with no notes, to bring them back.</li>
+      <li>To stop it, turn off iCloud Drive for Hence in the iPhone's Settings → [your name] → iCloud. You can delete the copy there too, under Manage Storage.</li>
+      <li>If iCloud is off, nothing is copied and everything stays on the device.</li>
+    </ul>
 
     <h2>Turning speech into text</h2>
     <p>
@@ -61,7 +75,8 @@
     </p>
     <ul>
       <li>The photo is written into the app's own private storage. It is not added to your camera roll, and no other app can read it.</li>
-      <li>It is never uploaded. It is not sent to the Hence server, and it is not sent to Claude — only the sentence you speak is, and only if you allowed that.</li>
+      <li>The words in the photo are read on your iPhone, using Apple's built-in text recognition, so you can search for them. Nothing is sent anywhere to do this.</li>
+      <li>It is never sent to us. It is not sent to the Hence server, and it is not sent to Claude — only the sentence you speak is, and only if you allowed that. If iCloud is on, it is copied to your own iCloud with your notes (see above).</li>
       <li>Deleting the note deletes the photo; the app removes orphaned photos the next time it starts.</li>
       <li>The app asks for camera permission the first time, and never reads your photo library.</li>
     </ul>
@@ -92,14 +107,17 @@
     <p>
       If you choose to connect a calendar in Settings — a Microsoft 365 or Outlook account, a Google
       account, or both — the app can show your upcoming meetings and add a note to your calendar as an
-      event. This connection is between your device and Microsoft or Google directly; it does not pass
-      through the Hence server.
+      event. When you tap a meeting and confirm, it can also cancel a meeting you organise (your
+      calendar then tells the attendees) or decline one you were invited to (the organiser is told).
+      It only does this when you ask. This connection is between your device and Microsoft or Google
+      directly; it does not pass through the Hence server.
     </p>
     <ul>
       <li>You sign in on Microsoft's or Google's own page. The app never sees your password.</li>
       <li>The app asks only for access to your calendar and your basic profile, so it can show which account is connected. It cannot read your email or files.</li>
       <li>The key that keeps you connected is stored in your device's Keychain, encrypted by iOS and readable by no other app.</li>
-      <li>Your upcoming meetings are kept on the device so they appear instantly and offline. They are not sent anywhere else.</li>
+      <li>Your upcoming meetings — their titles, times and organisers — are kept on the device so they appear instantly and offline. They are not sent anywhere else.</li>
+      <li>"Email the organiser" opens your own Mail app with their address filled in; nothing is sent until you press Send.</li>
       <li>Disconnecting in Settings removes the key and the stored meetings from the device. You can also revoke access from your Microsoft or Google account at any time.</li>
     </ul>
 

@@ -1,1 +1,7 @@
-First release.
+• Photos you can search: Hence reads the words in your photos, on your iPhone.
+• Your thoughts follow you: a copy is kept in your own iCloud, so reinstalling or a new iPhone brings them back.
+• Answer a meeting from the Agenda: cancel it if it is yours, decline it, or email the organiser.
+• Say "new line" to break a line while dictating.
+• Reminders understand more ways of saying the time: "at nine thirty", "at noon", "in half an hour".
+• Back up and restore your thoughts from Settings.
+• A thought you have just captured can be swiped away at once.

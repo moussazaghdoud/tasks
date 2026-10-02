@@ -1,1 +1,1 @@
-task,todo,voice,speak,reminder,productivity,to-do list,planner,notes,focus
+voice,notes,memo,thoughts,reminder,todo,tasks,dictation,agenda,calendar,planner,journal,capture

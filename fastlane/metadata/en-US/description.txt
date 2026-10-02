@@ -1,19 +1,23 @@
-Hence is a task manager built around one idea: write first, organize later, act fast.
+Hence keeps the thoughts that would otherwise slip away.
 
-Tap the microphone and say what needs doing — "call Thierry tomorrow about the partner terms, it's urgent" — and Hence turns it into a clear task: a short title, the date and time, the priority, the project, the person you delegated it to. A rambling memo comes back short and sharp, with a two-sentence summary of what was worth keeping. You confirm before anything is created, and you can change any detail first.
+Tap the orb and say what's on your mind. Hence writes it down as one clear line, ready the moment you look back. Say "remind me tomorrow at nine thirty" and the reminder is set as you speak. Dictating a list? Say "new line". Prefer not to talk? Type it, or take a photo — a picture can be the whole thought.
 
-Prefer to type? The same understanding works when you write. "Board deck friday high priority" needs no forms, no menus, no date pickers.
+PHOTOS YOU CAN SEARCH
+Photograph a whiteboard, a business card or a label: Hence reads the words in it, right on your iPhone. Search for a name or a number and the photo comes back.
 
-THE HOME SCREEN ANSWERS ONE QUESTION
-What now? A greeting, the microphone, and your next three tasks. Everything else waits behind More — the rest of the day, the week ahead, what you finished. No dashboard, no widgets, no badges.
+TURN A THOUGHT INTO WHAT IT NEEDS TO BE
+Tap any line to mark it done or important, set a reminder for any date and time, make it repeat, turn it into an email, add it to your calendar, or share it. Swipe left to delete — and undo it if you did not mean to.
 
-BUILT FOR REAL WORK
-• Today, Upcoming, Inbox, Important and Later — time first, folders second
-• Lightweight projects, notes, steps, links and recurring tasks
-• Reminders that arrive even when the app is closed
-• Focus mode: one task, its steps and a timer
-• Triage: sort a full inbox with one tap per task
-• Swipe to complete, drag to reorder, undo anything
+BUSINESS AND PRIVATE, APART
+Work thoughts and personal ones live side by side without mixing. Move a thought from one to the other with a tap.
 
-QUIET BY DESIGN
-No accounts. No advertising. No trackers or analytics. Your tasks stay on your device, and you can export them whenever you like.
+YOUR WEEK AT A GLANCE
+Connect Outlook or Google Calendar and an Agenda appears: the week ahead, a colour per day. Tap a meeting to cancel it if it is yours, decline it if it is not, or email the organiser.
+
+SPEAK THE WAY YOU SPEAK
+Hence understands English, French and Simplified Chinese, and can listen in all of them at once and keep whichever reads right. The interface comes in the same three languages.
+
+PRIVATE BY DEFAULT
+No account to create. No advertising, no tracking, no analytics. Your thoughts are kept on your iPhone, with a copy in your own iCloud so a new phone finds them — we never see them. If you choose, the text of a voice note — never the audio — can be sent to an AI model to tidy it into one clean line; Hence asks before the first one, and you can turn it off at any time in Settings.
+
+Dark and light, designed for one hand.
