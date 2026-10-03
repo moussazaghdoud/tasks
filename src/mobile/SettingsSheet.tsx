@@ -1,4 +1,4 @@
-import { ArrowUpRight, CalendarCheck, Check, Cloud, Download, Moon, Sun, Upload } from 'lucide-react';
+import { ArrowUpRight, CalendarCheck, Cloud, Download, Moon, Sun, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '@/store/workspace';
 import { backUp, restore } from './backup';
@@ -453,23 +453,32 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
 
       <p className="px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('language')}</p>
 
-      <div className="border-t border-line">
+      {/* Each language a pill, written in itself, wrapping onto as many rows
+          as it needs: seven of them take two or three lines instead of
+          seven rows. The chosen one is lit like Dark/Light above. */}
+      <div className="flex flex-wrap gap-2 px-6" role="radiogroup" aria-label={t('language')}>
         {LANGUAGES.map((option) => {
           const on = option.id === lang;
           return (
             <button
               key={option.id}
+              lang={option.locale}
+              role="radio"
+              aria-checked={on}
               onClick={() => {
                 if (!on) {
                   haptic('medium');
                   setLang(option.id);
                 }
               }}
-              aria-pressed={on}
-              className="flex h-[58px] w-full items-center gap-4 px-6 text-start transition-colors active:bg-wash-strong"
+              className={cn(
+                'h-10 rounded-full border px-4 text-[15px] transition-colors',
+                on
+                  ? 'border-accent/25 bg-accent-soft font-semibold text-accent ring-1 ring-accent/25'
+                  : 'border-line bg-sunk font-medium text-ink-2 active:bg-wash-strong',
+              )}
             >
-              <span className={cn('flex-1 text-[17px]', on ? 'font-medium text-ink' : 'text-ink-2')}>{option.native}</span>
-              {on && <Check className="size-[19px] shrink-0 text-accent" strokeWidth={2.4} />}
+              {option.native}
             </button>
           );
         })}
