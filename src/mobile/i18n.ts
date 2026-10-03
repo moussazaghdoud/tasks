@@ -18,7 +18,12 @@ import { IT } from './locales/it';
  * for anyone who works in two languages, so it sits in the header, one tap
  * away, and the interface stays put.
  */
-export type Lang = 'en' | 'fr' | 'it' | 'es' | 'de' | 'ar' | 'zh';
+/**
+ * Arabic is ready but not offered yet: its captions (locales/ar.ts), the
+ * right-to-left layout and its spoken reminders are all in place. Offering
+ * it is adding 'ar' here, its line to LANGUAGES and AR to DICTIONARIES.
+ */
+export type Lang = 'en' | 'fr' | 'it' | 'es' | 'de' | 'zh';
 
 export const LANGUAGES: Array<{ id: Lang; native: string; short: string; locale: string }> = [
   { id: 'en', native: 'English', short: 'EN', locale: 'en-US' },
@@ -26,8 +31,8 @@ export const LANGUAGES: Array<{ id: Lang; native: string; short: string; locale:
   { id: 'it', native: 'Italiano', short: 'IT', locale: 'it-IT' },
   { id: 'es', native: 'Español', short: 'ES', locale: 'es-ES' },
   { id: 'de', native: 'Deutsch', short: 'DE', locale: 'de-DE' },
-  // Written right to left: the whole layout turns round for it (see applyDir).
-  { id: 'ar', native: 'العربية', short: 'AR', locale: 'ar-SA' },
+  // Arabic, when it is offered: { id: 'ar', native: 'العربية', short: 'AR', locale: 'ar-SA' }.
+  // Written right to left, the whole layout turns round for it (see applyDir).
   // Simplified, as used in mainland China. The recogniser takes zh-CN too,
   // and Claude writes the thought back in the language it heard.
   { id: 'zh', native: '简体中文', short: '中文', locale: 'zh-CN' },
@@ -87,8 +92,9 @@ export const currentLang = (): Lang => current;
 export const speechLang = (): Lang => spoken ?? current;
 export const spokenChoice = (): SpokenChoice => speechLang();
 
-/** Arabic reads right to left; every other language here left to right. */
-export const isRtl = (lang: Lang = current): boolean => lang === 'ar';
+/** Languages read right to left — Arabic, once it is offered. */
+const RIGHT_TO_LEFT: ReadonlySet<string> = new Set(['ar']);
+export const isRtl = (lang: Lang = current): boolean => RIGHT_TO_LEFT.has(lang);
 
 /**
  * Set the page's language and direction. `dir="rtl"` on <html> turns the
@@ -226,8 +232,8 @@ const EN = {
   wn_swipe_body: 'A thought you have just captured can be swiped away at once.',
   wn_look_title: 'Pick a style',
   wn_look_body: 'Settings › Style: Pinboard, Notebook, Bubbles, Night sky, Pebbles, Orbit and more — each in dark and light.',
-  wn_lang_title: 'Seven languages',
-  wn_lang_body: 'Hence now speaks and understands Italian, Spanish, German and Arabic too. Pick the language you speak at the top of the main screen.',
+  wn_lang_title: 'Six languages',
+  wn_lang_body: 'Hence now speaks and understands Italian, Spanish and German too. Pick the language you speak at the top of the main screen.',
   meeting_yours: 'You organise this meeting',
   meeting_organized_by: 'Organised by {name}',
   meeting_cancel: 'Cancel the meeting',
@@ -452,8 +458,8 @@ const FR: Record<Key, string> = {
   wn_swipe_body: 'Une pensée que vous venez de dicter peut être supprimée d’un glissement, immédiatement.',
   wn_look_title: 'Choisissez un style',
   wn_look_body: 'Réglages › Style : Tableau, Carnet, Bulles, Ciel, Galets, Orbite et d’autres — chacun en sombre et en clair.',
-  wn_lang_title: 'Sept langues',
-  wn_lang_body: 'Hence parle et comprend désormais aussi l’italien, l’espagnol, l’allemand et l’arabe. Choisissez la langue parlée en haut de l’écran principal.',
+  wn_lang_title: 'Six langues',
+  wn_lang_body: 'Hence parle et comprend désormais aussi l’italien, l’espagnol et l’allemand. Choisissez la langue parlée en haut de l’écran principal.',
   meeting_yours: 'Vous organisez cette réunion',
   meeting_organized_by: 'Organisée par {name}',
   meeting_cancel: 'Annuler la réunion',
@@ -675,8 +681,8 @@ const ZH: Record<Key, string> = {
   wn_swipe_body: '刚刚记下的想法，也能立刻滑动删除。',
   wn_look_title: '选择一种风格',
   wn_look_body: '设置 › 风格：便签板、笔记本、气泡、夜空、鹅卵石、轨道等，每种都有深色和浅色。',
-  wn_lang_title: '七种语言',
-  wn_lang_body: 'Hence 现在也会说、也能听懂意大利语、西班牙语、德语和阿拉伯语。在主屏幕顶部选择你说的语言。',
+  wn_lang_title: '六种语言',
+  wn_lang_body: 'Hence 现在也会说、也能听懂意大利语、西班牙语和德语。在主屏幕顶部选择你说的语言。',
   meeting_yours: '你是这个会议的组织者',
   meeting_organized_by: '组织者：{name}',
   meeting_cancel: '取消会议',
@@ -821,7 +827,9 @@ const ZH: Record<Key, string> = {
   ai_provider_now: '笔记由 {who} 整理。',
 };
 
-const DICTIONARIES: Record<Lang, Record<Key, string>> = { en: EN, fr: FR, it: IT, es: ES, de: DE, ar: AR, zh: ZH };
+const DICTIONARIES: Record<Lang, Record<Key, string>> = { en: EN, fr: FR, it: IT, es: ES, de: DE, zh: ZH };
+/** Kept checked by the build, ready for when Arabic is offered. */
+export const ARABIC_CAPTIONS: Record<Key, string> = AR;
 
 /** Translate, filling {placeholders}. Typed, so a missing French line fails the build. */
 export function t(key: Key, vars?: Record<string, string | number>): string {

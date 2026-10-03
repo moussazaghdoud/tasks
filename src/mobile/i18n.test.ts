@@ -84,16 +84,15 @@ describe('spoken language', () => {
     expect(i18n.speechLocales()).toEqual(['de-DE']);
   });
 
-  it('offers seven languages, each with its own recogniser locale', async () => {
+  it('offers six languages, each with its own recogniser locale — Arabic not yet', async () => {
     const i18n = await fresh();
-    expect(i18n.LANGUAGES.map((l) => l.locale)).toEqual(['en-US', 'fr-FR', 'it-IT', 'es-ES', 'de-DE', 'ar-SA', 'zh-CN']);
+    expect(i18n.LANGUAGES.map((l) => l.locale)).toEqual(['en-US', 'fr-FR', 'it-IT', 'es-ES', 'de-DE', 'zh-CN']);
+    // Ready for later: its captions are kept complete by the build.
+    expect(i18n.ARABIC_CAPTIONS.settings).toBe('الإعدادات');
   });
 
-  it('reads Arabic right to left, and speaks every new language', async () => {
+  it('speaks every new language, left to right', async () => {
     const i18n = await fresh();
-    i18n.setLang('ar');
-    expect(i18n.isRtl()).toBe(true);
-    expect(i18n.t('settings')).toBe('الإعدادات');
     i18n.setLang('it');
     expect(i18n.isRtl()).toBe(false);
     expect(i18n.t('settings')).toBe('Impostazioni');
