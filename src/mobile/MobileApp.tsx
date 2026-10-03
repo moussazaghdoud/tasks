@@ -30,6 +30,7 @@ import {
   useCalendars,
 } from './calendar';
 import { applyLook, useLook } from './look';
+import { refreshProvider } from './aiProvider';
 import { applyTheme, useTheme } from './theme';
 import { SpaceTabs, visibleTabs } from './SpaceTabs';
 import { ThoughtRow } from './ThoughtRow';
@@ -61,6 +62,8 @@ export function MobileApp() {
   // The sign-in survives restarts in the Keychain; nothing used to ask.
   useEffect(() => {
     void refreshAccounts();
+    // Which AI service the server uses, so it is named before anything is sent.
+    void refreshProvider();
   }, []);
 
   useCalendars();

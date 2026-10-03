@@ -1,4 +1,5 @@
 import { Sparkles } from 'lucide-react';
+import { useAiProvider } from './aiProvider';
 import { t } from './i18n';
 import { Sheet } from './Sheet';
 
@@ -18,16 +19,19 @@ export function AiConsentSheet({
   /** `null` when the sheet was dismissed without an answer. */
   onChoose: (allow: boolean | null) => void;
 }) {
+  // Named, always: the question is only an answer if it says who is asking.
+  const provider = useAiProvider();
+  const named = { name: provider === 'gemini' ? 'Gemini' : 'Claude', who: t(provider === 'gemini' ? 'ai_who_gemini' : 'ai_who_claude') };
   return (
     // Dismissing without choosing counts as "not this time": the note is
     // kept on the device and the question comes back next time.
-    <Sheet open={open} onClose={() => onChoose(null)} label={t('ai_title')}>
+    <Sheet open={open} onClose={() => onChoose(null)} label={t('ai_title', named)}>
       <div className="px-6 pb-2">
         <span className="grid size-11 place-items-center rounded-full bg-accent-soft text-accent">
           <Sparkles className="size-[22px]" strokeWidth={1.8} />
         </span>
-        <h2 className="mt-4 text-[21px] leading-7 font-semibold tracking-[-0.02em] text-ink">{t('ai_title')}</h2>
-        <p className="mt-2.5 text-[15px] leading-[22px] text-ink-2">{t('ai_body')}</p>
+        <h2 className="mt-4 text-[21px] leading-7 font-semibold tracking-[-0.02em] text-ink">{t('ai_title', named)}</h2>
+        <p className="mt-2.5 text-[15px] leading-[22px] text-ink-2">{t('ai_body', named)}</p>
         <p className="mt-2.5 text-[13px] leading-[19px] text-ink-3">{t('ai_detail')}</p>
 
         <button

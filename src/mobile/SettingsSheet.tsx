@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '@/store/workspace';
 import { backUp, restore } from './backup';
 import { useCloudState } from './icloud';
+import { useAiProvider } from './aiProvider';
 import { LOOKS, setLook, useLook, type Look } from './look';
 import type { Key } from './i18n';
 import { cn } from '@/lib/platform';
@@ -153,6 +154,7 @@ function CalendarSection() {
  */
 function AiSection() {
   const on = useAiConsent() === 'granted';
+  const provider = useAiProvider();
   return (
     <>
       <p className="mt-7 px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('ai_section')}</p>
@@ -184,7 +186,9 @@ function AiSection() {
           </span>
         </button>
       </div>
-      <p className="px-6 pt-3 text-[12.5px] leading-[18px] text-ink-3">{t('ai_setting_note')}</p>
+      <p className="px-6 pt-3 text-[12.5px] leading-[18px] text-ink-3">
+        {t('ai_setting_note')} {t('ai_provider_now', { who: t(provider === 'gemini' ? 'ai_who_gemini' : 'ai_who_claude') })}
+      </p>
     </>
   );
 }

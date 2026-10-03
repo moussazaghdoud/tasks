@@ -128,6 +128,131 @@ function sanitize(raw: VoiceTaskDraft): VoiceTaskDraft | null {
   };
 }
 
+/* ---- Gemini, the alternative ---- */
+
+/**
+ * Which service tidies notes: VOICE_PROVIDER on the server, `claude` unless
+ * set to `gemini`. One switch for everyone — the app asks /healthz which is
+ * active so it can name it before anything is sent.
+ */
+export type Provider = 'claude' | 'gemini';
+export const activeProvider = (): Provider => (process.env.VOICE_PROVIDER?.trim().toLowerCase() === 'gemini' ? 'gemini' : 'claude');
+
+/** Google's fast, low-cost model by default; GEMINI_MODEL overrides it. */
+const geminiModel = () => process.env.GEMINI_MODEL?.trim() || 'gemini-3.5-flash-lite';
+
+/**
+ * The same answer shape as TASKS_SCHEMA, in the schema dialect Gemini's
+ * generateContent takes: `nullable` instead of a null branch, and no
+ * `additionalProperties`.
+ */
+const GEMINI_SCHEMA = {
+  type: 'OBJECT',
+  required: ['tasks'],
+  properties: {
+    tasks: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        required: ['title', 'notes', 'dueDate', 'dueTime', 'priority', 'project', 'assignee', 'subtasks', 'recurrence', 'estimatedMinutes', 'relatedTo'],
+        properties: {
+          title: { type: 'STRING', description: 'Short imperative task title, starting with a verb.' },
+          notes: { type: 'STRING', description: 'A tight summary of the context worth keeping; empty string if none.' },
+          dueDate: { type: 'STRING', nullable: true, description: 'YYYY-MM-DD' },
+          dueTime: { type: 'STRING', nullable: true, description: 'HH:mm, 24-hour' },
+          priority: { type: 'STRING', enum: ['important', 'normal', 'low'] },
+          project: { type: 'STRING', nullable: true },
+          assignee: { type: 'STRING', nullable: true },
+          subtasks: { type: 'ARRAY', items: { type: 'STRING' } },
+          recurrence: {
+            type: 'OBJECT',
+            nullable: true,
+            required: ['freq', 'interval'],
+            properties: {
+              freq: { type: 'STRING', enum: ['daily', 'weekdays', 'weekly', 'monthly', 'yearly'] },
+              interval: { type: 'INTEGER' },
+            },
+          },
+          estimatedMinutes: { type: 'INTEGER', nullable: true },
+          relatedTo: { type: 'STRING', nullable: true, description: 'Exact title of an existing open task this memo is about.' },
+        },
+      },
+    },
+  },
+} as const;
+
+/** Fill what a looser schema may leave out, so sanitize() sees the full shape. */
+function complete(raw: Partial<VoiceTaskDraft>): VoiceTaskDraft {
+  return {
+    title: typeof raw.title === 'string' ? raw.title : '',
+    notes: typeof raw.notes === 'string' ? raw.notes : '',
+    dueDate: raw.dueDate ?? null,
+    dueTime: raw.dueTime ?? null,
+    priority: raw.priority === 'important' || raw.priority === 'low' ? raw.priority : 'normal',
+    project: raw.project ?? null,
+    assignee: raw.assignee ?? null,
+    subtasks: Array.isArray(raw.subtasks) ? raw.subtasks.filter((s): s is string => typeof s === 'string') : [],
+    recurrence: raw.recurrence ?? null,
+    estimatedMinutes: typeof raw.estimatedMinutes === 'number' ? raw.estimatedMinutes : null,
+    relatedTo: raw.relatedTo ?? null,
+  };
+}
+
+/** The same instructions and context as Claude gets, asked of Gemini. */
+export async function analyzeWithGemini(ctx: VoiceContext, fetchImpl: typeof fetch = fetch): Promise<VoiceTaskDraft[]> {
+  const key = process.env.GEMINI_API_KEY?.trim();
+  if (!key) throw new VoiceAnalysisError('not_configured', 'No Gemini API key.');
+  const model = geminiModel();
+
+  let response: Response;
+  try {
+    // The key travels in a header, not the URL, so no log ever holds it.
+    response = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM }] },
+        contents: [{ role: 'user', parts: [{ text: userPrompt({ ...ctx, transcript: ctx.transcript.slice(0, MAX_TRANSCRIPT) }) }] }],
+        generationConfig: { responseMimeType: 'application/json', responseSchema: GEMINI_SCHEMA, temperature: 0.2, maxOutputTokens: 4000 },
+      }),
+      signal: AbortSignal.timeout(25_000),
+    });
+  } catch (error) {
+    throw new VoiceAnalysisError('upstream', error instanceof Error ? error.message : 'Gemini unreachable');
+  }
+
+  const body = (await response.json().catch(() => null)) as {
+    candidates?: Array<{ finishReason?: string; content?: { parts?: Array<{ text?: string }> } }>;
+    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
+    error?: { message?: string };
+  } | null;
+
+  if (!response.ok) {
+    const message = body?.error?.message ?? `Gemini error ${response.status}`;
+    if (response.status === 401 || response.status === 403) throw new VoiceAnalysisError('not_configured', message);
+    if (response.status === 429) throw new VoiceAnalysisError('rate_limited', message);
+    if (response.status === 400) throw new VoiceAnalysisError('bad_request', message);
+    throw new VoiceAnalysisError('upstream', message);
+  }
+
+  const usage = body?.usageMetadata;
+  console.log(`[hence] voice tokens model=${model} in=${usage?.promptTokenCount ?? 0} out=${usage?.candidatesTokenCount ?? 0} cached=0`);
+
+  const candidate = body?.candidates?.[0];
+  if (candidate?.finishReason === 'SAFETY' || candidate?.finishReason === 'PROHIBITED_CONTENT') {
+    throw new VoiceAnalysisError('refused', 'The request was declined.');
+  }
+  const text = candidate?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
+  if (!text) throw new VoiceAnalysisError('upstream', 'Empty response.');
+  let parsed: { tasks?: Array<Partial<VoiceTaskDraft>> };
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new VoiceAnalysisError('upstream', 'Gemini did not answer in the expected shape.');
+  }
+  return (parsed.tasks ?? []).map(complete).map(sanitize).filter((t): t is VoiceTaskDraft => t !== null).slice(0, 10);
+}
+
 export class VoiceAnalysisError extends Error {
   constructor(
     readonly code: 'not_configured' | 'refused' | 'rate_limited' | 'bad_request' | 'upstream',
@@ -236,7 +361,8 @@ export async function voiceMiddleware(req: IncomingMessage, res: ServerResponse)
   }
   try {
     const started = Date.now();
-    const tasks = await analyzeTranscript({
+    const analyze = activeProvider() === 'gemini' ? analyzeWithGemini : analyzeTranscript;
+    const tasks = await analyze({
       ...ctx,
       projects: Array.isArray(ctx.projects) ? ctx.projects.slice(0, 50) : [],
       people: Array.isArray(ctx.people) ? ctx.people.slice(0, 100) : [],

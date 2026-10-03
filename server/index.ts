@@ -11,7 +11,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { createGzip } from 'node:zlib';
-import { voiceMiddleware } from './voice.ts';
+import { activeProvider, voiceMiddleware } from './voice.ts';
 
 const PORT = Number(process.env.PORT ?? 3000);
 const HOST = process.env.HOST ?? '0.0.0.0';
@@ -101,7 +101,13 @@ const server = createServer((req, res) => {
     if (url === '/healthz') {
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ ok: true, voice: Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN) }));
+      // `provider` lets the app name who reads the notes before asking.
+      const provider = activeProvider();
+      const voice =
+        provider === 'gemini'
+          ? Boolean(process.env.GEMINI_API_KEY)
+          : Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
+      return res.end(JSON.stringify({ ok: true, voice, provider }));
     }
 
     if (url.startsWith('/api/voice')) {
@@ -149,7 +155,14 @@ const server = createServer((req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  const voice = process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN ? 'Claude analysis enabled' : 'no ANTHROPIC_API_KEY — voice memos use on-device analysis';
+  const voice =
+    activeProvider() === 'gemini'
+      ? process.env.GEMINI_API_KEY
+        ? 'Gemini analysis enabled'
+        : 'VOICE_PROVIDER=gemini but no GEMINI_API_KEY — voice memos use on-device analysis'
+      : process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN
+        ? 'Claude analysis enabled'
+        : 'no ANTHROPIC_API_KEY — voice memos use on-device analysis';
   console.log(`[hence] listening on http://${HOST}:${PORT} — ${voice}`);
 });
 

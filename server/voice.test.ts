@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it } from 'vitest';
-import { analyzeTranscript, VoiceAnalysisError } from './voice.ts';
+import { analyzeTranscript, analyzeWithGemini, VoiceAnalysisError } from './voice.ts';
 import type { VoiceContext } from '../src/lib/voice/types.ts';
 
 const ctx: VoiceContext = {
@@ -97,5 +97,54 @@ describe('analyzeTranscript', () => {
     const error = await analyzeTranscript(ctx, client).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(VoiceAnalysisError);
     expect((error as VoiceAnalysisError).code).toBe('not_configured');
+  });
+});
+
+describe('analyzeWithGemini', () => {
+  const gemini = (reply: { status?: number; body: unknown }) => {
+    const seen: { url?: string; headers?: Headers; body?: Record<string, unknown> } = {};
+    const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
+      seen.url = String(url);
+      seen.headers = new Headers(init?.headers);
+      seen.body = JSON.parse(String(init?.body));
+      return new Response(JSON.stringify(reply.body), { status: reply.status ?? 200, headers: { 'content-type': 'application/json' } });
+    }) as typeof fetch;
+    return { fetchImpl, seen };
+  };
+  const answer = (tasks: unknown[]) => ({
+    candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify({ tasks }) }] } }],
+    usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 },
+  });
+
+  it('asks generateContent for JSON, with the key in a header and the same instructions', async () => {
+    process.env.GEMINI_API_KEY = 'g-test';
+    const { fetchImpl, seen } = gemini({ body: answer([]) });
+    await analyzeWithGemini(ctx, fetchImpl);
+    expect(seen.url).toContain(':generateContent');
+    expect(seen.url).not.toContain('g-test');
+    expect(seen.headers?.get('x-goog-api-key')).toBe('g-test');
+    const config = seen.body?.generationConfig as { responseMimeType: string };
+    expect(config.responseMimeType).toBe('application/json');
+    const user = (seen.body?.contents as Array<{ parts: Array<{ text: string }> }>)[0].parts[0].text;
+    expect(user).toContain('<voice_memo>');
+  });
+
+  it('fills what Gemini leaves out and cleans the rest', async () => {
+    process.env.GEMINI_API_KEY = 'g-test';
+    const { fetchImpl } = gemini({ body: answer([{ title: 'call thierry', priority: 'important', dueDate: '2026-09-16' }]) });
+    const [task] = await analyzeWithGemini(ctx, fetchImpl);
+    expect(task.title).toBe('Call thierry');
+    expect(task.notes).toBe('');
+    expect(task.subtasks).toEqual([]);
+    expect(task.dueDate).toBe('2026-09-16');
+  });
+
+  it('reads a missing key or a refused key as not configured', async () => {
+    delete process.env.GEMINI_API_KEY;
+    const missing = await analyzeWithGemini(ctx, gemini({ body: {} }).fetchImpl).catch((e: unknown) => e);
+    expect((missing as VoiceAnalysisError).code).toBe('not_configured');
+    process.env.GEMINI_API_KEY = 'g-test';
+    const refused = await analyzeWithGemini(ctx, gemini({ status: 403, body: { error: { message: 'bad key' } } }).fetchImpl).catch((e: unknown) => e);
+    expect((refused as VoiceAnalysisError).code).toBe('not_configured');
   });
 });

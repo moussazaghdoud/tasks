@@ -72,7 +72,7 @@ export async function analyzeMemo(
   const text = transcript.trim();
   if (!text) return { tasks: [], source: 'local' };
   if (options.cloud === false) return local(text);
-  if (claudeUnavailable) return local(text, 'On-device analysis. Add a Claude API key for smarter results.');
+  if (claudeUnavailable) return local(text, 'On-device analysis: the server has no AI key set.');
   if (isNative() && !apiBase()) {
     claudeUnavailable = true;
     return local(text, 'This build has no server configured, so analysis ran on your device.');
@@ -91,16 +91,16 @@ export async function analyzeMemo(
       body: JSON.stringify(buildContext(text, language)),
       signal: controller.signal,
     });
-    if (!res.ok) return local(text, 'Claude was unavailable, so this was analyzed on your device.');
+    if (!res.ok) return local(text, 'The AI service was unavailable, so this was analyzed on your device.');
     const data = (await res.json()) as VoiceApiResponse;
     if (data.ok) return { tasks: data.tasks, source: 'claude' };
     if (data.error === 'not_configured') {
       claudeUnavailable = true;
-      return local(text, 'On-device analysis. Add a Claude API key for smarter results.');
+      return local(text, 'On-device analysis: the server has no AI key set.');
     }
-    return local(text, 'Claude was unavailable, so this was analyzed on your device.');
+    return local(text, 'The AI service was unavailable, so this was analyzed on your device.');
   } catch {
-    return local(text, 'Claude was unreachable, so this was analyzed on your device.');
+    return local(text, 'The AI service was unreachable, so this was analyzed on your device.');
   } finally {
     clearTimeout(timer);
   }
