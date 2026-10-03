@@ -139,8 +139,10 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
             transition: swipe.open || !swipe.dx ? 'transform 180ms var(--ease-out)' : undefined,
             touchAction: 'pan-y',
           }}
+          // thought-card, thought-title, thought-check: what a look (looks.css) re-dresses.
+          data-important={important && !checked}
           className={cn(
-            'relative flex items-start gap-3.5 rounded-[15px] border px-4 py-3.5 transition-colors duration-200',
+            'thought-card relative flex items-start gap-3.5 rounded-[15px] border px-4 py-3.5 transition-colors duration-200',
             // Important thoughts carry the red themselves rather than wearing a
             // badge: the card, its edge and the words all shift together, so it
             // reads from across the room without adding anything to the row.
@@ -158,7 +160,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           >
             <span
               className={cn(
-                'grid size-[19px] place-items-center rounded-full border-[1.5px] transition-colors duration-200',
+                'thought-check grid size-[19px] place-items-center rounded-full border-[1.5px] transition-colors duration-200',
                 checked ? 'border-accent bg-accent' : important ? 'border-ember/70' : 'border-line-strong',
               )}
             >
@@ -179,7 +181,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
             <span
               className={cn(
                 // pre-line: a dictated "new line" shows as one.
-                'block text-[15px] leading-[21px] tracking-[-0.01em] whitespace-pre-line transition-colors duration-200',
+                'thought-title block text-[15px] leading-[21px] tracking-[-0.01em] whitespace-pre-line transition-colors duration-200',
                 checked ? 'text-ink-3 line-through' : important ? 'font-medium text-ember' : 'text-ink',
               )}
             >

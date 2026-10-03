@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '@/store/workspace';
 import { backUp, restore } from './backup';
 import { useCloudState } from './icloud';
+import { LOOKS, setLook, useLook, type Look } from './look';
+import type { Key } from './i18n';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
 import { apiBase, isNative } from '@/lib/native/platform';
@@ -195,6 +197,59 @@ function AiSection() {
  * replace the app, with no way back.
  */
 /**
+ * A miniature of each look — its paper, two of its cards and its orb — in
+ * the theme already chosen, so the choice is made by eye, not by name.
+ * Painted from fixed colours rather than the live tokens, which only ever
+ * hold the look being worn.
+ */
+const LOOK_PREVIEW: Record<Look, { light: string[]; dark: string[]; font: string; radius: number; label: Key }> = {
+  classic: { light: ['#faf9f6', '#e9e6de', '#e9e6de', '#1e676c'], dark: ['#232326', '#1e1e21', '#1e1e21', '#56b0f5'], font: 'var(--font-sans)', radius: 6, label: 'look_classic' },
+  pinboard: { light: ['#c9a072', '#ffe58f', '#cdebd8', '#a8322a'], dark: ['#2e241b', '#5c4e22', '#2c4a3a', '#e8735e'], font: "'Caveat', var(--font-sans)", radius: 1, label: 'look_pinboard' },
+  notebook: { light: ['#fbf7ee', '#fbf7ee', '#fbf7ee', '#22356b'], dark: ['#1d2131', '#1d2131', '#1d2131', '#9db4ff'], font: "'Kalam', var(--font-sans)", radius: 0, label: 'look_notebook' },
+  bubbles: { light: ['#fbf8f3', '#ffd3c4', '#d7e6ff', '#e2563a'], dark: ['#17141c', '#4a2e28', '#24365a', '#ff7a59'], font: "'Nunito Variable', var(--font-sans)", radius: 12, label: 'look_bubbles' },
+  widgets: { light: ['#efeeea', '#3559d6', '#ff9a55', '#3559d6'], dark: ['#111111', '#3559d6', '#ff9a55', '#7a97ff'], font: "'Archivo Variable', var(--font-sans)", radius: 9, label: 'look_widgets' },
+  sky: { light: ['#eceffa', '#ffffff', '#ffffff', '#4b5bd7'], dark: ['#0c1330', '#1c2550', '#1c2550', '#f3e7bf'], font: "'Sora Variable', var(--font-sans)", radius: 8, label: 'look_sky' },
+};
+
+function LookPicker({ dark }: { dark: boolean }) {
+  const chosen = useLook();
+  return (
+    <div className="mb-5 flex gap-3 overflow-x-auto px-6 pb-1" role="radiogroup" aria-label={t('look_section')}>
+      {LOOKS.map((id) => {
+        const p = LOOK_PREVIEW[id];
+        const [paper, card1, card2, accent] = dark ? p.dark : p.light;
+        const on = id === chosen;
+        return (
+          <button
+            key={id}
+            role="radio"
+            aria-checked={on}
+            onClick={() => {
+              if (on) return;
+              haptic('light');
+              setLook(id);
+            }}
+            className="flex w-[84px] shrink-0 flex-col items-center gap-1.5"
+          >
+            <span
+              className={cn('relative block h-[104px] w-[84px] overflow-hidden rounded-[16px] border-2', on ? 'border-accent' : 'border-line')}
+              style={{ background: paper }}
+            >
+              <span className="absolute left-2 right-2 top-3 h-[22px]" style={{ background: card1, borderRadius: p.radius, border: id === 'notebook' || id === 'sky' ? `1px solid ${accent}33` : undefined }} />
+              <span className="absolute left-2 right-5 top-[42px] h-[22px]" style={{ background: card2, borderRadius: p.radius, border: id === 'notebook' || id === 'sky' ? `1px solid ${accent}33` : undefined }} />
+              <span className="absolute bottom-2.5 left-1/2 size-[18px] -translate-x-1/2 rounded-full" style={{ background: accent }} />
+            </span>
+            <span className={cn('text-[12px]', on ? 'font-semibold text-accent' : 'text-ink-3')} style={{ fontFamily: p.font }}>
+              {t(p.label)}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
  * Thoughts live only on this iPhone and leave with the app when it is
  * deleted. A backup is the file that brings them back.
  */
@@ -384,6 +439,9 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           );
         })}
       </div>
+
+      <p className="px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('look_section')}</p>
+      <LookPicker dark={theme === 'dark'} />
 
       <p className="px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('language')}</p>
 

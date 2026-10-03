@@ -3,14 +3,22 @@ import { createRoot } from 'react-dom/client';
 import '@fontsource-variable/geist';
 import '@fontsource-variable/sora';
 import '@fontsource/instrument-serif/400.css';
+// The looks' own type, bundled so it works offline and asks no font server.
+import '@fontsource/caveat/600.css';
+import '@fontsource/kalam/400.css';
+import '@fontsource-variable/nunito';
+import '@fontsource-variable/archivo';
 import './styles/index.css';
+import './styles/looks.css';
 import App from './App';
+import { applyLook, currentLook } from './mobile/look';
 import { applyTheme, storedTheme } from './mobile/theme';
 
-// Paint the theme before the first frame. Doing it inside React would show
-// one frame of the wrong palette on every launch.
+// Paint the theme and the look before the first frame. Doing it inside React
+// would show one frame of the wrong palette on every launch.
 if (window.matchMedia('(max-width: 767px)').matches) {
   applyTheme(storedTheme());
+  applyLook(currentLook());
 }
 
 createRoot(document.getElementById('root')!).render(

@@ -1,0 +1,430 @@
+/* ------------------------------------------------------------------------
+   Looks — the same app in other clothes.
+
+   Classic is index.css as it stands. Each look below redefines the same
+   tokens twice, for light and for dark, so the Dark/Light switch keeps
+   working inside every look; then it re-dresses the few objects that carry
+   the look: the paper behind the list, the thought cards, the capture orb.
+
+   The selectors pair the look with the theme on purpose. `[data-look]`
+   alone would tie with `[data-theme='dark']` on specificity, and whichever
+   came last would win — a look's daylight colours over the dark ones.
+
+   Unlayered, so these win over Tailwind's utilities without !important.
+   ------------------------------------------------------------------------ */
+
+/* ======================= Pinboard ======================= */
+
+:root[data-look='pinboard']:not([data-theme='dark']) {
+  --color-desk: #c09366;
+  --color-paper: #c9a072;
+  --color-raised: #fff8ea;
+  --color-sunk: #ffe9a8;
+  --color-wash: rgb(43 33 24 / 0.05);
+  --color-wash-strong: rgb(43 33 24 / 0.09);
+  --color-line: #b38654;
+  --color-line-strong: #9c7346;
+  --color-ink: #2b2118;
+  --color-ink-2: #3e2e1f;
+  --color-ink-3: #4f3b27;
+  --color-ink-4: #6b5236;
+  --color-accent: #a8322a;
+  --color-accent-hover: #8f2922;
+  --color-accent-soft: #f4d9d2;
+  --color-accent-wash: #f8e7e1;
+  --color-accent-ink: #6e1e18;
+  --color-on-accent: #fff6ee;
+  --color-ember: #a8322a;
+  --color-ember-soft: #f6d7cf;
+  --note-1: #ffe58f;
+  --note-2: #cdebd8;
+  --note-3: #f6cfcf;
+  --note-4: #d3e2f6;
+  --note-ink: #2b2118;
+  --pin: #2f6fdb;
+}
+
+:root[data-look='pinboard'][data-theme='dark'] {
+  --color-desk: #251d16;
+  --color-paper: #2e241b;
+  --color-raised: #3a2f24;
+  --color-sunk: #4a3d22;
+  --color-line: #4a3b2c;
+  --color-line-strong: #5e4c38;
+  --color-ink: #f3ebdd;
+  --color-ink-2: #d2c6b3;
+  --color-ink-3: #a89a86;
+  --color-ink-4: #857868;
+  --color-accent: #e8735e;
+  --color-accent-hover: #d9644f;
+  --color-accent-soft: #4a2a24;
+  --color-accent-wash: #3a241f;
+  --color-accent-ink: #2a0f0a;
+  --color-on-accent: #2a0f0a;
+  --color-ember: #ff9a7a;
+  --color-ember-soft: #4a2a24;
+  --note-1: #5c4e22;
+  --note-2: #2c4a3a;
+  --note-3: #573538;
+  --note-4: #2d4058;
+  --note-ink: #f6eedc;
+  --pin: #8fb4ff;
+}
+
+:root[data-look='pinboard'] .app-main {
+  background-image: radial-gradient(rgb(60 35 10 / 0.14) 1px, transparent 1.6px);
+  background-size: 7px 7px;
+  background-attachment: local;
+}
+
+/* ======================= Notebook ======================= */
+
+:root[data-look='notebook']:not([data-theme='dark']) {
+  --color-desk: #f3eee2;
+  --color-paper: #fbf7ee;
+  --color-raised: #fffdf7;
+  --color-sunk: transparent;
+  --color-wash: rgb(34 53 107 / 0.04);
+  --color-wash-strong: rgb(34 53 107 / 0.08);
+  --color-line: #e3dccb;
+  --color-line-strong: #c9c0aa;
+  --color-ink: #22356b;
+  --color-ink-2: #34467a;
+  --color-ink-3: #5c6487;
+  --color-ink-4: #8d93ae;
+  --color-accent: #22356b;
+  --color-accent-hover: #1a2a57;
+  --color-accent-soft: #e3e8f5;
+  --color-accent-wash: #eef1f8;
+  --color-accent-ink: #121d3d;
+  --color-on-accent: #fbf7ee;
+  --color-ember: #b6402e;
+  --color-ember-soft: transparent;
+  --rule: #d6e1ee;
+  --margin: #e8a3a3;
+}
+
+:root[data-look='notebook'][data-theme='dark'] {
+  --color-desk: #181b28;
+  --color-paper: #1d2131;
+  --color-raised: #252a3d;
+  --color-sunk: transparent;
+  --color-line: #2c3247;
+  --color-line-strong: #3a4160;
+  --color-ink: #dce4ff;
+  --color-ink-2: #b9c3e6;
+  --color-ink-3: #8a93b8;
+  --color-ink-4: #6b7396;
+  --color-accent: #9db4ff;
+  --color-accent-hover: #8aa3f5;
+  --color-accent-soft: #263052;
+  --color-accent-wash: #20284a;
+  --color-accent-ink: #0e1430;
+  --color-on-accent: #0e1430;
+  --color-ember: #ff9a7a;
+  --color-ember-soft: transparent;
+  --rule: #2a3048;
+  --margin: #6e3f4a;
+}
+
+:root[data-look='notebook'] .app-main {
+  background-image:
+    linear-gradient(90deg, transparent 62px, var(--margin) 62px, var(--margin) 64px, transparent 64px),
+    repeating-linear-gradient(180deg, transparent 0 41px, var(--rule) 41px 42px);
+  background-attachment: local;
+}
+
+:root[data-look='notebook'] .thought-card {
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:root[data-look='notebook'] .thought-title {
+  font-family: 'Kalam', var(--font-sans);
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+/* ======================= Bubbles ======================= */
+
+:root[data-look='bubbles']:not([data-theme='dark']) {
+  --font-display: 'Nunito Variable', 'Nunito', var(--font-sans);
+  --color-desk: #f4efe8;
+  --color-paper: #fbf8f3;
+  --color-raised: #ffffff;
+  --color-sunk: #ffd3c4;
+  --color-line: #ede6dd;
+  --color-line-strong: #ddd3c7;
+  --color-ink: #2a2433;
+  --color-ink-2: #4a4257;
+  --color-ink-3: #6f6780;
+  --color-ink-4: #9a93a8;
+  --color-accent: #e2563a;
+  --color-accent-hover: #cf4a30;
+  --color-accent-soft: #fce3dc;
+  --color-accent-wash: #fdf0ec;
+  --color-accent-ink: #7a2412;
+  --color-on-accent: #ffffff;
+  --color-ember: #c2432a;
+  --note-1: #ffd3c4;
+  --note-2: #d7e6ff;
+  --note-3: #e2f2d3;
+  --note-4: #f0deff;
+  --note-5: #fff0b3;
+  --note-6: #d2f1ec;
+  --note-ink: #2a2433;
+}
+
+:root[data-look='bubbles'][data-theme='dark'] {
+  --font-display: 'Nunito Variable', 'Nunito', var(--font-sans);
+  --color-desk: #120f16;
+  --color-paper: #17141c;
+  --color-raised: #221e29;
+  --color-sunk: #4a2e28;
+  --color-line: #2e2836;
+  --color-line-strong: #3d3547;
+  --color-ink: #f5eeff;
+  --color-ink-2: #d5cce3;
+  --color-ink-3: #a79eb8;
+  --color-ink-4: #827a93;
+  --color-accent: #ff7a59;
+  --color-accent-hover: #f06a4a;
+  --color-accent-soft: #45261e;
+  --color-accent-wash: #2e1e1a;
+  --color-accent-ink: #2a0e06;
+  --color-on-accent: #2a0e06;
+  --color-ember: #ff9a7a;
+  --note-1: #4a2e28;
+  --note-2: #24365a;
+  --note-3: #2d4226;
+  --note-4: #3a2850;
+  --note-5: #4a4220;
+  --note-6: #1f4440;
+  --note-ink: #f5eeff;
+}
+
+/* ======================= Widgets ======================= */
+
+:root[data-look='widgets']:not([data-theme='dark']) {
+  --font-display: 'Archivo Variable', 'Archivo', var(--font-sans);
+  --color-desk: #e6e4de;
+  --color-paper: #efeeea;
+  --color-raised: #ffffff;
+  --color-sunk: #ffffff;
+  --color-line: #dcd9d1;
+  --color-line-strong: #c4c0b6;
+  --color-ink: #111111;
+  --color-ink-2: #333333;
+  --color-ink-3: #5e5e5e;
+  --color-ink-4: #8a8a8a;
+  --color-accent: #3559d6;
+  --color-accent-hover: #2a4bc4;
+  --color-accent-soft: #dde4fa;
+  --color-accent-wash: #ebeffc;
+  --color-accent-ink: #13235e;
+  --color-on-accent: #ffffff;
+  --color-ember: #d9480f;
+  --tile-5: #ffffff;
+}
+
+:root[data-look='widgets'][data-theme='dark'] {
+  --font-display: 'Archivo Variable', 'Archivo', var(--font-sans);
+  --color-desk: #0a0a0a;
+  --color-paper: #111111;
+  --color-raised: #1c1c1c;
+  --color-sunk: #1c1c1c;
+  --color-line: #2a2a2a;
+  --color-line-strong: #3a3a3a;
+  --color-ink: #ffffff;
+  --color-ink-2: #cfcfcf;
+  --color-ink-3: #9c9c9c;
+  --color-ink-4: #747474;
+  --color-accent: #7a97ff;
+  --color-accent-hover: #6a88f5;
+  --color-accent-soft: #1e2a52;
+  --color-accent-wash: #172040;
+  --color-accent-ink: #0a1230;
+  --color-on-accent: #0a1230;
+  --color-ember: #ff9a6b;
+  --tile-5: #f2efe8;
+}
+
+/* ======================= Night sky ======================= */
+
+:root[data-look='sky']:not([data-theme='dark']) {
+  --color-desk: #e3e7f7;
+  --color-paper: #eceffa;
+  --color-raised: #ffffff;
+  --color-sunk: rgb(255 255 255 / 0.78);
+  --color-line: #d7dcf0;
+  --color-line-strong: #c3cae6;
+  --color-ink: #1c2347;
+  --color-ink-2: #3a4270;
+  --color-ink-3: #5e6694;
+  --color-ink-4: #8990b5;
+  --color-accent: #4b5bd7;
+  --color-accent-hover: #3f4ec4;
+  --color-accent-soft: #dfe3fa;
+  --color-accent-wash: #ebeefc;
+  --color-accent-ink: #1a2160;
+  --color-on-accent: #ffffff;
+  --color-ember: #c0503a;
+  --color-ember-soft: #f8e4de;
+  --star: rgb(75 91 215 / 0.18);
+}
+
+:root[data-look='sky'][data-theme='dark'] {
+  --color-desk: #091027;
+  --color-paper: #0c1330;
+  --color-raised: #151e45;
+  --color-sunk: rgb(255 255 255 / 0.06);
+  --color-wash: rgb(233 237 255 / 0.05);
+  --color-wash-strong: rgb(233 237 255 / 0.09);
+  --color-line: #222c5a;
+  --color-line-strong: #2e3a72;
+  --color-ink: #e9edff;
+  --color-ink-2: #c3cbf0;
+  --color-ink-3: #96a0d0;
+  --color-ink-4: #6f79aa;
+  --color-accent: #f3e7bf;
+  --color-accent-hover: #e8daa8;
+  --color-accent-soft: #2a2e4a;
+  --color-accent-wash: #1a2246;
+  --color-accent-ink: #0c1330;
+  --color-on-accent: #0c1330;
+  --color-ember: #ffb08f;
+  --color-ember-soft: rgb(255 176 143 / 0.1);
+  --star: rgb(201 214 255 / 0.5);
+}
+
+:root[data-look='sky'] .app-main {
+  background-image:
+    radial-gradient(var(--star) 1px, transparent 1.4px),
+    radial-gradient(var(--star) 1px, transparent 1.4px);
+  background-size: 97px 113px, 151px 89px;
+  background-position: 0 0, 40px 60px;
+  background-attachment: local;
+}
+
+:root[data-look='sky'] .thought-card {
+  border-radius: 20px;
+}
+
+/* =================== Cards that carry colour =================== */
+
+/* Pinboard, bubbles and widgets give each thought its own colour, in turn
+   down the list. The words then take that card's ink, whatever the theme. */
+:root[data-look='pinboard'] li:nth-child(4n + 1) .thought-card { --card-bg: var(--note-1); }
+:root[data-look='pinboard'] li:nth-child(4n + 2) .thought-card { --card-bg: var(--note-2); }
+:root[data-look='pinboard'] li:nth-child(4n + 3) .thought-card { --card-bg: var(--note-3); }
+:root[data-look='pinboard'] li:nth-child(4n + 4) .thought-card { --card-bg: var(--note-4); }
+
+:root[data-look='bubbles'] li:nth-child(6n + 1) .thought-card { --card-bg: var(--note-1); }
+:root[data-look='bubbles'] li:nth-child(6n + 2) .thought-card { --card-bg: var(--note-2); }
+:root[data-look='bubbles'] li:nth-child(6n + 3) .thought-card { --card-bg: var(--note-3); }
+:root[data-look='bubbles'] li:nth-child(6n + 4) .thought-card { --card-bg: var(--note-4); }
+:root[data-look='bubbles'] li:nth-child(6n + 5) .thought-card { --card-bg: var(--note-5); }
+:root[data-look='bubbles'] li:nth-child(6n + 6) .thought-card { --card-bg: var(--note-6); }
+
+:root[data-look='widgets'] li:nth-child(5n + 1) .thought-card { --card-bg: #3559d6; --card-ink: #ffffff; }
+:root[data-look='widgets'] li:nth-child(5n + 2) .thought-card { --card-bg: #ff9a55; --card-ink: #1a1208; }
+:root[data-look='widgets'] li:nth-child(5n + 3) .thought-card { --card-bg: #34c08f; --card-ink: #06241a; }
+:root[data-look='widgets'] li:nth-child(5n + 4) .thought-card { --card-bg: var(--tile-5); --card-ink: #111111; }
+:root[data-look='widgets'] li:nth-child(5n + 5) .thought-card { --card-bg: #c9a6f2; --card-ink: #1d0f2e; }
+/* Something marked important is the one card in red, whatever its turn. */
+:root[data-look='widgets'] .thought-card[data-important='true'] { --card-bg: #e2452c; --card-ink: #ffffff; }
+
+:root[data-look='pinboard'] .thought-card,
+:root[data-look='bubbles'] .thought-card,
+:root[data-look='widgets'] .thought-card {
+  background: var(--card-bg);
+  border-color: transparent;
+  color: var(--card-ink, var(--note-ink));
+}
+
+:root[data-look='pinboard'] .thought-title,
+:root[data-look='bubbles'] .thought-title,
+:root[data-look='widgets'] .thought-title {
+  color: var(--card-ink, var(--note-ink));
+}
+
+/* The empty tick ring takes the card's ink, so it shows on every colour. */
+:root[data-look='pinboard'] .thought-card [aria-checked='false'] .thought-check,
+:root[data-look='bubbles'] .thought-card [aria-checked='false'] .thought-check,
+:root[data-look='widgets'] .thought-card [aria-checked='false'] .thought-check {
+  border-color: currentColor;
+  opacity: 0.55;
+}
+
+/* Pinboard: paper notes, pinned and a little askew. */
+:root[data-look='pinboard'] .thought-card {
+  border-radius: 3px;
+  box-shadow: 0 7px 14px rgb(40 22 6 / 0.28);
+  transform: rotate(-1.1deg);
+}
+:root[data-look='pinboard'] li:nth-child(even) .thought-card {
+  transform: rotate(0.9deg);
+}
+:root[data-look='pinboard'] .thought-card::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: var(--pin);
+  box-shadow: 0 2px 3px rgb(0 0 0 / 0.35);
+}
+:root[data-look='pinboard'] .thought-card[data-important='true']::before {
+  background: var(--color-accent);
+}
+:root[data-look='pinboard'] .thought-title {
+  font-family: 'Caveat', var(--font-sans);
+  font-size: 24px;
+  line-height: 1.08;
+  font-weight: 600;
+}
+
+/* Bubbles: soft, round, and a size larger. */
+:root[data-look='bubbles'] .thought-card {
+  border-radius: 28px;
+  padding-top: 18px;
+  padding-bottom: 18px;
+  box-shadow: 0 10px 22px rgb(90 60 120 / 0.1);
+}
+:root[data-look='bubbles'] .thought-title {
+  font-weight: 800;
+  font-size: 17px;
+}
+
+/* Widgets: bold blocks to read from across the room. */
+:root[data-look='widgets'] .thought-card {
+  border-radius: 24px;
+  min-height: 92px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+:root[data-look='widgets'] .thought-title {
+  font-weight: 800;
+  font-size: 19px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+/* =================== The capture orb =================== */
+
+/* Every look's orb is its accent, solid by day and glowing by night. */
+:root[data-look] .capture-orb {
+  background: var(--color-accent);
+  box-shadow: 0 10px 26px -8px rgb(0 0 0 / 0.35), 0 2px 6px -2px rgb(0 0 0 / 0.2);
+}
+:root[data-look][data-theme='dark'] .capture-orb {
+  background: var(--color-accent);
+  box-shadow: 0 0 40px -6px var(--color-accent), 0 14px 30px -12px rgb(0 0 0 / 0.6);
+}
+:root[data-look='pinboard'] .capture-orb {
+  border-radius: 50%;
+}

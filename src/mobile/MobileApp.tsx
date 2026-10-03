@@ -29,6 +29,7 @@ import {
   useAgendaMeetings,
   useCalendars,
 } from './calendar';
+import { applyLook, useLook } from './look';
 import { applyTheme, useTheme } from './theme';
 import { SpaceTabs, visibleTabs } from './SpaceTabs';
 import { ThoughtRow } from './ThoughtRow';
@@ -94,6 +95,13 @@ export function MobileApp() {
     void setStatusBarTheme(theme);
     return () => document.documentElement.removeAttribute('data-theme');
   }, [theme]);
+
+  // The look chosen in Settings: the same screens in other clothes.
+  const look = useLook();
+  useEffect(() => {
+    applyLook(look);
+    return () => document.documentElement.removeAttribute('data-look');
+  }, [look]);
 
   const { open, doneToday } = useMemo(() => {
     const live = Object.values(tasks).filter((t) => !t.archivedAt);
@@ -185,7 +193,7 @@ export function MobileApp() {
         )}
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 pb-[184px]">
+      <main className="app-main min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 pb-[184px]">
         {view === 'agenda' ? (
           <AgendaList />
         ) : open.length === 0 && doneToday.length === 0 ? (
