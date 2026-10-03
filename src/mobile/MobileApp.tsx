@@ -209,7 +209,17 @@ export function MobileApp() {
           <Empty searching={searching} />
         ) : (
           <>
-            <ul className="pt-1">
+            {/* thought-list and its two labels: what the One thing and
+                Now / Later looks hang on (looks.css). */}
+            <ul
+              className="thought-list pt-1"
+              style={
+                {
+                  '--now-label': JSON.stringify(t('zone_now')),
+                  '--later-label': JSON.stringify(t('zone_later')),
+                } as React.CSSProperties
+              }
+            >
               {open.map((t) => (
                 <li key={t.id}>
                   <ThoughtRow task={t} onOpen={() => setOpenId(t.id)} />

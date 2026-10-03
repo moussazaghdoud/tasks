@@ -211,8 +211,12 @@ const LOOK_PREVIEW: Record<Look, { light: string[]; dark: string[]; font: string
   pinboard: { light: ['#c9a072', '#ffe58f', '#cdebd8', '#a8322a'], dark: ['#2e241b', '#5c4e22', '#2c4a3a', '#e8735e'], font: "'Caveat', var(--font-sans)", radius: 1, label: 'look_pinboard' },
   notebook: { light: ['#fbf7ee', '#fbf7ee', '#fbf7ee', '#22356b'], dark: ['#1d2131', '#1d2131', '#1d2131', '#9db4ff'], font: "'Kalam', var(--font-sans)", radius: 0, label: 'look_notebook' },
   bubbles: { light: ['#fbf8f3', '#ffd3c4', '#d7e6ff', '#e2563a'], dark: ['#17141c', '#4a2e28', '#24365a', '#ff7a59'], font: "'Nunito Variable', var(--font-sans)", radius: 12, label: 'look_bubbles' },
-  widgets: { light: ['#efeeea', '#3559d6', '#ff9a55', '#3559d6'], dark: ['#111111', '#3559d6', '#ff9a55', '#7a97ff'], font: "'Archivo Variable', var(--font-sans)", radius: 9, label: 'look_widgets' },
   sky: { light: ['#eceffa', '#ffffff', '#ffffff', '#4b5bd7'], dark: ['#0c1330', '#1c2550', '#1c2550', '#f3e7bf'], font: "'Sora Variable', var(--font-sans)", radius: 8, label: 'look_sky' },
+  pebbles: { light: ['#ece5d8', '#4a4641', '#d9d2c5', '#2f2c29'], dark: ['#1e1c1a', '#3a3733', '#5a554e', '#e8e1d5'], font: "'Figtree Variable', var(--font-sans)", radius: 11, label: 'look_pebbles' },
+  onething: { light: ['#e4dfd5', '#fffdf8', '#fffdf8', '#24211d'], dark: ['#1a1917', '#262420', '#262420', '#f2eee6'], font: "'Fraunces Variable', serif", radius: 7, label: 'look_onething' },
+  nowlater: { light: ['#faf8f4', '#fff4e3', '#e9eef4', '#1f2430'], dark: ['#16181d', '#2e2619', '#1f2733', '#f1c27d'], font: "'IBM Plex Sans', var(--font-sans)", radius: 5, label: 'look_nowlater' },
+  moodboard: { light: ['#eeeae3', '#ffffff', '#2a2622', '#2a2622'], dark: ['#1b1917', '#2b2825', '#f3d9a4', '#f3d9a4'], font: "'Fraunces Variable', serif", radius: 1, label: 'look_moodboard' },
+  orbit: { light: ['#f3efe8', '#ffffff', '#ffffff', '#2c2720'], dark: ['#1c1a17', '#2a2723', '#2a2723', '#f3efe8'], font: "'Urbanist Variable', var(--font-sans)", radius: 11, label: 'look_orbit' },
 };
 
 function LookPicker({ dark }: { dark: boolean }) {

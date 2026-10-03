@@ -12,10 +12,23 @@ import { useSyncExternalStore } from 'react';
  * sheets and toasts included, reads the same tokens, and nothing in the
  * interface has to know which look it is wearing.
  */
-export type Look = 'classic' | 'pinboard' | 'notebook' | 'bubbles' | 'widgets' | 'sky';
+export type Look =
+  | 'classic'
+  | 'pinboard'
+  | 'notebook'
+  | 'bubbles'
+  | 'sky'
+  | 'pebbles'
+  | 'onething'
+  | 'nowlater'
+  | 'moodboard'
+  | 'orbit';
 
-/** In the order Settings offers them; Classic first. */
-export const LOOKS: Look[] = ['classic', 'pinboard', 'notebook', 'bubbles', 'widgets', 'sky'];
+/**
+ * In the order Settings offers them; Classic first. A look no longer offered
+ * (Widgets, once) reads as Classic, so nobody is left on a missing one.
+ */
+export const LOOKS: Look[] = ['classic', 'pinboard', 'notebook', 'bubbles', 'sky', 'pebbles', 'onething', 'nowlater', 'moodboard', 'orbit'];
 
 const KEY = 'hence.look';
 
