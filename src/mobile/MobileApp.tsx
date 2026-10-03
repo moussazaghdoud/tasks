@@ -62,8 +62,14 @@ export function MobileApp() {
   // The sign-in survives restarts in the Keychain; nothing used to ask.
   useEffect(() => {
     void refreshAccounts();
-    // Which AI service the server uses, so it is named before anything is sent.
+    // Which AI service the server uses, so it is named before anything is
+    // sent — at launch, and each time the app comes back to the screen.
     void refreshProvider();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refreshProvider();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
   useCalendars();

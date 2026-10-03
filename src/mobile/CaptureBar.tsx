@@ -15,6 +15,7 @@ import { ws } from '@/store/workspace';
 import { ui, useUi } from '@/store/ui';
 import { AiConsentSheet } from './AiConsentSheet';
 import { aiConsent, setAiConsent } from './aiConsent';
+import { refreshProvider } from './aiProvider';
 import { dayTimeIn, speechLocale, speechLocales, t } from './i18n';
 import { currentSpace, spaceOf } from './space';
 import { setReminder } from './thoughtActions';
@@ -103,8 +104,13 @@ export function CaptureBar() {
       }
       setPhase('thinking');
 
-      // Nothing leaves the phone for Claude without a yes. Asked once, here,
-      // where the question means something; the answer is remembered.
+      // Which service the server uses right now: it can change while the app
+      // sits in the background, and a yes to one is not a yes to the other.
+      // A second at most; offline, the last known one stands.
+      if (said) await Promise.race([refreshProvider(), new Promise((r) => setTimeout(r, 1500))]);
+
+      // Nothing leaves the phone for the AI service without a yes. Asked once,
+      // here, where the question means something; the answer is remembered.
       // A photograph with no words has nothing to send, so it asks nothing.
       let cloud = said ? aiConsent() === 'granted' : false;
       if (said && aiConsent() === 'unset') {
