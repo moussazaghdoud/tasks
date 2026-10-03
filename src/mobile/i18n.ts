@@ -1,4 +1,8 @@
 import { useSyncExternalStore } from 'react';
+import { AR } from './locales/ar';
+import { DE } from './locales/de';
+import { ES } from './locales/es';
+import { IT } from './locales/it';
 
 /**
  * Two languages: the one you read, and the one you speak.
@@ -14,29 +18,34 @@ import { useSyncExternalStore } from 'react';
  * for anyone who works in two languages, so it sits in the header, one tap
  * away, and the interface stays put.
  */
-export type Lang = 'en' | 'fr' | 'zh';
+export type Lang = 'en' | 'fr' | 'it' | 'es' | 'de' | 'ar' | 'zh';
 
 export const LANGUAGES: Array<{ id: Lang; native: string; short: string; locale: string }> = [
   { id: 'en', native: 'English', short: 'EN', locale: 'en-US' },
   { id: 'fr', native: 'Français', short: 'FR', locale: 'fr-FR' },
+  { id: 'it', native: 'Italiano', short: 'IT', locale: 'it-IT' },
+  { id: 'es', native: 'Español', short: 'ES', locale: 'es-ES' },
+  { id: 'de', native: 'Deutsch', short: 'DE', locale: 'de-DE' },
+  // Written right to left: the whole layout turns round for it (see applyDir).
+  { id: 'ar', native: 'العربية', short: 'AR', locale: 'ar-SA' },
   // Simplified, as used in mainland China. The recogniser takes zh-CN too,
   // and Claude writes the thought back in the language it heard.
   { id: 'zh', native: '简体中文', short: '中文', locale: 'zh-CN' },
 ];
 
 /**
- * The spoken language can also be left to the app, which listens in all three
- * at once and keeps whichever transcript reads like the language it was
- * transcribed in. Apple's recogniser must be told a language before it hears
- * anything, so "automatic" is a race between three of them, not a setting.
+ * The spoken language is always one chosen language. Listening in several at
+ * once and keeping the best transcript worked for three; for seven it is too
+ * many recognisers at a time for a phone, so the person picks — once, in the
+ * header — and the app remembers.
  */
-export type SpokenChoice = Lang | 'auto';
+export type SpokenChoice = Lang;
 
 const KEY = 'hence.lang';
 const SPEECH_KEY = 'hence.speech';
 
-const isLang = (value: unknown): value is Lang => value === 'en' || value === 'fr' || value === 'zh';
-const isChoice = (value: unknown): value is SpokenChoice => isLang(value) || value === 'auto';
+const isLang = (value: unknown): value is Lang => LANGUAGES.some((l) => l.id === value);
+const isChoice = (value: unknown): value is SpokenChoice => isLang(value);
 
 function stored(key: string): Lang | null {
   try {
@@ -61,24 +70,36 @@ function detect(): Lang {
   const chosen = stored(KEY);
   if (chosen) return chosen;
   const phone = typeof navigator !== 'undefined' ? navigator.language : '';
-  if (/^fr/i.test(phone)) return 'fr';
-  if (/^zh/i.test(phone)) return 'zh';
-  return 'en';
+  const match = LANGUAGES.find((l) => phone.toLowerCase().startsWith(l.id));
+  return match ? match.id : 'en';
 }
 
 let current: Lang = detect();
 /**
- * Automatic until someone says otherwise. Listening in three languages is
- * what most people want without knowing to ask for it, and the tap that
- * pins one language is there the moment it guesses wrong.
+ * The interface's own language until someone picks another in the header.
+ * A stored `auto` from before is read as nothing stored.
  */
-let spoken: SpokenChoice = storedChoice() ?? 'auto';
+let spoken: SpokenChoice | null = storedChoice();
 const listeners = new Set<() => void>();
 
 export const currentLang = (): Lang => current;
-export const spokenChoice = (): SpokenChoice => spoken;
-/** The language the microphone leads with; under `auto`, the interface's. */
-export const speechLang = (): Lang => (spoken === 'auto' ? current : spoken);
+/** The language the microphone listens in: the one picked, else the interface's. */
+export const speechLang = (): Lang => spoken ?? current;
+export const spokenChoice = (): SpokenChoice => speechLang();
+
+/** Arabic reads right to left; every other language here left to right. */
+export const isRtl = (lang: Lang = current): boolean => lang === 'ar';
+
+/**
+ * Set the page's language and direction. `dir="rtl"` on <html> turns the
+ * whole layout round — text, rows, the logical paddings and positions the
+ * interface is written in — so Arabic reads as Arabic apps do.
+ */
+export function applyDir(lang: Lang = current): void {
+  if (typeof document === 'undefined') return;
+  document.documentElement.lang = localeOf(lang);
+  document.documentElement.dir = isRtl(lang) ? 'rtl' : 'ltr';
+}
 
 /** BCP-47 tag, for `Intl` and for the speech recogniser. */
 export const localeOf = (lang: Lang = current): string => LANGUAGES.find((l) => l.id === lang)!.locale;
@@ -86,14 +107,9 @@ export const localeOf = (lang: Lang = current): string => LANGUAGES.find((l) => 
 /** What the microphone listens for. */
 export const speechLocale = (): string => localeOf(speechLang());
 
-/**
- * Every language to listen in, best guess first. One of them under a pinned
- * choice; all three, led by the interface's, when it is left automatic.
- */
+/** The languages to listen in: the one chosen. A list, for the recogniser's sake. */
 export function speechLocales(): string[] {
-  if (spoken !== 'auto') return [localeOf(spoken)];
-  const lead = localeOf(current);
-  return [lead, ...LANGUAGES.map((l) => l.locale).filter((l) => l !== lead)];
+  return [localeOf(speechLang())];
 }
 
 function remember(key: string, value: string): void {
@@ -108,6 +124,7 @@ export function setLang(next: Lang): void {
   if (next === current) return;
   current = next;
   remember(KEY, next);
+  applyDir(next);
   for (const notify of listeners) notify();
 }
 
@@ -118,13 +135,6 @@ export function setSpeechLang(next: SpokenChoice): void {
   for (const notify of listeners) notify();
 }
 
-/** Automatic, then each language in turn, so one tap moves through them. */
-const CYCLE: SpokenChoice[] = ['auto', ...LANGUAGES.map((l) => l.id)];
-
-export const nextSpeechLang = (): SpokenChoice => {
-  const at = CYCLE.indexOf(spoken);
-  return CYCLE[(at + 1) % CYCLE.length];
-};
 
 function subscribe(onChange: () => void): () => void {
   listeners.add(onChange);
@@ -134,7 +144,7 @@ function subscribe(onChange: () => void): () => void {
 }
 
 export const useLang = (): Lang => useSyncExternalStore(subscribe, () => current, () => 'en');
-export const useSpeechLang = (): SpokenChoice => useSyncExternalStore(subscribe, spokenChoice, () => 'auto');
+export const useSpeechLang = (): SpokenChoice => useSyncExternalStore(subscribe, spokenChoice, () => 'en');
 
 /* ------------------------------------------------------------------ */
 
@@ -211,11 +221,13 @@ const EN = {
   wn_newline_title: 'Say “new line”',
   wn_newline_body: 'Dictating a list? Say “new line” and the next words go on a line of their own.',
   wn_reminders_title: 'Reminders, said your way',
-  wn_reminders_body: '“At nine thirty”, “at noon”, “in half an hour” — in English, French and Chinese.',
+  wn_reminders_body: '“At nine thirty”, “at noon”, “in half an hour” — in every language Hence speaks.',
   wn_swipe_title: 'Swipe to delete, right away',
   wn_swipe_body: 'A thought you have just captured can be swiped away at once.',
   wn_look_title: 'Pick a style',
   wn_look_body: 'Settings › Style: Pinboard, Notebook, Bubbles, Night sky, Pebbles, Orbit and more — each in dark and light.',
+  wn_lang_title: 'Seven languages',
+  wn_lang_body: 'Hence now speaks and understands Italian, Spanish, German and Arabic too. Pick the language you speak at the top of the main screen.',
   meeting_yours: 'You organise this meeting',
   meeting_organized_by: 'Organised by {name}',
   meeting_cancel: 'Cancel the meeting',
@@ -430,11 +442,13 @@ const FR: Record<Key, string> = {
   wn_newline_title: 'Dites « à la ligne »',
   wn_newline_body: 'Vous dictez une liste ? Dites « à la ligne » et la suite passe sur une nouvelle ligne.',
   wn_reminders_title: 'Des rappels dits à votre façon',
-  wn_reminders_body: '« À neuf heures et demie », « à midi », « dans une demi-heure » — en français, anglais et chinois.',
+  wn_reminders_body: '« À neuf heures et demie », « à midi », « dans une demi-heure » — dans toutes les langues de Hence.',
   wn_swipe_title: 'Glisser pour supprimer, tout de suite',
   wn_swipe_body: 'Une pensée que vous venez de dicter peut être supprimée d’un glissement, immédiatement.',
   wn_look_title: 'Choisissez un style',
   wn_look_body: 'Réglages › Style : Tableau, Carnet, Bulles, Ciel, Galets, Orbite et d’autres — chacun en sombre et en clair.',
+  wn_lang_title: 'Sept langues',
+  wn_lang_body: 'Hence parle et comprend désormais aussi l’italien, l’espagnol, l’allemand et l’arabe. Choisissez la langue parlée en haut de l’écran principal.',
   meeting_yours: 'Vous organisez cette réunion',
   meeting_organized_by: 'Organisée par {name}',
   meeting_cancel: 'Annuler la réunion',
@@ -646,11 +660,13 @@ const ZH: Record<Key, string> = {
   wn_newline_title: '说“换行”',
   wn_newline_body: '在口述清单？说“换行”，接下来的内容就会另起一行。',
   wn_reminders_title: '用你习惯的方式设提醒',
-  wn_reminders_body: '“九点半”“中午”“半小时后”——中文、英文和法文都可以。',
+  wn_reminders_body: '“九点半”“中午”“半小时后”——Hence 支持的所有语言都可以。',
   wn_swipe_title: '立即滑动删除',
   wn_swipe_body: '刚刚记下的想法，也能立刻滑动删除。',
   wn_look_title: '选择一种风格',
   wn_look_body: '设置 › 风格：便签板、笔记本、气泡、夜空、鹅卵石、轨道等，每种都有深色和浅色。',
+  wn_lang_title: '七种语言',
+  wn_lang_body: 'Hence 现在也会说、也能听懂意大利语、西班牙语、德语和阿拉伯语。在主屏幕顶部选择你说的语言。',
   meeting_yours: '你是这个会议的组织者',
   meeting_organized_by: '组织者：{name}',
   meeting_cancel: '取消会议',
@@ -790,7 +806,7 @@ const ZH: Record<Key, string> = {
   ai_provider_now: '笔记由 {who} 整理。',
 };
 
-const DICTIONARIES: Record<Lang, Record<Key, string>> = { en: EN, fr: FR, zh: ZH };
+const DICTIONARIES: Record<Lang, Record<Key, string>> = { en: EN, fr: FR, it: IT, es: ES, de: DE, ar: AR, zh: ZH };
 
 /** Translate, filling {placeholders}. Typed, so a missing French line fails the build. */
 export function t(key: Key, vars?: Record<string, string | number>): string {
@@ -805,6 +821,10 @@ export function greetingIn(now = new Date()): string {
   const table = {
     en: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening' },
     fr: { morning: 'Bonjour', afternoon: 'Bon après-midi', evening: 'Bonsoir' },
+    it: { morning: 'Buongiorno', afternoon: 'Buon pomeriggio', evening: 'Buonasera' },
+    es: { morning: 'Buenos días', afternoon: 'Buenas tardes', evening: 'Buenas noches' },
+    de: { morning: 'Guten Morgen', afternoon: 'Guten Tag', evening: 'Guten Abend' },
+    ar: { morning: 'صباح الخير', afternoon: 'نهارك سعيد', evening: 'مساء الخير' },
     zh: { morning: '早上好', afternoon: '下午好', evening: '晚上好' },
   } as const;
   return table[current][slot];

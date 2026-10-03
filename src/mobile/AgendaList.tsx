@@ -379,7 +379,7 @@ function MeetingRow({
       <button
         onClick={onOpen}
         className={cn(
-          'flex w-full items-start gap-3.5 rounded-[15px] border px-4 py-3.5 text-left transition-transform active:scale-[0.99]',
+          'flex w-full items-start gap-3.5 rounded-[15px] border px-4 py-3.5 text-start transition-transform active:scale-[0.99]',
           tone.card,
           happening && 'border-accent/40',
         )}

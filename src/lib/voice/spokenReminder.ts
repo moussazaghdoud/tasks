@@ -30,6 +30,16 @@ const TRIGGERS = [
   /\bmet(?:s|tez)[-\s]moi\s+un\s+rappel(?:\s+pour)?\b/i,
   /(?:请|记得)?提醒(?:一下)?我/,
   /设(?:置|定)?(?:一?个)?提醒/,
+  // Italian
+  /\bmettimi\s+un\s+promemoria(?:\s+per)?\b/i,
+  /\bricordami\b/i,
+  // Spanish
+  /(?<![\p{L}])pon(?:me)?\s+un\s+recordatorio(?:\s+para)?(?![\p{L}])/iu,
+  /(?<![\p{L}])recu[eé]rdame(?![\p{L}])/iu,
+  // German
+  /\berinnere?\s+mich\b/i,
+  // Arabic, with or without the doubling mark on the kaf
+  /ذكّ?رني/,
 ];
 
 const DAY_WORDS: Array<{ re: RegExp; days?: number; weekday?: number; hour?: number }> = [
@@ -80,7 +90,78 @@ const DAY_WORDS: Array<{ re: RegExp; days?: number; weekday?: number; hour?: num
   { re: /^下?周五|^下?星期五/, weekday: 5 },
   { re: /^下?周六|^下?星期六/, weekday: 6 },
   { re: /^下?周日|^下?星期日|^下?周天/, weekday: 0 },
+  // Italian
+  { re: /^domani mattina/i, days: 1, hour: 9 },
+  { re: /^domani pomeriggio/i, days: 1, hour: 14 },
+  { re: /^domani sera/i, days: 1, hour: 19 },
+  { re: /^dopodomani/i, days: 2 },
+  { re: /^domani/i, days: 1 },
+  { re: /^stasera/i, days: 0, hour: 19 },
+  { re: /^stamattina/i, days: 0, hour: 9 },
+  { re: /^oggi pomeriggio/i, days: 0, hour: 14 },
+  { re: /^oggi/i, days: 0 },
+  { re: /^luned[iì](?:\s+prossimo)?/iu, weekday: 1 },
+  { re: /^marted[iì](?:\s+prossimo)?/iu, weekday: 2 },
+  { re: /^mercoled[iì](?:\s+prossimo)?/iu, weekday: 3 },
+  { re: /^gioved[iì](?:\s+prossimo)?/iu, weekday: 4 },
+  { re: /^venerd[iì](?:\s+prossimo)?/iu, weekday: 5 },
+  { re: /^sabato(?:\s+prossimo)?/i, weekday: 6 },
+  { re: /^domenica(?:\s+prossima)?/i, weekday: 0 },
+  // Spanish — "pasado mañana" and "esta mañana" before the bare "mañana"
+  { re: /^pasado\s+mañana/iu, days: 2 },
+  { re: /^mañana\s+por\s+la\s+mañana/iu, days: 1, hour: 9 },
+  { re: /^mañana\s+por\s+la\s+tarde/iu, days: 1, hour: 16 },
+  { re: /^mañana\s+por\s+la\s+noche/iu, days: 1, hour: 20 },
+  { re: /^mañana/iu, days: 1 },
+  { re: /^esta\s+mañana/iu, days: 0, hour: 9 },
+  { re: /^esta\s+tarde/iu, days: 0, hour: 16 },
+  { re: /^esta\s+noche/iu, days: 0, hour: 20 },
+  { re: /^hoy/iu, days: 0 },
+  { re: /^(?:el\s+)?lunes(?:\s+(?:que\s+viene|pr[oó]ximo))?/iu, weekday: 1 },
+  { re: /^(?:el\s+)?martes(?:\s+(?:que\s+viene|pr[oó]ximo))?/iu, weekday: 2 },
+  { re: /^(?:el\s+)?mi[eé]rcoles(?:\s+(?:que\s+viene|pr[oó]ximo))?/iu, weekday: 3 },
+  { re: /^(?:el\s+)?jueves(?:\s+(?:que\s+viene|pr[oó]ximo))?/iu, weekday: 4 },
+  { re: /^(?:el\s+)?viernes(?:\s+(?:que\s+viene|pr[oó]ximo))?/iu, weekday: 5 },
+  { re: /^(?:el\s+)?s[aá]bado(?:\s+(?:que\s+viene|pr[oó]ximo))?/iu, weekday: 6 },
+  { re: /^(?:el\s+)?domingo(?:\s+(?:que\s+viene|pr[oó]ximo))?/iu, weekday: 0 },
+  // German
+  { re: /^morgen\s+früh/iu, days: 1, hour: 9 },
+  { re: /^morgen\s+vormittag/i, days: 1, hour: 10 },
+  { re: /^morgen\s+nachmittag/i, days: 1, hour: 14 },
+  { re: /^morgen\s+abend/i, days: 1, hour: 19 },
+  { re: /^übermorgen/iu, days: 2 },
+  { re: /^morgen/i, days: 1 },
+  { re: /^heute\s+(?:morgen|früh)/iu, days: 0, hour: 9 },
+  { re: /^heute\s+nachmittag/i, days: 0, hour: 14 },
+  { re: /^heute\s+abend/i, days: 0, hour: 19 },
+  { re: /^heute/i, days: 0 },
+  { re: /^(?:am\s+|nächsten\s+|kommenden\s+)?montag/iu, weekday: 1 },
+  { re: /^(?:am\s+|nächsten\s+|kommenden\s+)?dienstag/iu, weekday: 2 },
+  { re: /^(?:am\s+|nächsten\s+|kommenden\s+)?mittwoch/iu, weekday: 3 },
+  { re: /^(?:am\s+|nächsten\s+|kommenden\s+)?donnerstag/iu, weekday: 4 },
+  { re: /^(?:am\s+|nächsten\s+|kommenden\s+)?freitag/iu, weekday: 5 },
+  { re: /^(?:am\s+|nächsten\s+|kommenden\s+)?samstag/iu, weekday: 6 },
+  { re: /^(?:am\s+|nächsten\s+|kommenden\s+)?sonntag/iu, weekday: 0 },
+  // Arabic — with or without the tanween the recogniser may add
+  { re: /^غد(?:ًا|اً|ا)?\s+صباح(?:ًا|اً|ا)?/, days: 1, hour: 9 },
+  { re: /^غد(?:ًا|اً|ا)?\s+مساء(?:ً|اً)?/, days: 1, hour: 19 },
+  { re: /^غد(?:ًا|اً|ا)?/, days: 1 },
+  { re: /^بعد\s+غد/, days: 2 },
+  { re: /^(?:الليلة|هذا\s+المساء)/, days: 0, hour: 19 },
+  { re: /^هذا\s+الصباح/, days: 0, hour: 9 },
+  { re: /^اليوم/, days: 0 },
+  { re: /^(?:يوم\s+)?ال[اإ]ثنين(?:\s+القادم)?/, weekday: 1 },
+  { re: /^(?:يوم\s+)?الثلاثاء(?:\s+القادم)?/, weekday: 2 },
+  { re: /^(?:يوم\s+)?ال[أا]ربعاء(?:\s+القادم)?/, weekday: 3 },
+  { re: /^(?:يوم\s+)?الخميس(?:\s+القادم)?/, weekday: 4 },
+  { re: /^(?:يوم\s+)?الجمعة(?:\s+القادمة)?/, weekday: 5 },
+  { re: /^(?:يوم\s+)?السبت(?:\s+القادم)?/, weekday: 6 },
+  { re: /^(?:يوم\s+)?ال[أا]حد(?:\s+القادم)?/, weekday: 0 },
 ];
+
+/** The afternoon and evening words after an hour, in each language: they add twelve. */
+const LATER_IN_DAY = /^(?:tarde|noche|sera|pomeriggio|notte|abends|nachmittags|nachts|مساء|ليل|ظهر)/iu;
+const pmIf = (part: string | undefined, hour: number) => (part && LATER_IN_DAY.test(part) && hour < 12 ? hour + 12 : hour);
 
 /**
  * An hour, but only when it says so.
@@ -91,9 +172,34 @@ const DAY_WORDS: Array<{ re: RegExp; days?: number; weekday?: number; hour?: num
  */
 const TIMES: Array<{ re: RegExp; read: (m: RegExpMatchArray) => { hour: number; minute: number } | null }> = [
   {
-    // noon, midnight, midi, minuit — a time with no number in it.
-    re: /^(?:at\s+|à\s+)?(noon|midday|midnight|midi|minuit)\b/i,
-    read: (m) => ({ hour: /^(midnight|minuit)$/i.test(m[1]) ? 0 : 12, minute: 0 }),
+    // noon, midnight, midi, minuit, mezzogiorno, mediodía, Mittag — no number in it.
+    re: /^(?:at\s+|à\s+|a\s+|al\s+|um\s+)?(noon|midday|midnight|midi|minuit|mezzogiorno|mezzanotte|mediod[ií]a|medianoche|mitternacht|mittags?)(?![\p{L}])/iu,
+    read: (m) => ({ hour: /^(midnight|minuit|mezzanotte|medianoche|mitternacht)$/i.test(m[1]) ? 0 : 12, minute: 0 }),
+  },
+  {
+    // Arabic noon: عند الظهر
+    re: /^(?:عند\s+)?الظهر/,
+    read: () => ({ hour: 12, minute: 0 }),
+  },
+  {
+    // Italian: "alle 9", "alle ore 21", "alle 9:30 di sera"
+    re: /^(?:alle(?:\s+ore)?|all['’])\s*(\d{1,2})(?:[:.](\d{2}))?(?:\s+di\s+(mattina|sera|pomeriggio|notte))?/i,
+    read: (m) => ({ hour: pmIf(m[3], Number(m[1])), minute: Number(m[2] ?? 0) }),
+  },
+  {
+    // Spanish: "a las 9", "a la 1", "a las 9:30 de la tarde"
+    re: /^a\s+las?\s+(\d{1,2})(?:[:.](\d{2}))?(?:\s+de\s+la\s+(mañana|tarde|noche|madrugada))?/iu,
+    read: (m) => ({ hour: pmIf(m[3], Number(m[1])), minute: Number(m[2] ?? 0) }),
+  },
+  {
+    // German: "um 9", "um 9 Uhr", "um 9:30", "um 9 Uhr 30", "um 7 Uhr abends"
+    re: /^um\s+(\d{1,2})(?:[:.](\d{2}))?(?:\s*uhr(?:\s+(\d{1,2}))?)?(?:\s+(morgens|früh|vormittags|nachmittags|abends|nachts))?/iu,
+    read: (m) => ({ hour: pmIf(m[4], Number(m[1])), minute: Number(m[2] ?? m[3] ?? 0) }),
+  },
+  {
+    // Arabic: "الساعة 9", "في الساعة 9 والنصف مساءً"
+    re: /^(?:في\s+|عند\s+)?الساعة\s+(\d{1,2})(?:[:.](\d{2}))?(?:\s+و\s*(?:ال)?(نصف|ربع))?(?:\s+(صباح(?:ًا|اً|ا)?|مساء(?:ً|اً)?|ظهر(?:ًا|اً|ا)?|ليل(?:ًا|اً|ا)?))?/,
+    read: (m) => ({ hour: pmIf(m[4], Number(m[1])), minute: m[3] === 'نصف' ? 30 : m[3] === 'ربع' ? 15 : Number(m[2] ?? 0) }),
   },
   {
     // "9 h 30", "9 heures 30": the French hour with a space before the minutes.
@@ -134,7 +240,8 @@ const TIMES: Array<{ re: RegExp; read: (m: RegExpMatchArray) => { hour: number; 
 /** "in twenty minutes", "dans 2 heures", "20分钟后". */
 const DELAYS: Array<{ re: RegExp; minutes: (m: RegExpMatchArray) => number }> = [
   {
-    re: /^in\s+(?:an?\s+|(\d{1,3})\s*)(minutes?|mins?|hours?|hrs?|days?)/i,
+    // Whole words only: "in 30 Minuten" is German, not "in 30 minute" and an "n".
+    re: /^in\s+(?:an?\s+|(\d{1,3})\s*)(minutes?|mins?|hours?|hrs?|days?)(?![\p{L}])/iu,
     minutes: (m) => scale(m[1] ? Number(m[1]) : 1, m[2]),
   },
   {
@@ -145,12 +252,32 @@ const DELAYS: Array<{ re: RegExp; minutes: (m: RegExpMatchArray) => number }> = 
     re: /^(\d{1,3})\s*个?\s*(分钟|小时|钟头|天)(?:以?后|之后)/,
     minutes: (m) => scale(Number(m[1]), m[2]),
   },
+  {
+    // "tra 20 minuti", "fra un'ora", "tra 2 giorni"
+    re: /^(?:tra|fra)\s+(?:un['’]?\s*|(\d{1,3})\s*)(minut[oi]|or[ae]|giorn[oi])/i,
+    minutes: (m) => scale(m[1] ? Number(m[1]) : 1, m[2]),
+  },
+  {
+    // "dentro de 20 minutos", "en una hora", "en 2 días"
+    re: /^(?:dentro\s+de|en)\s+(?:una?\s+|(\d{1,3})\s*)(minutos?|horas?|d[ií]as?)/iu,
+    minutes: (m) => scale(m[1] ? Number(m[1]) : 1, m[2]),
+  },
+  {
+    // "in 20 Minuten", "in einer Stunde", "in 2 Tagen"
+    re: /^in\s+(?:einer?\s+|(\d{1,3})\s*)(minuten?|stunden?|tag(?:en)?)(?![\p{L}])/iu,
+    minutes: (m) => scale(m[1] ? Number(m[1]) : 1, m[2]),
+  },
+  {
+    // "بعد 20 دقيقة", "بعد ساعة", "بعد ساعتين", "بعد يومين"
+    re: /^بعد\s+(?:(\d{1,3})\s*)?(دقيقة|دقائق|ساعتين|ساعات|ساعة|يومين|أيام|يوم)/,
+    minutes: (m) => scale(m[1] ? Number(m[1]) : /ين$/.test(m[2]) ? 2 : 1, m[2]),
+  },
 ];
 
 function scale(count: number, unit: string): number {
   const u = unit.toLowerCase();
-  if (/^(hour|hrs?|heure|小时|钟头)/.test(u)) return count * 60;
-  if (/^(day|jour|天)/.test(u)) return count * 60 * 24;
+  if (/^(hour|hrs?|heure|小时|钟头|or[ae]|hora|stunde|ساع)/.test(u)) return count * 60;
+  if (/^(day|jour|天|giorn|d[ií]a|tag|يوم|أيام)/.test(u)) return count * 60 * 24;
   return count;
 }
 
@@ -158,13 +285,14 @@ function scale(count: number, unit: string): number {
 function assume(hour: number, said: string): number {
   // 1 to 7 with no marker is the afternoon: nobody asks to be reminded at
   // five past four in the morning without saying so.
-  if (hour >= 1 && hour <= 7 && !/\b(a\.?m\.?|morning|matin|早上|上午)\b/i.test(said)) return hour + 12;
+  const morning = /\b(a\.?m\.?|morning|matin|mattina|morgens|vormittags)\b|mañana|madrugada|früh|早上|上午|صباح/i;
+  if (hour >= 1 && hour <= 7 && !morning.test(said)) return hour + 12;
   return hour;
 }
 
 /** The time clause at the very start of `rest`, if there is one. */
 function readClause(rest: string, now: Date): { at: Date; length: number } | null {
-  const trimmed = rest.replace(/^[\s,;:.·、，。]+/, '');
+  const trimmed = rest.replace(/^[\s,;:.·、，。،]+/, '');
   const skipped = rest.length - trimmed.length;
 
   for (const delay of DELAYS) {
@@ -199,7 +327,9 @@ function readClause(rest: string, now: Date): { at: Date; length: number } | nul
     if (!read || read.hour > 23 || read.minute > 59) continue;
     // A marker — am, pm, 下午 — has already said which half of the day this
     // is, and so has any hour past noon. Otherwise guess.
-    const stated = /[ap]\.?m|o'clock|早上|上午|中午|下午|晚上/i.test(m[0]) || read.hour > 12;
+    const stated =
+      /[ap]\.?m|o'clock|早上|上午|中午|下午|晚上|mattina|sera|pomeriggio|notte|mañana|tarde|noche|madrugada|morgens|früh|vormittags|nachmittags|abends|nachts|صباح|مساء|ظهر|ليل/iu.test(m[0]) ||
+      read.hour > 12;
     hour = stated ? read.hour : assume(read.hour, m[0]);
     minute = read.minute;
     cursor += gap + m[0].length;
@@ -329,8 +459,65 @@ export function spokenNumbers(text: string): string {
         const value = chinese(n);
         return value === null || value > 59 ? whole : `点${two(value)}`;
       })
+      // Arabic-Indic and Persian digits, which some recognisers write
+      .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+      .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+      // Italian: "alle nove", "alle nove e mezza", "all'una", "tra mezz'ora", "tra venti minuti"
+      .replace(
+        new RegExp(`\\b(?:alle(?:\\s+ore)?|all['’])\\s*(${words(IT_HOURS)})(?:\\s+e\\s+(mezza|mezzo|un\\s+quarto|quarto))?(?![\\p{L}])`, 'giu'),
+        (_, h: string, m: string | undefined) => `alle ${lookup(IT_HOURS, h)}${m ? (/^mezz/i.test(m) ? ':30' : ':15') : ''}`,
+      )
+      .replace(/\b(tra|fra)\s+mezz['’]ora\b/gi, '$1 30 minuti')
+      .replace(new RegExp(`\\b(tra|fra)\\s+(${words(IT_COUNTS)})\\s+(minuti|ore|giorni)\\b`, 'gi'), (_, p: string, n: string, u: string) => `${p} ${lookup(IT_COUNTS, n)} ${u}`)
+      // Spanish: "a las nueve", "a las nueve y media", "en media hora", "dentro de veinte minutos"
+      .replace(
+        new RegExp(`(?<![\\p{L}])a\\s+las?\\s+(${words(ES_HOURS)})(?:\\s+y\\s+(media|cuarto))?(?![\\p{L}])`, 'giu'),
+        (_, h: string, m: string | undefined) => `a las ${lookup(ES_HOURS, h)}${m ? (/^media/i.test(m) ? ':30' : ':15') : ''}`,
+      )
+      .replace(/(?<![\p{L}])(dentro\s+de|en)\s+media\s+hora(?![\p{L}])/giu, '$1 30 minutos')
+      .replace(new RegExp(`(?<![\\p{L}])(dentro\\s+de|en)\\s+(${words(ES_COUNTS)})\\s+(minutos|horas|d[ií]as)(?![\\p{L}])`, 'giu'), (whole, p: string, n: string, u: string) =>
+        /^una?$/i.test(n) ? whole : `${p} ${lookup(ES_COUNTS, n)} ${u}`,
+      )
+      // German: "um halb zehn" is half past nine; "um Viertel nach neun", "um neun", "in einer halben Stunde"
+      .replace(new RegExp(`(?<![\\p{L}])um\\s+halb\\s+(${words(DE_HOURS)})(?![\\p{L}])`, 'giu'), (_, h: string) => {
+        const v = lookup(DE_HOURS, h);
+        return `um ${v === 1 ? 12 : v - 1}:30`;
+      })
+      .replace(new RegExp(`(?<![\\p{L}])um\\s+viertel\\s+nach\\s+(${words(DE_HOURS)})(?![\\p{L}])`, 'giu'), (_, h: string) => `um ${lookup(DE_HOURS, h)}:15`)
+      .replace(new RegExp(`(?<![\\p{L}])um\\s+viertel\\s+vor\\s+(${words(DE_HOURS)})(?![\\p{L}])`, 'giu'), (_, h: string) => {
+        const v = lookup(DE_HOURS, h);
+        return `um ${v === 1 ? 12 : v - 1}:45`;
+      })
+      .replace(new RegExp(`(?<![\\p{L}])um\\s+(${words(DE_HOURS)})(?![\\p{L}])`, 'giu'), (_, h: string) => `um ${lookup(DE_HOURS, h)}`)
+      .replace(/(?<![\p{L}])in\s+einer\s+halben\s+stunde(?![\p{L}])/giu, 'in 30 Minuten')
+      .replace(new RegExp(`(?<![\\p{L}])in\\s+(${words(DE_COUNTS)})\\s+(minuten|stunden|tagen)(?![\\p{L}])`, 'giu'), (_, n: string, u: string) => `in ${lookup(DE_COUNTS, n)} ${u}`)
+      // Arabic: "الساعة التاسعة", "بعد نصف ساعة"
+      .replace(new RegExp(`الساعة\\s+(${AR_ORDINALS})`, 'g'), (_, h: string) => `الساعة ${AR_HOURS[h]}`)
+      .replace(/بعد\s+نصف\s+ساعة/g, 'بعد 30 دقيقة')
   );
 }
+
+const IT_HOURS: Record<string, number> = {
+  una: 1, due: 2, tre: 3, quattro: 4, cinque: 5, sei: 6, sette: 7, otto: 8, nove: 9, dieci: 10, undici: 11, dodici: 12,
+};
+const IT_COUNTS: Record<string, number> = { ...IT_HOURS, quindici: 15, venti: 20, trenta: 30, quaranta: 40, cinquanta: 50 };
+const ES_HOURS: Record<string, number> = {
+  una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12,
+};
+const ES_COUNTS: Record<string, number> = { ...ES_HOURS, quince: 15, veinte: 20, treinta: 30, cuarenta: 40, cincuenta: 50 };
+const DE_HOURS: Record<string, number> = {
+  eins: 1, ein: 1, zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10, elf: 11, zwölf: 12,
+};
+const DE_COUNTS: Record<string, number> = {
+  zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10, elf: 11, zwölf: 12,
+  fünfzehn: 15, zwanzig: 20, dreißig: 30, vierzig: 40, fünfzig: 50,
+};
+/** Arabic hours are said as feminine ordinals: الساعة التاسعة, nine o'clock. */
+const AR_HOURS: Record<string, number> = {
+  'الحادية عشرة': 11, 'الثانية عشرة': 12, الواحدة: 1, الثانية: 2, الثالثة: 3, الرابعة: 4, الخامسة: 5,
+  السادسة: 6, السابعة: 7, الثامنة: 8, التاسعة: 9, العاشرة: 10,
+};
+const AR_ORDINALS = Object.keys(AR_HOURS).sort((a, b) => b.length - a.length).join('|');
 
 /** Tidy the sentence left behind: no double spaces, no dangling comma. */
 function tidy(text: string): string {
@@ -341,7 +528,7 @@ function tidy(text: string): string {
     .replace(/\s+([,.;:!?])/g, '$1')
     .replace(/^[\s,;:.\-–—·、，。]+/, '')
     .replace(/[\s,;:\-–—]+$/, '')
-    .replace(/^(?:to|that|about|de|d'|que|qu'|à)\s+/i, '')
+    .replace(/^(?:to|that|about|de|d'|que|qu'|à|di|da|zu|dass|an|أن)\s+/i, '')
     .trim();
   return out ? out.charAt(0).toUpperCase() + out.slice(1) : '';
 }

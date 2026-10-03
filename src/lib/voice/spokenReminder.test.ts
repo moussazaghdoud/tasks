@@ -134,6 +134,42 @@ describe('extractReminder', () => {
     expect(left('Remind me tomorrow at 9 to buy\nBread\nMilk')).toBe('Buy\nBread\nMilk');
   });
 
+  it('speaks Italian', () => {
+    expect(stamp(when('Ricordami domani alle 9 di chiamare Paolo'))).toBe('2026-09-24 09:00');
+    expect(left('Ricordami domani alle 9 di chiamare Paolo')).toBe('Chiamare Paolo');
+    expect(stamp(when('Ricordami domani alle nove e mezza'))).toBe('2026-09-24 09:30');
+    expect(stamp(when('Ricordami stasera di innaffiare le piante'))).toBe('2026-09-23 19:00');
+    expect(stamp(when('Ricordami tra mezz’ora'))).toBe('2026-09-23 10:30');
+    expect(stamp(when('Ricordami venerdì alle 15'))).toBe('2026-09-25 15:00');
+    expect(extractReminder('Penso a una cosa per domani', NOW).at).toBeNull();
+  });
+
+  it('speaks Spanish', () => {
+    expect(stamp(when('Recuérdame mañana a las 9 llamar a Pablo'))).toBe('2026-09-24 09:00');
+    expect(left('Recuérdame mañana a las 9 llamar a Pablo')).toBe('Llamar a Pablo');
+    expect(stamp(when('Recuérdame mañana a las nueve y media'))).toBe('2026-09-24 09:30');
+    expect(stamp(when('Recuérdame en media hora'))).toBe('2026-09-23 10:30');
+    expect(stamp(when('Recuérdame el lunes a las 10 de la mañana'))).toBe('2026-09-28 10:00');
+    expect(stamp(when('Recuérdame a las 7 de la tarde'))).toBe('2026-09-23 19:00');
+  });
+
+  it('speaks German', () => {
+    expect(stamp(when('Erinnere mich morgen um 9 Uhr Paul anzurufen'))).toBe('2026-09-24 09:00');
+    expect(stamp(when('Erinnere mich morgen um halb zehn'))).toBe('2026-09-24 09:30');
+    expect(stamp(when('Erinnere mich heute Abend an die Pflanzen'))).toBe('2026-09-23 19:00');
+    expect(stamp(when('Erinnere mich in einer halben Stunde an den Ofen'))).toBe('2026-09-23 10:30');
+    expect(left('Erinnere mich in einer halben Stunde an den Ofen')).toBe('Den Ofen');
+    expect(stamp(when('Erinnere mich am Freitag um 15 Uhr'))).toBe('2026-09-25 15:00');
+  });
+
+  it('speaks Arabic, digits written either way', () => {
+    expect(stamp(when('ذكرني غدا الساعة 9 بالاتصال ببول'))).toBe('2026-09-24 09:00');
+    expect(left('ذكرني غدا الساعة 9 بالاتصال ببول')).toBe('بالاتصال ببول');
+    expect(stamp(when('ذكّرني غدًا الساعة التاسعة'))).toBe('2026-09-24 09:00');
+    expect(stamp(when('ذكرني بعد ساعة بالفرن'))).toBe('2026-09-23 11:00');
+    expect(stamp(when('ذكرني الخميس الساعة ٣ مساءً'))).toBe('2026-09-24 15:00');
+  });
+
   it('reads Chinese numerals and delays', () => {
     expect(stamp(when('提醒我明天早上九点给牙医打电话'))).toBe('2026-09-24 09:00');
     expect(left('提醒我明天早上九点给牙医打电话')).toBe('给牙医打电话');

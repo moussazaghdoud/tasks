@@ -11,6 +11,14 @@ describe('withLineBreaks', () => {
     expect(withLineBreaks('购物清单，另起一行，面包')).toBe('购物清单\n面包');
   });
 
+  it('breaks the line in Italian, Spanish, German and Arabic', () => {
+    expect(withLineBreaks('Spesa a capo pane a capo latte')).toBe('Spesa\nPane\nLatte');
+    expect(withLineBreaks('Marco è a capo del progetto')).toBe('Marco è a capo del progetto');
+    expect(withLineBreaks('Compra nueva línea pan nueva línea leche')).toBe('Compra\nPan\nLeche');
+    expect(withLineBreaks('Einkauf neue Zeile Brot neue Zeile Milch')).toBe('Einkauf\nBrot\nMilch');
+    expect(withLineBreaks('قائمة التسوق سطر جديد خبز سطر جديد حليب')).toBe('قائمة التسوق\nخبز\nحليب');
+  });
+
   it('treats "enter" and "entrée" the same, when they stand alone', () => {
     expect(withLineBreaks('Call Paul. Enter. About the contract')).toBe('Call Paul\nAbout the contract');
     expect(withLineBreaks('Appeler Paul entrée pour le contrat')).toBe('Appeler Paul\nPour le contrat');

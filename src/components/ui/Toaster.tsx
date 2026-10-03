@@ -30,7 +30,7 @@ function ToastItem({ t }: { t: Toast }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       className={cn(
-        'pointer-events-auto flex max-w-[min(92vw,460px)] animate-toast items-center gap-3 rounded-[10px] py-2 pr-2 pl-3.5 text-ui shadow-float',
+        'pointer-events-auto flex max-w-[min(92vw,460px)] animate-toast items-center gap-3 rounded-[10px] py-2 pe-2 ps-3.5 text-ui shadow-float',
         t.tone === 'reminder' ? 'bg-raised text-ink' : 'bg-[#26241f] text-[#f4f1ea]',
       )}
     >

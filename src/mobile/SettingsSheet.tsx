@@ -90,7 +90,7 @@ function CalendarSection() {
                   if (provider.asksEmail) setAsking(provider.id);
                   else void signIn(provider.id);
                 }}
-                className="flex h-[62px] w-full items-center gap-4 px-6 text-left transition-colors active:bg-wash-strong disabled:opacity-50"
+                className="flex h-[62px] w-full items-center gap-4 px-6 text-start transition-colors active:bg-wash-strong disabled:opacity-50"
               >
                 <CalendarCheck
                   className={cn('size-[21px] shrink-0', connected ? 'text-accent' : 'text-ink-3')}
@@ -166,7 +166,7 @@ function AiSection() {
             haptic('light');
             setAiConsent(on ? 'denied' : 'granted');
           }}
-          className="flex h-[58px] w-full items-center gap-4 px-6 text-left transition-colors active:bg-wash-strong"
+          className="flex h-[58px] w-full items-center gap-4 px-6 text-start transition-colors active:bg-wash-strong"
         >
           <span className="flex-1 text-[17px] text-ink">{t('ai_toggle')}</span>
           {/* Drawn like the system switch, so it reads as one without a label. */}
@@ -179,8 +179,8 @@ function AiSection() {
           >
             <span
               className={cn(
-                'absolute top-[2px] left-[2px] size-[27px] rounded-full bg-white shadow-[0_2px_4px_rgb(0_0_0/0.25)] transition-transform duration-200',
-                on && 'translate-x-5',
+                'absolute top-[2px] start-[2px] size-[27px] rounded-full bg-white shadow-[0_2px_4px_rgb(0_0_0/0.25)] transition-transform duration-200',
+                on && 'translate-x-5 rtl:-translate-x-5',
               )}
             />
           </span>
@@ -295,7 +295,7 @@ function BackupSection() {
     }
   };
 
-  const row = 'flex h-[58px] w-full items-center gap-4 px-6 text-left text-[17px] text-ink transition-colors active:bg-wash-strong disabled:opacity-40';
+  const row = 'flex h-[58px] w-full items-center gap-4 px-6 text-start text-[17px] text-ink transition-colors active:bg-wash-strong disabled:opacity-40';
   return (
     <>
       <p className="mt-7 px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('backup_section')}</p>
@@ -466,7 +466,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
                 }
               }}
               aria-pressed={on}
-              className="flex h-[58px] w-full items-center gap-4 px-6 text-left transition-colors active:bg-wash-strong"
+              className="flex h-[58px] w-full items-center gap-4 px-6 text-start transition-colors active:bg-wash-strong"
             >
               <span className={cn('flex-1 text-[17px]', on ? 'font-medium text-ink' : 'text-ink-2')}>{option.native}</span>
               {on && <Check className="size-[19px] shrink-0 text-accent" strokeWidth={2.4} />}

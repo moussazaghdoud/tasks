@@ -15,6 +15,7 @@ import '@fontsource/ibm-plex-sans/600.css';
 import './styles/index.css';
 import './styles/looks.css';
 import App from './App';
+import { applyDir } from './mobile/i18n';
 import { applyLook, currentLook } from './mobile/look';
 import { applyTheme, storedTheme } from './mobile/theme';
 
@@ -23,6 +24,8 @@ import { applyTheme, storedTheme } from './mobile/theme';
 if (window.matchMedia('(max-width: 767px)').matches) {
   applyTheme(storedTheme());
   applyLook(currentLook());
+  // Right to left for Arabic, before the first frame too.
+  applyDir();
 }
 
 createRoot(document.getElementById('root')!).render(

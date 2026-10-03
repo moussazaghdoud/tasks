@@ -10,7 +10,7 @@ import { haptic } from '@/lib/native/bridge';
 import { toast } from '@/store/toast';
 import { ws } from '@/store/workspace';
 import { ACTION_WIDTH, useSwipe } from '@/hooks/useSwipe';
-import { relativeIn, repeatLabel, t, timeIn } from './i18n';
+import { isRtl, relativeIn, repeatLabel, t, timeIn } from './i18n';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -85,7 +85,9 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
     });
   }, [task.id, done]);
 
-  const swipe = useSwipe({ enabled: !done, onRight: () => toggleComplete(task.id) });
+  // Mirrored in Arabic: complete toward the end of the line, delete from it.
+  const rtl = isRtl();
+  const swipe = useSwipe({ enabled: !done, flip: rtl, onRight: () => toggleComplete(task.id) });
 
   const remove = () => {
     swipe.close();
@@ -113,7 +115,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
 
         {/* Deleting is a button, behind the row, waiting to be pressed. */}
         {swipe.dx < 0 && (
-          <div className="absolute inset-y-0 right-0 flex items-stretch overflow-hidden rounded-[15px]">
+          <div className="absolute inset-y-0 end-0 flex items-stretch overflow-hidden rounded-[15px]">
             <button
               onClick={remove}
               aria-label={t('act_delete')}
@@ -133,7 +135,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           onTouchCancel={swipe.handlers.onTouchCancel}
           onAnimationEnd={(e) => e.target === e.currentTarget && setEnter(false)}
           style={{
-            transform: swipe.dx ? `translateX(${swipe.dx}px)` : undefined,
+            transform: swipe.dx ? `translateX(${rtl ? -swipe.dx : swipe.dx}px)` : undefined,
             // Only the snap back or open is animated; a finger drag must not
             // lag behind the finger.
             transition: swipe.open || !swipe.dx ? 'transform 180ms var(--ease-out)' : undefined,
@@ -156,7 +158,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
             role="checkbox"
             aria-checked={checked}
             aria-label={checked ? t('a11y_reopen', { title: task.title }) : t('a11y_complete', { title: task.title })}
-            className="-my-2 -ml-1.5 grid h-11 w-9 shrink-0 place-items-center rounded-full"
+            className="-my-2 -ms-1.5 grid h-11 w-9 shrink-0 place-items-center rounded-full"
           >
             <span
               className={cn(
@@ -174,7 +176,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           {/* With Delete showing, a tap puts the row back rather than opening
               the menu: the first tap after a swipe is almost always a
               change of mind. */}
-          <button onClick={() => (swipe.open ? swipe.close() : onOpen())} className="min-w-0 flex-1 text-left">
+          <button onClick={() => (swipe.open ? swipe.close() : onOpen())} className="min-w-0 flex-1 text-start">
             {/* The photograph, small: enough to recognise which whiteboard,
                 not so much that the list becomes a gallery. */}
             <PhotoThumb name={task.photo} reading={isNative() && task.photoText === undefined} />

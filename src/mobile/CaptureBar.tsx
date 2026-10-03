@@ -396,7 +396,7 @@ export function CaptureBar() {
               <p className="pt-1 text-[11px] font-semibold tracking-[0.16em] text-accent uppercase">
                 {phase === 'listening' ? t('listening') : t('thinking')}
               </p>
-              <div className="-mt-1.5 -mr-1.5 flex items-center">
+              <div className="-mt-1.5 -me-1.5 flex items-center">
                 {/* Somewhere you cannot speak: keep the photograph and the
                     words so far, and carry on with the keyboard. */}
                 {phase === 'listening' && (
@@ -480,7 +480,7 @@ export function CaptureBar() {
                 keyboard was closed without a word. Held in plain sight, with
                 one way to let it go, rather than waiting invisibly. */}
             {photoSrc && (
-              <div className="absolute -top-2 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-line bg-raised py-1 pr-1 pl-2 shadow-sheet">
+              <div className="absolute -top-2 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-line bg-raised py-1 pe-1 ps-2 shadow-sheet">
                 <img src={photoSrc} alt={t('photo_attached')} className="size-7 rounded-full object-cover" />
                 <button
                   onClick={() => {

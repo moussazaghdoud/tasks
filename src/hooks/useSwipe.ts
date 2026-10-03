@@ -22,7 +22,14 @@ export function useSwipe({
   onRight,
   onLeft,
   enabled,
+  flip = false,
 }: {
+  /**
+   * Right to left, as in Arabic: the gestures mirror, as they do in Apple's
+   * own apps. `dx` and the callbacks then speak in reading order — "right"
+   * means toward the end of the line — and the row draws `-dx`.
+   */
+  flip?: boolean;
   onRight: () => void;
   /**
    * Given one, left becomes a throw too and calls it — which is what the
@@ -51,7 +58,7 @@ export function useSwipe({
     const s = start.current;
     if (!s) return;
     const t = e.touches[0];
-    const x = t.clientX - s.x;
+    const x = (t.clientX - s.x) * (flip ? -1 : 1);
     const y = t.clientY - s.y;
     if (!s.locked) {
       if (Math.abs(x) > 8 && Math.abs(x) > Math.abs(y) * 1.4) s.locked = 'h';

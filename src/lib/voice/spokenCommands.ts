@@ -20,6 +20,15 @@ const ALWAYS = [
   /(?<![\p{L}])à\s+la\s+ligne(?![\p{L}])/giu,
   // Chinese
   /另起一行|换行|下一行|新段落|回车/g,
+  // Italian — "a capo", but not "a capo del progetto" (at the head of)
+  /(?<![\p{L}])(?:nuova\s+riga|nuovo\s+paragrafo)(?![\p{L}])/giu,
+  /(?<![\p{L}])a\s+capo(?![\p{L}])(?!\s+d(?:i|el|ella|ello|ei|egli|elle|ell['’])(?![\p{L}]))/giu,
+  // Spanish
+  /(?<![\p{L}])(?:nueva\s+l[ií]nea|punto\s+y\s+aparte|nuevo\s+p[aá]rrafo)(?![\p{L}])/giu,
+  // German
+  /(?<![\p{L}])(?:neue\s+zeile|neuer\s+absatz)(?![\p{L}])/giu,
+  // Arabic
+  /سطر\s+جديد|فقرة\s+جديدة/g,
 ];
 
 /** "Enter" alone between pauses, or at either end. */

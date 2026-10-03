@@ -76,31 +76,30 @@ describe('spoken language', () => {
     expect(i18n.speechLocale()).toBe('en-US');
   });
 
-  it('cycles from automatic through every language and back', async () => {
+  it('starts listening in the interface language, and keeps one language only', async () => {
     const i18n = await fresh();
-    const seen: string[] = [];
-    for (let i = 0; i < i18n.LANGUAGES.length + 1; i++) {
-      const next = i18n.nextSpeechLang();
-      i18n.setSpeechLang(next);
-      seen.push(next);
-    }
-    expect(seen).toEqual(['en', 'fr', 'zh', 'auto']);
+    expect(i18n.spokenChoice()).toBe('en');
+    expect(i18n.speechLocales()).toEqual(['en-US']);
+    i18n.setSpeechLang('de');
+    expect(i18n.speechLocales()).toEqual(['de-DE']);
   });
 
-  it('listens in every language when automatic, leading with the interface', async () => {
+  it('offers seven languages, each with its own recogniser locale', async () => {
     const i18n = await fresh();
-    // Fresh means automatic: nobody has pinned a language yet.
-    expect(i18n.spokenChoice()).toBe('auto');
-    expect(i18n.speechLocales()).toEqual(['en-US', 'fr-FR', 'zh-CN']);
-    i18n.setLang('fr');
-    // The interface language leads, because it is the likeliest one, and its
-    // words are what appear on screen while someone speaks.
-    expect(i18n.speechLocales()).toEqual(['fr-FR', 'en-US', 'zh-CN']);
+    expect(i18n.LANGUAGES.map((l) => l.locale)).toEqual(['en-US', 'fr-FR', 'it-IT', 'es-ES', 'de-DE', 'ar-SA', 'zh-CN']);
   });
 
-  it('listens in one language only when one is pinned', async () => {
+  it('reads Arabic right to left, and speaks every new language', async () => {
     const i18n = await fresh();
-    i18n.setSpeechLang('zh');
-    expect(i18n.speechLocales()).toEqual(['zh-CN']);
+    i18n.setLang('ar');
+    expect(i18n.isRtl()).toBe(true);
+    expect(i18n.t('settings')).toBe('الإعدادات');
+    i18n.setLang('it');
+    expect(i18n.isRtl()).toBe(false);
+    expect(i18n.t('settings')).toBe('Impostazioni');
+    i18n.setLang('es');
+    expect(i18n.t('thoughts_many', { n: 2 })).toBe('2 ideas');
+    i18n.setLang('de');
+    expect(i18n.greetingIn(new Date(2026, 9, 4, 9))).toBe('Guten Morgen');
   });
 });

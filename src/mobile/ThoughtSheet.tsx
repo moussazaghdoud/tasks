@@ -270,14 +270,14 @@ function EditSheet({
   return (
     <Sheet open={open} onClose={onClose} label={t('act_edit')}>
       <div className="flex items-center gap-3 px-6 pt-1 pb-3">
-        <button onClick={onClose} className="-ml-2 h-11 shrink-0 px-2 text-[17px] text-ink-3 active:opacity-60">
+        <button onClick={onClose} className="-ms-2 h-11 shrink-0 px-2 text-[17px] text-ink-3 active:opacity-60">
           {t('cancel')}
         </button>
         <h2 className="min-w-0 flex-1 truncate text-center text-[17px] font-semibold text-ink">{t('act_edit')}</h2>
         <button
           onClick={save}
           disabled={!clean || !changed}
-          className="-mr-2 h-11 shrink-0 px-2 text-[17px] font-semibold text-accent transition-opacity active:opacity-60 disabled:opacity-30"
+          className="-me-2 h-11 shrink-0 px-2 text-[17px] font-semibold text-accent transition-opacity active:opacity-60 disabled:opacity-30"
         >
           {t('save')}
         </button>

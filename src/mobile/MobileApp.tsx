@@ -1,4 +1,4 @@
-import { Mic, Search, Settings2, X } from 'lucide-react';
+import { Check, Mic, Search, Settings2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Space, Task } from '@/domain/types';
 import { isOnDay, todayKey } from '@/lib/dates';
@@ -10,7 +10,6 @@ import { CaptureBar } from './CaptureBar';
 import {
   greetingIn,
   LANGUAGES,
-  nextSpeechLang,
   setSpeechLang,
   t,
   useLang,
@@ -18,6 +17,7 @@ import {
   type SpokenChoice,
 } from './i18n';
 import { SettingsSheet } from './SettingsSheet';
+import { Sheet } from './Sheet';
 import { setView, spaceOf, useView } from './space';
 import { AgendaList } from './AgendaList';
 import {
@@ -158,7 +158,7 @@ export function MobileApp() {
               <button
                 onClick={() => setQuery(null)}
                 aria-label={t('cancel')}
-                className="-mr-2 grid size-11 place-items-center rounded-full text-ink-3 active:bg-wash-strong"
+                className="-me-2 grid size-11 place-items-center rounded-full text-ink-3 active:bg-wash-strong"
               >
                 <X className="size-5" />
               </button>
@@ -188,7 +188,7 @@ export function MobileApp() {
               <button
                 onClick={() => setSettingsOpen(true)}
                 aria-label={t('settings')}
-                className="-mr-1.5 grid size-11 shrink-0 place-items-center rounded-full text-ink-3 transition-colors active:bg-wash-strong"
+                className="-me-1.5 grid size-11 shrink-0 place-items-center rounded-full text-ink-3 transition-colors active:bg-wash-strong"
               >
                 <Settings2 className="size-[20px]" strokeWidth={1.8} />
               </button>
@@ -291,31 +291,52 @@ const meetingCount = (n: number): string =>
 /**
  * The language you are about to speak, one tap from the microphone's screen.
  *
- * A tap moves to the next language rather than opening a list: with three of
- * them, switching is at most two taps, and nothing covers the screen while you
- * are about to talk. The microphone icon says which language this is about —
- * the interface language lives in Settings and does not move with it.
+ * With seven languages a tap that steps to the next one would take six taps
+ * to come back, so it opens a short list instead, each language written in
+ * itself. The microphone icon says which language this is about — the
+ * interface language lives in Settings and does not move with it.
  */
 function SpeechLangSwitch() {
   const spoken = useSpeechLang();
-  const name = (choice: SpokenChoice) =>
-    choice === 'auto' ? t('speech_auto') : LANGUAGES.find((l) => l.id === choice)!.native;
-  const short = spoken === 'auto' ? t('speech_auto_short') : LANGUAGES.find((l) => l.id === spoken)!.short;
+  const [open, setOpen] = useState(false);
+  const name = (choice: SpokenChoice) => LANGUAGES.find((l) => l.id === choice)!.native;
+  const short = LANGUAGES.find((l) => l.id === spoken)!.short;
 
   return (
-    <button
-      onClick={() => {
-        const next = nextSpeechLang();
-        setSpeechLang(next);
-        haptic('light');
-        toast(next === 'auto' ? t('speech_auto_now') : t('speech_lang_now', { lang: name(next) }));
-      }}
-      aria-label={t('speech_lang', { lang: name(spoken) })}
-      className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-line bg-sunk pr-3 pl-2.5 text-ink-2 transition-colors active:bg-wash-strong"
-    >
-      <Mic className={cn('size-[14px]', spoken === 'auto' ? 'text-ink-3' : 'text-accent')} strokeWidth={2.1} />
-      <span className="text-[13px] font-semibold tracking-[0.04em] tabular-nums">{short}</span>
-    </button>
+    <>
+      <button
+        onClick={() => {
+          haptic('light');
+          setOpen(true);
+        }}
+        aria-label={t('speech_lang', { lang: name(spoken) })}
+        className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-line bg-sunk ps-2.5 pe-3 text-ink-2 transition-colors active:bg-wash-strong"
+      >
+        <Mic className="size-[14px] text-accent" strokeWidth={2.1} />
+        <span className="text-[13px] font-semibold tracking-[0.04em] tabular-nums">{short}</span>
+      </button>
+      <Sheet open={open} onClose={() => setOpen(false)} label={t('speech_lang', { lang: name(spoken) })}>
+        <div className="border-t border-line">
+          {LANGUAGES.map((l) => (
+            <button
+              key={l.id}
+              lang={l.locale}
+              onClick={() => {
+                setOpen(false);
+                if (l.id === spoken) return;
+                setSpeechLang(l.id);
+                haptic('light');
+                toast(t('speech_lang_now', { lang: l.native }));
+              }}
+              className="flex h-[54px] w-full items-center gap-4 px-6 text-start text-[17px] text-ink transition-colors active:bg-wash-strong"
+            >
+              <span className="flex-1">{l.native}</span>
+              {l.id === spoken && <Check className="size-[18px] text-accent" strokeWidth={2.2} />}
+            </button>
+          ))}
+        </div>
+      </Sheet>
+    </>
   );
 }
 

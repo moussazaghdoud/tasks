@@ -116,7 +116,7 @@ export function Sheet({
               <h2 className="min-w-0 flex-1 truncate text-[21px] font-semibold tracking-[-0.02em] text-ink">{title}</h2>
               <button
                 onClick={onClose}
-                className="-mr-2 h-11 shrink-0 px-2 text-[17px] font-semibold text-accent active:opacity-60"
+                className="-me-2 h-11 shrink-0 px-2 text-[17px] font-semibold text-accent active:opacity-60"
               >
                 {t('done_sheet')}
               </button>
@@ -150,7 +150,7 @@ export function SheetAction({
     <button
       onClick={onClick}
       className={cn(
-        'flex h-[58px] w-full items-center gap-4 px-6 text-left text-[17px] transition-colors active:bg-wash-strong',
+        'flex h-[58px] w-full items-center gap-4 px-6 text-start text-[17px] transition-colors active:bg-wash-strong',
         tone === 'danger' ? 'text-ember' : tone === 'accent' ? 'text-accent' : 'text-ink',
       )}
     >

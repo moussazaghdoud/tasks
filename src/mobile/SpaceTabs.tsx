@@ -1,6 +1,6 @@
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
-import { t } from './i18n';
+import { isRtl, t } from './i18n';
 import { setView, type View } from './space';
 
 /**
@@ -34,8 +34,9 @@ export function SpaceTabs({ active, tabs }: { active: View; tabs: View[] }) {
       {/* The moving share of the track, less the padding. */}
       <span
         aria-hidden
-        className="absolute top-[3px] bottom-[3px] left-[3px] rounded-full bg-accent-soft ring-1 ring-accent/25 transition-transform duration-300 ease-[var(--ease-out)]"
-        style={{ width: `calc(${100 / tabs.length}% - 2px)`, transform: `translateX(${index * 100}%)` }}
+        className="absolute top-[3px] bottom-[3px] start-[3px] rounded-full bg-accent-soft ring-1 ring-accent/25 transition-transform duration-300 ease-[var(--ease-out)]"
+        // Right to left, the tabs run from the right edge, so the track slides the other way.
+        style={{ width: `calc(${100 / tabs.length}% - 2px)`, transform: `translateX(${(isRtl() ? -1 : 1) * index * 100}%)` }}
       />
       {tabs.map((id) => {
         const on = id === active;
