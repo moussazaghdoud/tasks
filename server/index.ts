@@ -11,7 +11,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { createGzip } from 'node:zlib';
-import { activeProvider, voiceMiddleware } from './voice.ts';
+import { activeProvider, applyCors, voiceMiddleware } from './voice.ts';
 
 const PORT = Number(process.env.PORT ?? 3000);
 const HOST = process.env.HOST ?? '0.0.0.0';
@@ -99,6 +99,9 @@ const server = createServer((req, res) => {
     securityHeaders(res);
 
     if (url === '/healthz') {
+      // The iPhone app reads this from capacitor://localhost, a cross-origin
+      // request: without the CORS headers its question is silently refused.
+      applyCors(req, res);
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
       // `provider` lets the app name who reads the notes before asking.

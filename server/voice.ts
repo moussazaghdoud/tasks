@@ -333,7 +333,7 @@ function send(res: ServerResponse, status: number, body: VoiceApiResponse | { er
  */
 const NATIVE_ORIGINS = ['capacitor://localhost', 'ionic://localhost', 'http://localhost'];
 
-function applyCors(req: IncomingMessage, res: ServerResponse): void {
+export function applyCors(req: IncomingMessage, res: ServerResponse): void {
   const extra = (process.env.ALLOWED_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean);
   const origin = req.headers.origin;
   if (origin && [...NATIVE_ORIGINS, ...extra].includes(origin)) {
