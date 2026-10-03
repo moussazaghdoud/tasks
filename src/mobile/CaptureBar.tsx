@@ -3,7 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
 import { markFresh } from '@/lib/fresh';
-import { cameraAvailable, capturePhoto, keepPhotoText, photoUrl, readPhotoText } from '@/lib/native/photos';
+import { cameraAvailable, cameraBlocked, capturePhoto, keepPhotoText, photoUrl, readPhotoText } from '@/lib/native/photos';
+import { explainBlocked } from './permissions';
 import { analyzeMemo } from '@/lib/voice/analyze';
 import { createFromDrafts, findTaskByTitle, type ConfirmedDraft } from '@/lib/voice/createFromDrafts';
 import { startLevelMeter, startSpeech, type SpeechErrorCode, type SpeechSession } from '@/lib/voice/speech';
@@ -282,7 +283,10 @@ export function CaptureBar() {
         }
         setPhase('idle');
         setTranscript('');
-        toast(errorText(code));
+        // A refusal is not a passing error: say what is missing, and where
+        // to give it back, rather than a toast that is gone in a moment.
+        if (code === 'not-allowed') void explainBlocked('microphone');
+        else toast(errorText(code));
       },
       onEnd: () => {
         // The recogniser can end on its own; treat it as finishing.
@@ -329,6 +333,11 @@ export function CaptureBar() {
   const photograph = useCallback(async () => {
     if (phase !== 'idle') return;
     haptic('light');
+    // Refused before: the camera would not open, and nothing would happen.
+    if (await cameraBlocked()) {
+      void explainBlocked('camera');
+      return;
+    }
     const name = await capturePhoto();
     if (!name) return;
     photo.current = name;

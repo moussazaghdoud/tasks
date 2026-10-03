@@ -60,6 +60,20 @@ export async function capturePhoto(): Promise<string | null> {
   }
 }
 
+/**
+ * Whether the camera has been refused — "Don't Allow" once, or switched off
+ * in Settings. iOS will not ask again, so the app has to say so itself.
+ */
+export async function cameraBlocked(): Promise<boolean> {
+  if (!isNative()) return false;
+  try {
+    const { camera } = await Camera.checkPermissions();
+    return camera === 'denied';
+  } catch {
+    return false;
+  }
+}
+
 /** A URL the web view can show this photograph at. */
 export async function photoUrl(name: string): Promise<string | null> {
   try {

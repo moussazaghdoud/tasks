@@ -14,8 +14,24 @@ public class AppearancePlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "AppearancePlugin"
     public let jsName = "Appearance"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "setStyle", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "setStyle", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise)
     ]
+
+    /// Hence's own page in the iPhone's Settings — where the camera and
+    /// microphone are switched back on once they have been refused. iOS asks
+    /// only once; after a refusal, this is the only way back.
+    @objc func openSettings(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard let url = URL(string: UIApplication.openSettingsURLString) else {
+                call.reject("No settings page")
+                return
+            }
+            UIApplication.shared.open(url, options: [:]) { opened in
+                if opened { call.resolve() } else { call.reject("Settings did not open") }
+            }
+        }
+    }
 
     @objc func setStyle(_ call: CAPPluginCall) {
         let style: UIUserInterfaceStyle = call.getString("style") == "light" ? .light : .dark

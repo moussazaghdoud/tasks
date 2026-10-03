@@ -19,7 +19,20 @@ import { isIOS, isNative } from './platform';
 // ---- feedback ---------------------------------------------------------------
 
 /** Our own Swift plugin: which way UIKit should dress the app. */
-const Appearance = registerPlugin<{ setStyle(options: { style: 'dark' | 'light' }): Promise<void> }>('Appearance');
+const Appearance = registerPlugin<{
+  setStyle(options: { style: 'dark' | 'light' }): Promise<void>;
+  openSettings(): Promise<void>;
+}>('Appearance');
+
+/** Open Hence's page in the iPhone's Settings, where refused permissions are given back. */
+export async function openAppSettings(): Promise<void> {
+  if (!isNative()) return;
+  try {
+    await Appearance.openSettings();
+  } catch {
+    /* nothing more to offer */
+  }
+}
 
 /**
  * Dress the app's own chrome to match the palette.

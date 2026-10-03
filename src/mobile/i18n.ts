@@ -263,6 +263,11 @@ const EN = {
   err_network: 'Transcription needs a connection.',
   err_no_speech: 'I didn’t catch that.',
   err_other: 'Something interrupted the recording.',
+  perm_mic_title: 'Hence can’t hear you',
+  perm_mic_body: 'The microphone or speech recognition is turned off for Hence. Turn them on in the iPhone’s Settings to speak your thoughts.',
+  perm_camera_title: 'Hence can’t use the camera',
+  perm_camera_body: 'The camera is turned off for Hence. Turn it on in the iPhone’s Settings to photograph a thought.',
+  perm_open_settings: 'Open Settings',
 
   captured_at: 'Captured {when}',
   tomorrow_at: 'Tomorrow {time}',
@@ -484,6 +489,11 @@ const FR: Record<Key, string> = {
   err_network: 'La transcription nécessite une connexion.',
   err_no_speech: 'Je n’ai rien entendu.',
   err_other: 'L’enregistrement a été interrompu.',
+  perm_mic_title: 'Hence ne vous entend pas',
+  perm_mic_body: 'Le micro ou la reconnaissance vocale est désactivé pour Hence. Activez-les dans les Réglages de l’iPhone pour dicter vos pensées.',
+  perm_camera_title: 'Hence n’a pas accès à l’appareil photo',
+  perm_camera_body: 'L’appareil photo est désactivé pour Hence. Activez-le dans les Réglages de l’iPhone pour photographier une pensée.',
+  perm_open_settings: 'Ouvrir les Réglages',
 
   captured_at: 'Noté {when}',
   tomorrow_at: 'Demain {time}',
@@ -702,6 +712,11 @@ const ZH: Record<Key, string> = {
   err_network: '语音转写需要网络连接。',
   err_no_speech: '没有听清。',
   err_other: '录音被中断。',
+  perm_mic_title: 'Hence 听不到你',
+  perm_mic_body: 'Hence 的麦克风或语音识别已关闭。请在 iPhone 的“设置”中开启，才能说出你的想法。',
+  perm_camera_title: 'Hence 无法使用相机',
+  perm_camera_body: 'Hence 的相机权限已关闭。请在 iPhone 的“设置”中开启，才能拍下你的想法。',
+  perm_open_settings: '打开设置',
 
   // Time first: "2分钟前记录" reads naturally, "记录于 2分钟前" does not.
   captured_at: '{when}记录',
