@@ -384,3 +384,10 @@
     transition-duration: 1ms !important;
   }
 }
+
+/* A thought is held to be moved: no text selection or iOS callout under the finger. */
+li.reorderable {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}

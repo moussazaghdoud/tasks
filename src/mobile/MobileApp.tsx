@@ -36,6 +36,10 @@ import { SpaceTabs, visibleTabs } from './SpaceTabs';
 import { ThoughtRow } from './ThoughtRow';
 import { ThoughtSheet } from './ThoughtSheet';
 import { WhatsNewSheet } from './WhatsNewSheet';
+import { useReorder } from './useReorder';
+
+/** Important thoughts come first; within each group, the order kept by hand. */
+const rankOf = (t: Task): number => (t.priority === 'important' ? 0 : 1);
 
 /**
  * The whole application on a phone.
@@ -124,19 +128,24 @@ export function MobileApp() {
       !!t.photoText?.toLowerCase().includes(q);
     const all = live.filter((t) => spaceOf(t) === space);
     return {
-      // Important first, then newest: what you just said is what you are
-      // thinking about, unless you have said something matters more.
+      // Important first, then in the order kept by hand. A new thought goes
+      // to the top of its group (it is given the lowest position), so
+      // without any moving this is still newest first.
       open: all
         .filter((t) => t.status !== 'done' && matches(t))
-        .sort((a, b) => {
-          const rank = (t: Task) => (t.priority === 'important' ? 0 : 1);
-          return rank(a) - rank(b) || b.createdAt.localeCompare(a.createdAt);
-        }),
+        .sort((a, b) => rankOf(a) - rankOf(b) || a.position - b.position || b.createdAt.localeCompare(a.createdAt)),
       doneToday: all
         .filter((t) => t.status === 'done' && !!t.completedAt && isOnDay(t.completedAt, today) && matches(t))
         .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? '')),
     };
   }, [tasks, query, space]);
+
+  // Hold a thought and move it: within its group, so important ones stay on top.
+  const reorder = useReorder({
+    ids: open.map((t) => t.id),
+    group: (id) => (tasks[id] ? rankOf(tasks[id]) : 1),
+    onDrop: (id, prevId, nextId) => ws().reorder(id, prevId, nextId),
+  });
 
   const searching = query !== null;
 
@@ -212,6 +221,7 @@ export function MobileApp() {
             {/* thought-list and its two labels: what the One thing and
                 Now / Later looks hang on (looks.css). */}
             <ul
+              ref={reorder.listRef}
               className="thought-list pt-1"
               style={
                 {
@@ -220,8 +230,8 @@ export function MobileApp() {
                 } as React.CSSProperties
               }
             >
-              {open.map((t) => (
-                <li key={t.id}>
+              {open.map((t, i) => (
+                <li key={t.id} data-id={t.id} className="reorderable" style={reorder.styleFor(t.id, i)}>
                   <ThoughtRow task={t} onOpen={() => setOpenId(t.id)} />
                 </li>
               ))}
