@@ -1,4 +1,6 @@
-import { Bell, Check, Repeat, Trash2 } from 'lucide-react';
+import { Bell, Check, Repeat, Send, Trash2 } from 'lucide-react';
+import { personOf } from '@/lib/share/people';
+import { st } from './shareI18n';
 import { memo, useEffect, useState } from 'react';
 import type { Task } from '@/domain/types';
 import { isFresh } from '@/lib/fresh';
@@ -143,12 +145,18 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           }}
           // thought-card, thought-title, thought-check: what a look (looks.css) re-dresses.
           data-important={important && !checked}
+          data-shared={!!task.sharedBy}
           className={cn(
             'thought-card relative flex items-start gap-3.5 rounded-[15px] border px-4 py-3.5 transition-colors duration-200',
             // Important thoughts carry the red themselves rather than wearing a
             // badge: the card, its edge and the words all shift together, so it
             // reads from across the room without adding anything to the row.
-            important && !checked ? 'border-ember/45 bg-ember-soft' : 'border-line bg-sunk',
+            // One someone sent is indigo the same way: it is theirs, handed over.
+            important && !checked
+              ? 'border-ember/45 bg-ember-soft'
+              : task.sharedBy && !checked
+                ? 'border-tomorrow/40 bg-tomorrow-soft'
+                : 'border-line bg-sunk',
             checked && 'opacity-55',
             enter && 'animate-enter',
           )}
@@ -189,8 +197,14 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
             >
               {task.title}
             </span>
-            {!done && (task.reminderAt || task.recurrence) && (
+            {!done && (task.reminderAt || task.recurrence || task.sharedBy) && (
               <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium tracking-[0.045em] uppercase">
+                {task.sharedBy && (
+                  <span className="flex items-center gap-1.5 text-tomorrow">
+                    <Send className="size-3" strokeWidth={2.1} />
+                    {st('from_person', { name: personOf(task.sharedBy.id)?.name || task.sharedBy.name || st('someone') })}
+                  </span>
+                )}
                 {task.reminderAt && (
                   <span className={cn('flex items-center gap-1.5', overdue ? 'text-ember' : 'text-accent')}>
                     <Bell className="size-3" strokeWidth={2.1} />

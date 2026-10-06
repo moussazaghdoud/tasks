@@ -27,6 +27,7 @@ interface ShareBoxPlugin {
   fetch(options: { to: string }): Promise<{ envelopes: Envelope[] }>;
   remove(options: { ids: string[] }): Promise<void>;
   subscribe(options: { to: string; alert: string }): Promise<void>;
+  chime(): Promise<void>;
 }
 
 interface Envelope {
@@ -124,14 +125,22 @@ export async function sayHello(to: Person): Promise<void> {
   await ShareBox.post({ to: to.id, kind: 'hello', from: me.id, data: await sealAnonymous(to.publicKey, { card }) });
 }
 
-/** Send a thought to each of these people. Resolves with those it could not reach. */
+/**
+ * Send a thought to each of these people. Resolves with those it could not reach.
+ *
+ * The thought is sealed between my key and theirs, which proves it is mine;
+ * my card travels with it, sealed for them alone, so someone who has since
+ * removed me still learns who is writing and can choose to take me back.
+ */
 export async function sendThought(to: Person[], thought: SharedThought): Promise<Person[]> {
   const me = await identity();
+  const card: Card = { id: me.id, name: me.name, publicKey: me.keys.publicKey };
   const failed: Person[] = [];
   for (const person of to) {
     try {
-      const data = await sealFor(me.keys.privateJwk, person.publicKey, thought);
-      await ShareBox.post({ to: person.id, kind: 'thought', from: me.id, data });
+      const sealed = await sealFor(me.keys.privateJwk, person.publicKey, thought);
+      const data = await sealAnonymous(person.publicKey, { card, sealed });
+      await ShareBox.post({ to: person.id, kind: 'note', from: me.id, data });
     } catch (error) {
       setMailError(messageOf(error));
       failed.push(person);
@@ -217,15 +226,23 @@ async function collectNow(): Promise<number> {
         }
         requests.push({ id: envelope.id, card, at: envelope.sentAt });
         arrived++;
-      } else if (envelope.kind === 'thought') {
-        const sender = personOf(envelope.from);
-        // From someone not in the book: nothing to open it with.
-        if (!sender) continue;
-        const thought = await openFrom<SharedThought>(me.keys.privateJwk, sender.publicKey, envelope.data);
+      } else if (envelope.kind === 'note') {
+        const { card, sealed } = await openAnonymous<{ card: Card; sealed: string }>(me.keys.privateJwk, envelope.data);
+        if (!card?.id || card.id !== envelope.from || typeof sealed !== 'string') continue;
+        const known = personOf(card.id);
+        // Someone in the book is held to the key they were added with: a
+        // stranger cannot borrow their identifier. Someone not in it proves
+        // only that they hold the key on their own card.
+        const thought = await openFrom<SharedThought>(me.keys.privateJwk, known ? known.publicKey : card.publicKey, sealed);
         if (thought?.v !== 1 || typeof thought.title !== 'string' || !thought.title.trim()) continue;
+        // From someone removed, or never added: it waits behind a request,
+        // shown once they are taken (back) in, dropped if they are declined.
+        if (!known && !requests.some((r) => r.card.id === card.id)) {
+          requests.push({ id: `${envelope.id}-hello`, card, at: envelope.sentAt });
+        }
         thoughts.push({
           id: envelope.id,
-          from: sender.id,
+          from: card.id,
           at: envelope.sentAt,
           thought: {
             v: 1,
@@ -262,6 +279,9 @@ export async function announce(to: Person[]): Promise<void> {
     await sayHello(person).catch((error) => setMailError(messageOf(error)));
   }
 }
+
+/** A short sound: something arrived while the app is open. */
+export const chime = (): Promise<void> => ShareBox.chime().catch(() => undefined);
 
 export function settleRequest(id: string): void {
   commit({ ...inbox, requests: inbox.requests.filter((r) => r.id !== id) });

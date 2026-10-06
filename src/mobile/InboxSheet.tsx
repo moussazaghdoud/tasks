@@ -1,7 +1,7 @@
 import { Ban, Bell, Flag, Inbox, UserPlus } from 'lucide-react';
 import { useEffect } from 'react';
-import { useInbox } from '@/lib/share/mailbox';
-import { personOf } from '@/lib/share/people';
+import { useInbox, type Incoming } from '@/lib/share/mailbox';
+import { personOf, usePeopleBook } from '@/lib/share/people';
 import { Sheet } from './Sheet';
 import { dayTimeIn } from './i18n';
 import { st } from './shareI18n';
@@ -9,9 +9,21 @@ import { acceptRequest, acceptThought, block, declineRequest, declineThought, re
 
 const nameOf = (id: string): string => personOf(id)?.name || st('someone');
 
+/**
+ * What can be shown now: thoughts from people in the book. The rest wait
+ * behind their sender's request, and appear once it is accepted.
+ */
+function useVisibleInbox() {
+  usePeopleBook();
+  const { requests, thoughts } = useInbox();
+  const shown = thoughts.filter((item) => personOf(item.from));
+  const waiting = (id: string) => thoughts.filter((item: Incoming) => item.from === id).length;
+  return { requests, thoughts: shown, waiting };
+}
+
 /** The line over the list when something has arrived. Tapping it opens what came. */
 export function InboxBanner({ onOpen }: { onOpen: () => void }) {
-  const { requests, thoughts } = useInbox();
+  const { requests, thoughts } = useVisibleInbox();
   const n = requests.length + thoughts.length;
   if (!n) return null;
   const text =
@@ -33,7 +45,7 @@ export function InboxBanner({ onOpen }: { onOpen: () => void }) {
 
 /** What others sent: people asking to be added, and thoughts to accept or decline. */
 export function InboxSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { requests, thoughts } = useInbox();
+  const { requests, thoughts, waiting } = useVisibleInbox();
   const empty = !requests.length && !thoughts.length;
   // Nothing left to decide: the sheet has done its job.
   useEffect(() => {
@@ -72,6 +84,9 @@ export function InboxSheet({ open, onClose }: { open: boolean; onClose: () => vo
             <UserPlus className="size-5 shrink-0 text-accent" strokeWidth={1.9} />
             {st('request_text', { name: request.card.name || st('someone') })}
           </p>
+          {waiting(request.card.id) > 0 && (
+            <p className="mt-1 ps-[30px] text-[13px] text-ink-3">{st('waiting_thoughts', { n: waiting(request.card.id) })}</p>
+          )}
           {choice(
             () => acceptRequest(request),
             () => declineRequest(request),

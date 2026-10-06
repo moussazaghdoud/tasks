@@ -6,6 +6,7 @@ import { readCard, type Card } from '@/lib/share/card';
 import { identity, knownIdentity } from '@/lib/share/identity';
 import {
   announce,
+  chime,
   collect,
   messageOf,
   dropFrom,
@@ -40,6 +41,8 @@ export async function addFromCard(card: Card): Promise<void> {
   if (personOf(card.id)) {
     addPerson(card); // their latest name and key
     toast(st('already_added', { name }));
+    // They may have removed us since: say hello again, so they can take us back.
+    await sayHello({ ...card, addedAt: '' }).catch((error) => toast(st('icloud_failed', { why: messageOf(error) })));
     return;
   }
   addPerson(card);
@@ -156,6 +159,8 @@ export function acceptThought(item: Incoming): void {
     title: thought.title,
     notes: thought.notes,
     space: 'business',
+    // Kept on the thought, so it reads as someone else's in the list.
+    sharedBy: { id: item.from, name: personOf(item.from)?.name ?? '' },
     priority: thought.important ? 'important' : 'normal',
     reminderAt: thought.reminderAt && Date.parse(thought.reminderAt) > Date.now() ? thought.reminderAt : null,
   });
@@ -176,7 +181,11 @@ export function acceptRequest(request: ContactRequest): void {
   toast(st('added_person', { name: request.card.name || st('someone') }));
 }
 
-export const declineRequest = (request: ContactRequest): void => settleRequest(request.id);
+/** Declined: and whatever they sent while waiting goes with them. */
+export function declineRequest(request: ContactRequest): void {
+  settleRequest(request.id);
+  dropFrom(request.card.id);
+}
 
 export function remove(person: { id: string; name: string }): void {
   removePerson(person.id);
@@ -206,11 +215,19 @@ export function report(person: { id: string; name: string }): void {
 export async function initSharing(): Promise<void> {
   if (!isNative() || !(await sharingAvailable())) return;
   void listenForMail(st('share_push'));
-  void collect();
+  void check();
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') void collect();
+    if (document.visibilityState === 'visible') void check();
   });
   setInterval(() => {
-    if (document.visibilityState === 'visible') void collect();
+    if (document.visibilityState === 'visible') void check();
   }, 60_000);
+}
+
+/** Collect, and make a small sound when something new is there. */
+async function check(): Promise<void> {
+  if ((await collect()) > 0) {
+    void chime();
+    haptic('success');
+  }
 }

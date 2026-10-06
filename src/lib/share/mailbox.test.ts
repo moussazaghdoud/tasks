@@ -81,6 +81,22 @@ describe('sending a thought between two phones', () => {
     expect(box).toHaveLength(0);
   });
 
+  it('turns a thought from someone removed into a request, with the thought waiting behind it', async () => {
+    const alice = await phone('Alice');
+    const bob = await phone('Bob');
+    use(alice);
+    alice.people.addPerson(bob.card);
+
+    // Bob had removed Alice; she does not know, and sends.
+    await alice.mailbox.sendThought([{ ...bob.card, addedAt: '' }], thought);
+    use(bob);
+    expect(await bob.mailbox.collect()).toBe(1);
+    const inbox = JSON.parse(bob.store.get('hence.inbox')!);
+    expect(inbox.requests.map((r: { card: { name: string } }) => r.card.name)).toEqual(['Alice']);
+    expect(inbox.thoughts[0].from).toBe(alice.card.id);
+    expect(box).toHaveLength(0);
+  });
+
   it('opens nothing from a blocked sender, nor from a stranger posing as a contact', async () => {
     const alice = await phone('Alice');
     const mallory = await phone('Mallory');

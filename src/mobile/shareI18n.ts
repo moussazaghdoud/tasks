@@ -63,6 +63,7 @@ const EN = {
   mail_error: 'Last iCloud error: {why}',
   pending_name: 'Choose your name — {name} will be added right after.',
   person_rename: 'Rename',
+  waiting_thoughts: '{n} thought(s) waiting — accept to see them',
 };
 
 export type ShareKey = keyof typeof EN;
@@ -125,6 +126,7 @@ const FR: Record<ShareKey, string> = {
   mail_error: 'Dernière erreur iCloud : {why}',
   pending_name: 'Choisissez votre nom — {name} sera ajouté·e juste après.',
   person_rename: 'Renommer',
+  waiting_thoughts: '{n} pensée(s) en attente — acceptez pour les voir',
 };
 
 const IT: Record<ShareKey, string> = {
@@ -185,6 +187,7 @@ const IT: Record<ShareKey, string> = {
   mail_error: 'Ultimo errore iCloud: {why}',
   pending_name: 'Scegli il tuo nome — {name} verrà aggiunto/a subito dopo.',
   person_rename: 'Rinomina',
+  waiting_thoughts: '{n} pensiero/i in attesa — accetta per vederli',
 };
 
 const ES: Record<ShareKey, string> = {
@@ -245,6 +248,7 @@ const ES: Record<ShareKey, string> = {
   mail_error: 'Último error de iCloud: {why}',
   pending_name: 'Elige tu nombre — {name} se añadirá justo después.',
   person_rename: 'Renombrar',
+  waiting_thoughts: '{n} pensamiento(s) en espera — acepta para verlos',
 };
 
 const DE: Record<ShareKey, string> = {
@@ -305,6 +309,7 @@ const DE: Record<ShareKey, string> = {
   mail_error: 'Letzter iCloud-Fehler: {why}',
   pending_name: 'Wähle deinen Namen — {name} wird gleich danach hinzugefügt.',
   person_rename: 'Umbenennen',
+  waiting_thoughts: '{n} Gedanke(n) warten — annehmen, um sie zu sehen',
 };
 
 const ZH: Record<ShareKey, string> = {
@@ -365,6 +370,7 @@ const ZH: Record<ShareKey, string> = {
   mail_error: '最近的 iCloud 错误：{why}',
   pending_name: '请先设置你的名字——随后将添加 {name}。',
   person_rename: '重命名',
+  waiting_thoughts: '有 {n} 个想法在等待——接受后即可查看',
 };
 
 const DICTIONARIES: Partial<Record<Lang, Record<ShareKey, string>>> = { en: EN, fr: FR, it: IT, es: ES, de: DE, zh: ZH };

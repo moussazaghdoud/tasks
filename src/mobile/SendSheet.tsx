@@ -1,11 +1,12 @@
 import { Check, Copy, Forward, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Task } from '@/domain/types';
+import { identity, setMyName, useMyName } from '@/lib/share/identity';
 import { people as listPeople, usePeopleBook } from '@/lib/share/people';
 import { cn } from '@/lib/platform';
 import { Sheet } from './Sheet';
 import { st } from './shareI18n';
-import { send } from './sharing';
+import { announceName, send } from './sharing';
 
 /**
  * Send a thought to people or a team, then say whether you keep it: there is
@@ -26,10 +27,21 @@ export function SendSheet({ task, open, onClose }: { task: Task; open: boolean; 
       return all ? now.filter((id) => !ids.includes(id)) : [...new Set([...now, ...ids])];
     });
 
+  // A thought from no one arrives as "Someone": a name comes first.
+  const myName = useMyName();
+  const [name, setName] = useState('');
+
   const go = (mode: 'copy' | 'transfer') => {
     const to = everyone.filter((p) => chosen.includes(p.id));
     onClose();
     void send(task, to, mode);
+  };
+
+  const saveName = async () => {
+    await identity();
+    setMyName(name);
+    // Those who already have us get the name too.
+    if (everyone.length) announceName();
   };
 
   const row = 'flex h-[54px] w-full items-center gap-4 px-6 text-start text-[17px] text-ink transition-colors active:bg-wash-strong';
@@ -41,7 +53,27 @@ export function SendSheet({ task, open, onClose }: { task: Task; open: boolean; 
 
   return (
     <Sheet open={open} onClose={onClose} label={st('send_title')} title={st('send_title')}>
-      {everyone.length === 0 ? (
+      {!myName.trim() ? (
+        <div className="px-6 pb-4">
+          <p className="pb-3 text-[15px] leading-[22px] text-ink-3">{st('name_needed')}</p>
+          <input
+            autoFocus
+            value={name}
+            maxLength={40}
+            placeholder={st('my_name_placeholder')}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && name.trim() && saveName()}
+            className="h-12 w-full rounded-[14px] border border-line bg-sunk px-4 text-[16px] text-ink outline-none placeholder:text-ink-4 focus:border-accent/50"
+          />
+          <button
+            disabled={!name.trim()}
+            onClick={saveName}
+            className="mt-2.5 h-12 w-full rounded-[14px] bg-accent text-[16px] font-semibold text-on-accent disabled:opacity-35"
+          >
+            {st('continue')}
+          </button>
+        </div>
+      ) : everyone.length === 0 ? (
         <p className="px-6 pb-4 text-[15px] leading-[22px] text-ink-3">{st('share_no_people')}</p>
       ) : (
         <>

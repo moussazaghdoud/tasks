@@ -1,3 +1,4 @@
+import AudioToolbox
 import Capacitor
 import CloudKit
 import UIKit
@@ -23,8 +24,17 @@ public class ShareBoxPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "post", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "fetch", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "remove", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "subscribe", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "subscribe", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "chime", returnType: CAPPluginReturnPromise)
     ]
+
+    /// The iPhone's own "message received" sound, for something that arrives
+    /// while the app is open — when iOS shows no notification. Like every
+    /// system sound, it stays quiet with the silent switch on.
+    @objc func chime(_ call: CAPPluginCall) {
+        AudioServicesPlaySystemSound(1007)
+        call.resolve()
+    }
 
     private let container = CKContainer(identifier: "iCloud.com.moussazaghdoud.hence")
     private var database: CKDatabase { container.publicCloudDatabase }
