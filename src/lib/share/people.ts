@@ -15,6 +15,8 @@ export interface Person {
   /** Their public key: what seals a thought so only they can open it. */
   publicKey: string;
   addedAt: string;
+  /** Named by you: the name they send no longer replaces it. */
+  renamed?: boolean;
 }
 
 export interface Team {
@@ -61,13 +63,26 @@ export const personOf = (id: string): Person | undefined => book.people[id];
 export const teams = (): Team[] => book.teams;
 export const isBlocked = (id: string): boolean => book.blocked.includes(id);
 
-export function addPerson(person: Omit<Person, 'addedAt'>): void {
+/** Add someone, or bring their name and key up to date if they are already here. */
+export function addPerson(person: { id: string; name: string; publicKey: string }): void {
+  const known = book.people[person.id];
+  const next: Person = known
+    ? { ...known, publicKey: person.publicKey, name: known.renamed || !person.name ? known.name : person.name }
+    : { id: person.id, name: person.name, publicKey: person.publicKey, addedAt: new Date().toISOString() };
   // Someone re-added after a block is unblocked: adding is the clearer wish.
   commit({
     ...book,
-    people: { ...book.people, [person.id]: { ...person, addedAt: new Date().toISOString() } },
+    people: { ...book.people, [person.id]: next },
     blocked: book.blocked.filter((id) => id !== person.id),
   });
+}
+
+/** Call someone what you call them. An empty name goes back to theirs, from their next update. */
+export function renamePerson(id: string, name: string): void {
+  const known = book.people[id];
+  if (!known) return;
+  const clean = name.trim().slice(0, 40);
+  commit({ ...book, people: { ...book.people, [id]: { ...known, name: clean || known.name, renamed: !!clean } } });
 }
 
 export function removePerson(id: string): void {

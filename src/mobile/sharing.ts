@@ -1,9 +1,13 @@
+import { useSyncExternalStore } from 'react';
 import { haptic } from '@/lib/native/bridge';
+import { ensureNotificationPermission } from '@/lib/native/notifications';
 import { isNative } from '@/lib/native/platform';
 import { readCard, type Card } from '@/lib/share/card';
-import { identity } from '@/lib/share/identity';
+import { identity, knownIdentity } from '@/lib/share/identity';
 import {
+  announce,
   collect,
+  messageOf,
   dropFrom,
   listenForMail,
   sayHello,
@@ -14,7 +18,7 @@ import {
   type ContactRequest,
   type Incoming,
 } from '@/lib/share/mailbox';
-import { addPerson, blockPerson, personOf, removePerson, type Person } from '@/lib/share/people';
+import { addPerson, blockPerson, people, personOf, removePerson, type Person } from '@/lib/share/people';
 import type { Task } from '@/domain/types';
 import { toast } from '@/store/toast';
 import { ws } from '@/store/workspace';
@@ -42,15 +46,75 @@ export async function addFromCard(card: Card): Promise<void> {
   haptic('success');
   toast(st('added_person', { name }));
   // Their card is enough to send them thoughts; the hello lets them add us back.
-  await sayHello({ ...card, addedAt: '' }).catch(() => toast(st('share_unavailable')));
+  await sayHello({ ...card, addedAt: '' }).catch((error) => toast(st('icloud_failed', { why: messageOf(error) })));
 }
 
-/** A link or a QR's text: add whoever's card it holds. False when it holds none. */
+/**
+ * A link or a QR's text: add whoever's card it holds. False when it holds
+ * none. Without a name of your own yet, the card waits while People asks for
+ * one — a hello with no name arrives as "Someone".
+ */
 export function addFromText(text: string): boolean {
   const card = readCard(text);
   if (!card) return false;
-  void addFromCard(card);
+  if (knownIdentity()?.name) void addFromCard(card);
+  else setPending(card);
   return true;
+}
+
+let pending: Card | null = null;
+const pendingListeners = new Set<() => void>();
+function setPending(next: Card | null): void {
+  pending = next;
+  pendingListeners.forEach((l) => l());
+}
+
+/** A card opened before you had a name, waiting for one. */
+export const usePendingCard = (): Card | null =>
+  useSyncExternalStore(
+    (on) => {
+      pendingListeners.add(on);
+      return () => pendingListeners.delete(on);
+    },
+    () => pending,
+    () => null,
+  );
+
+export const dropPending = (): void => setPending(null);
+
+/** Your name is set: add whoever was waiting for it. */
+export function addPending(): void {
+  const card = pending;
+  setPending(null);
+  if (card) void addFromCard(card);
+}
+
+/** Your name changed: everyone you have gets the new one. */
+export function announceName(): void {
+  void announce(people());
+}
+
+/** A code copied from a message — Signal, WhatsApp, Mail. */
+export async function pasteCode(): Promise<void> {
+  let text = '';
+  try {
+    const { Clipboard } = await import('@capacitor/clipboard');
+    text = (await Clipboard.read()).value ?? '';
+  } catch {
+    /* nothing to paste */
+  }
+  if (!addFromText(text)) toast(st('paste_none'));
+}
+
+/**
+ * Ask once to show notifications: iCloud's notice that something arrived is
+ * shown only if they are allowed. Then subscribe again, so the iPhone is
+ * registered with what it is now allowed to do.
+ */
+export async function allowNotices(): Promise<void> {
+  if (!isNative()) return;
+  await ensureNotificationPermission();
+  void listenForMail(st('share_push'));
 }
 
 /**
@@ -62,6 +126,8 @@ export async function send(task: Task, to: Person[], mode: 'copy' | 'transfer'):
     toast(st('share_unavailable'));
     return;
   }
+  // The first send is when a notice from the other side starts to matter.
+  void allowNotices();
   const failed = await sendThought(to, {
     v: 1,
     title: task.title,

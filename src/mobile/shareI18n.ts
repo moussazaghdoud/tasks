@@ -56,6 +56,13 @@ const EN = {
   report_subject: 'Report a Hence user',
   report_body: 'I am reporting the Hence user {id} ({name}).\n\nWhat happened:\n',
   continue: 'Continue',
+  paste_code: 'Paste a code',
+  scan_photo: 'Scan from a photo',
+  paste_none: 'No Hence code in what you copied.',
+  icloud_failed: 'iCloud didn’t accept it: {why}',
+  mail_error: 'Last iCloud error: {why}',
+  pending_name: 'Choose your name — {name} will be added right after.',
+  person_rename: 'Rename',
 };
 
 export type ShareKey = keyof typeof EN;
@@ -111,6 +118,13 @@ const FR: Record<ShareKey, string> = {
   report_subject: 'Signaler un utilisateur de Hence',
   report_body: 'Je signale l’utilisateur Hence {id} ({name}).\n\nCe qui s’est passé :\n',
   continue: 'Continuer',
+  paste_code: 'Coller un code',
+  scan_photo: 'Scanner depuis une photo',
+  paste_none: 'Aucun code Hence dans ce que vous avez copié.',
+  icloud_failed: 'iCloud a refusé : {why}',
+  mail_error: 'Dernière erreur iCloud : {why}',
+  pending_name: 'Choisissez votre nom — {name} sera ajouté·e juste après.',
+  person_rename: 'Renommer',
 };
 
 const IT: Record<ShareKey, string> = {
@@ -164,6 +178,13 @@ const IT: Record<ShareKey, string> = {
   report_subject: 'Segnala un utente di Hence',
   report_body: 'Segnalo l’utente Hence {id} ({name}).\n\nCosa è successo:\n',
   continue: 'Continua',
+  paste_code: 'Incolla un codice',
+  scan_photo: 'Scansiona da una foto',
+  paste_none: 'Nessun codice Hence in ciò che hai copiato.',
+  icloud_failed: 'iCloud ha rifiutato: {why}',
+  mail_error: 'Ultimo errore iCloud: {why}',
+  pending_name: 'Scegli il tuo nome — {name} verrà aggiunto/a subito dopo.',
+  person_rename: 'Rinomina',
 };
 
 const ES: Record<ShareKey, string> = {
@@ -217,6 +238,13 @@ const ES: Record<ShareKey, string> = {
   report_subject: 'Denunciar a un usuario de Hence',
   report_body: 'Denuncio al usuario de Hence {id} ({name}).\n\nLo que ocurrió:\n',
   continue: 'Continuar',
+  paste_code: 'Pegar un código',
+  scan_photo: 'Escanear desde una foto',
+  paste_none: 'No hay ningún código de Hence en lo que has copiado.',
+  icloud_failed: 'iCloud lo rechazó: {why}',
+  mail_error: 'Último error de iCloud: {why}',
+  pending_name: 'Elige tu nombre — {name} se añadirá justo después.',
+  person_rename: 'Renombrar',
 };
 
 const DE: Record<ShareKey, string> = {
@@ -270,6 +298,13 @@ const DE: Record<ShareKey, string> = {
   report_subject: 'Hence-Nutzer melden',
   report_body: 'Ich melde den Hence-Nutzer {id} ({name}).\n\nWas passiert ist:\n',
   continue: 'Weiter',
+  paste_code: 'Code einfügen',
+  scan_photo: 'Aus einem Foto scannen',
+  paste_none: 'Kein Hence-Code in dem, was du kopiert hast.',
+  icloud_failed: 'iCloud hat abgelehnt: {why}',
+  mail_error: 'Letzter iCloud-Fehler: {why}',
+  pending_name: 'Wähle deinen Namen — {name} wird gleich danach hinzugefügt.',
+  person_rename: 'Umbenennen',
 };
 
 const ZH: Record<ShareKey, string> = {
@@ -323,6 +358,13 @@ const ZH: Record<ShareKey, string> = {
   report_subject: '举报 Hence 用户',
   report_body: '我要举报 Hence 用户 {id}（{name}）。\n\n发生了什么：\n',
   continue: '继续',
+  paste_code: '粘贴二维码链接',
+  scan_photo: '从照片扫描',
+  paste_none: '你复制的内容中没有 Hence 二维码。',
+  icloud_failed: 'iCloud 拒绝了：{why}',
+  mail_error: '最近的 iCloud 错误：{why}',
+  pending_name: '请先设置你的名字——随后将添加 {name}。',
+  person_rename: '重命名',
 };
 
 const DICTIONARIES: Partial<Record<Lang, Record<ShareKey, string>>> = { en: EN, fr: FR, it: IT, es: ES, de: DE, zh: ZH };

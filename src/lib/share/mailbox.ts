@@ -132,11 +132,39 @@ export async function sendThought(to: Person[], thought: SharedThought): Promise
     try {
       const data = await sealFor(me.keys.privateJwk, person.publicKey, thought);
       await ShareBox.post({ to: person.id, kind: 'thought', from: me.id, data });
-    } catch {
+    } catch (error) {
+      setMailError(messageOf(error));
       failed.push(person);
     }
   }
   return failed;
+}
+
+/**
+ * What last went wrong between this iPhone and iCloud, as iCloud said it —
+ * shown in People, so a failure is not silent. Cleared by the next success.
+ */
+let mailError: string | null = null;
+const errorListeners = new Set<() => void>();
+
+function setMailError(next: string | null): void {
+  if (next === mailError) return;
+  mailError = next;
+  errorListeners.forEach((l) => l());
+}
+
+export const messageOf = (error: unknown): string =>
+  (error as { message?: string })?.message || String(error);
+
+export function useMailError(): string | null {
+  return useSyncExternalStore(
+    (on) => {
+      errorListeners.add(on);
+      return () => errorListeners.delete(on);
+    },
+    () => mailError,
+    () => null,
+  );
 }
 
 let collecting: Promise<number> | null = null;
@@ -158,7 +186,9 @@ async function collectNow(): Promise<number> {
   let envelopes: Envelope[];
   try {
     ({ envelopes } = await ShareBox.fetch({ to: me.id }));
-  } catch {
+    setMailError(null);
+  } catch (error) {
+    setMailError(messageOf(error));
     return 0;
   }
   if (!envelopes.length) return 0;
@@ -179,7 +209,12 @@ async function collectNow(): Promise<number> {
           addPerson(card);
           continue;
         }
-        if (requests.some((r) => r.card.id === card.id)) continue;
+        // A request still waiting: their newer card, with the name they have since chosen.
+        const waiting = requests.findIndex((r) => r.card.id === card.id);
+        if (waiting >= 0) {
+          requests[waiting] = { ...requests[waiting], card };
+          continue;
+        }
         requests.push({ id: envelope.id, card, at: envelope.sentAt });
         arrived++;
       } else if (envelope.kind === 'thought') {
@@ -218,7 +253,14 @@ async function collectNow(): Promise<number> {
 export async function listenForMail(alert: string): Promise<void> {
   if (!isNative()) return;
   const me = await identity();
-  await ShareBox.subscribe({ to: me.id, alert }).catch(() => undefined);
+  await ShareBox.subscribe({ to: me.id, alert }).catch((error) => setMailError(messageOf(error)));
+}
+
+/** Send my card again to everyone I have — how a new name reaches them. */
+export async function announce(to: Person[]): Promise<void> {
+  for (const person of to) {
+    await sayHello(person).catch((error) => setMailError(messageOf(error)));
+  }
 }
 
 export function settleRequest(id: string): void {

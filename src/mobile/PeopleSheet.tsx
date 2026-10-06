@@ -1,4 +1,4 @@
-import { Ban, Check, Flag, Plus, ScanLine, Send, Trash2, UserMinus, Users } from 'lucide-react';
+import { Ban, Check, ClipboardPaste, Flag, Image, Pencil, Plus, ScanLine, Send, Trash2, TriangleAlert, UserMinus, Users } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import { haptic } from '@/lib/native/bridge';
@@ -6,13 +6,14 @@ import { isNative } from '@/lib/native/platform';
 import { scanCode } from '@/lib/native/photos';
 import { cardLink } from '@/lib/share/card';
 import { identity, setMyName, useMyName } from '@/lib/share/identity';
-import { people as listPeople, removeTeam, saveTeam, usePeopleBook, type Person, type Team } from '@/lib/share/people';
+import { useMailError } from '@/lib/share/mailbox';
+import { people as listPeople, removeTeam, renamePerson, saveTeam, usePeopleBook, type Person, type Team } from '@/lib/share/people';
 import { cn } from '@/lib/platform';
 import { toast } from '@/store/toast';
 import { Sheet } from './Sheet';
 import { t } from './i18n';
 import { st } from './shareI18n';
-import { addFromText, block, remove, report } from './sharing';
+import { addFromText, addPending, allowNotices, announceName, block, pasteCode, remove, report, usePendingCard } from './sharing';
 
 const LABEL = 'px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase';
 const ROW = 'flex h-[58px] w-full items-center gap-4 px-6 text-start text-[17px] text-ink transition-colors active:bg-wash-strong disabled:opacity-40';
@@ -34,6 +35,13 @@ export function PeopleSheet({ open, onClose }: { open: boolean; onClose: () => v
   // Subscribing re-renders on any change; the sorted list is read after it.
   const book = usePeopleBook();
   const everyone = listPeople();
+  const pending = usePendingCard();
+  const mailError = useMailError();
+
+  // Opening People is when receiving starts to matter: ask for notices now.
+  useEffect(() => {
+    if (open) void allowNotices();
+  }, [open]);
 
   // The code carries the name, so it is redrawn when the name changes.
   useEffect(() => {
@@ -83,26 +91,42 @@ export function PeopleSheet({ open, onClose }: { open: boolean; onClose: () => v
     }
   };
 
-  const scan = async () => {
+  const scan = async (from: 'camera' | 'library') => {
     if (!named) return needName();
-    const codes = await scanCode();
+    const codes = await scanCode(from);
     if (codes === null) return;
     if (!codes.some((code) => addFromText(code))) toast(st('scan_none'));
   };
 
+  const paste = () => (named ? void pasteCode() : needName());
+
+  const saveName = async () => {
+    await identity();
+    const clean = name.trim();
+    const changed = clean !== myName.trim();
+    setMyName(clean);
+    if (!clean) return;
+    // Someone's link was waiting for a name; otherwise the new name goes to everyone.
+    if (pending) addPending();
+    else if (changed && everyone.length) announceName();
+  };
+
   return (
     <Sheet open={open} onClose={onClose} label={st('people_title')} title={st('people_title')}>
+      {pending && (
+        <p className="mx-6 mb-3 rounded-[14px] border border-accent/25 bg-accent-soft px-4 py-3 text-[14px] leading-[20px] text-accent">
+          {st('pending_name', { name: pending.name || st('someone') })}
+        </p>
+      )}
       <p className={LABEL}>{st('my_name_label')}</p>
       <div className="px-6">
         <input
           value={name}
           maxLength={40}
+          autoFocus={!!pending}
           placeholder={st('my_name_placeholder')}
           onChange={(e) => setName(e.target.value)}
-          onBlur={async () => {
-            await identity();
-            setMyName(name);
-          }}
+          onBlur={() => void saveName()}
           onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
           className="h-12 w-full rounded-[14px] border border-line bg-sunk px-4 text-[16px] text-ink outline-none placeholder:text-ink-4 focus:border-accent/50"
         />
@@ -121,12 +145,28 @@ export function PeopleSheet({ open, onClose }: { open: boolean; onClose: () => v
           <span className="flex-1">{st('send_my_code')}</span>
         </button>
         {isNative() && (
-          <button onClick={() => void scan()} className={cn(ROW, 'border-t border-line')}>
-            <ScanLine className="size-[20px] shrink-0 text-accent" strokeWidth={1.9} />
-            <span className="flex-1">{st('scan_code')}</span>
-          </button>
+          <>
+            <button onClick={() => void scan('camera')} className={cn(ROW, 'border-t border-line')}>
+              <ScanLine className="size-[20px] shrink-0 text-accent" strokeWidth={1.9} />
+              <span className="flex-1">{st('scan_code')}</span>
+            </button>
+            <button onClick={() => void scan('library')} className={cn(ROW, 'border-t border-line')}>
+              <Image className="size-[20px] shrink-0 text-accent" strokeWidth={1.9} />
+              <span className="flex-1">{st('scan_photo')}</span>
+            </button>
+            <button onClick={paste} className={cn(ROW, 'border-t border-line')}>
+              <ClipboardPaste className="size-[20px] shrink-0 text-accent" strokeWidth={1.9} />
+              <span className="flex-1">{st('paste_code')}</span>
+            </button>
+          </>
         )}
       </div>
+      {mailError && (
+        <p className="flex gap-2 px-6 pt-3 text-[12.5px] leading-[18px] break-words text-ember select-text">
+          <TriangleAlert className="mt-px size-4 shrink-0" strokeWidth={2} />
+          {st('mail_error', { why: mailError })}
+        </p>
+      )}
 
       <p className={cn(LABEL, 'mt-6')}>{st('people_title')}</p>
       {everyone.length === 0 ? (
@@ -177,16 +217,50 @@ export function PeopleSheet({ open, onClose }: { open: boolean; onClose: () => v
 }
 
 function PersonRow({ person, open, onToggle }: { person: Person; open: boolean; onToggle: () => void }) {
+  const [renaming, setRenaming] = useState(false);
+  const [name, setName] = useState(person.name);
+  useEffect(() => {
+    if (!open) setRenaming(false);
+  }, [open]);
+
   return (
     <div className="border-b border-line">
-      <button onClick={onToggle} className={ROW}>
-        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-[14px] font-semibold text-accent">
-          {(person.name || '?').slice(0, 1).toUpperCase()}
-        </span>
-        <span className="flex-1 truncate">{person.name || st('someone')}</span>
-      </button>
-      {open && (
+      {renaming ? (
+        <div className="px-6 py-2">
+          <input
+            autoFocus
+            value={name}
+            maxLength={40}
+            placeholder={st('my_name_placeholder')}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => {
+              renamePerson(person.id, name);
+              setRenaming(false);
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+            className="h-11 w-full rounded-[12px] border border-line bg-sunk px-3.5 text-[16px] text-ink outline-none focus:border-accent/50"
+          />
+        </div>
+      ) : (
+        <button onClick={onToggle} className={ROW}>
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-[14px] font-semibold text-accent">
+            {(person.name || '?').slice(0, 1).toUpperCase()}
+          </span>
+          <span className="flex-1 truncate">{person.name || st('someone')}</span>
+        </button>
+      )}
+      {open && !renaming && (
         <div className="flex animate-fade flex-wrap gap-2 px-6 pb-4">
+          <button
+            onClick={() => {
+              setName(person.name);
+              setRenaming(true);
+            }}
+            className={cn(PILL, 'text-ink-2')}
+          >
+            <Pencil className="size-4" strokeWidth={1.9} />
+            {st('person_rename')}
+          </button>
           <button onClick={() => remove(person)} className={cn(PILL, 'text-ink-2')}>
             <UserMinus className="size-4" strokeWidth={1.9} />
             {st('person_remove')}

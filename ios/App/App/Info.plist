@@ -51,7 +51,7 @@
 		</dict>
 	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Hence does not read your photo library. The camera component it uses requires this permission to be declared; photos you take in the app are kept privately inside the app and never added to your library.</string>
+	<string>Hence opens your photo library only when you choose a picture yourself, such as a screenshot of someone's Hence code. Nothing else in your library is read, and photos you take in the app are never added to it.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Hence does not save anything to your photo library. Photos you take in the app are kept privately inside the app.</string>
 	<key>NSCameraUsageDescription</key>
