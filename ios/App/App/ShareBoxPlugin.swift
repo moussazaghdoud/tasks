@@ -2,6 +2,7 @@ import AudioToolbox
 import Capacitor
 import CloudKit
 import UIKit
+import UserNotifications
 
 /**
  The mailbox thoughts travel through between two people's Hence.
@@ -25,8 +26,41 @@ public class ShareBoxPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "fetch", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "remove", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "subscribe", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "chime", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "chime", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "status", returnType: CAPPluginReturnPromise)
     ]
+
+    /// The three links a notice of arrival depends on, each checked: whether
+    /// notifications are allowed, whether the iPhone is registered for push,
+    /// and whether iCloud holds the subscription for this mailbox.
+    @objc func status(_ call: CAPPluginCall) {
+        let to = call.getString("to") ?? ""
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let permission = Self.describe(settings.authorizationStatus)
+            DispatchQueue.main.async {
+                let registered = UIApplication.shared.isRegisteredForRemoteNotifications
+                self.database.fetch(withSubscriptionID: "inbox-" + to) { subscription, error in
+                    call.resolve([
+                        "permission": permission,
+                        "registered": registered,
+                        "subscribed": subscription != nil,
+                        "error": error?.localizedDescription ?? ""
+                    ])
+                }
+            }
+        }
+    }
+
+    private static func describe(_ status: UNAuthorizationStatus) -> String {
+        switch status {
+        case .authorized: return "authorized"
+        case .denied: return "denied"
+        case .notDetermined: return "notDetermined"
+        case .provisional: return "provisional"
+        case .ephemeral: return "ephemeral"
+        @unknown default: return "unknown"
+        }
+    }
 
     /// The iPhone's own "message received" sound, for something that arrives
     /// while the app is open — when iOS shows no notification. Like every

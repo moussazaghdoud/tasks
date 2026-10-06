@@ -1,19 +1,48 @@
-import { Ban, Check, ClipboardPaste, Flag, Image, Pencil, Plus, ScanLine, Send, Trash2, TriangleAlert, UserMinus, Users } from 'lucide-react';
+import {
+  Ban,
+  Check,
+  ClipboardPaste,
+  Flag,
+  Image,
+  Pencil,
+  Plus,
+  ScanLine,
+  Send,
+  Trash2,
+  TriangleAlert,
+  Undo2,
+  UserMinus,
+  Users,
+  X,
+} from 'lucide-react';
+import { forget, useOutbox } from '@/lib/share/outbox';
 import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
-import { haptic } from '@/lib/native/bridge';
+import { haptic, openAppSettings } from '@/lib/native/bridge';
 import { isNative } from '@/lib/native/platform';
 import { scanCode } from '@/lib/native/photos';
 import { cardLink } from '@/lib/share/card';
 import { identity, setMyName, useMyName } from '@/lib/share/identity';
-import { useMailError } from '@/lib/share/mailbox';
+import { noticeStatus, useMailError, type NoticeStatus } from '@/lib/share/mailbox';
 import { people as listPeople, removeTeam, renamePerson, saveTeam, usePeopleBook, type Person, type Team } from '@/lib/share/people';
 import { cn } from '@/lib/platform';
 import { toast } from '@/store/toast';
 import { Sheet } from './Sheet';
-import { t } from './i18n';
+import { dayTimeIn, t } from './i18n';
 import { st } from './shareI18n';
-import { addFromText, addPending, allowNotices, announceName, block, pasteCode, remove, report, usePendingCard } from './sharing';
+import {
+  addFromText,
+  addPending,
+  allowNotices,
+  announceName,
+  block,
+  pasteCode,
+  remove,
+  report,
+  resend,
+  restore,
+  usePendingCard,
+} from './sharing';
 
 const LABEL = 'px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase';
 const ROW = 'flex h-[58px] w-full items-center gap-4 px-6 text-start text-[17px] text-ink transition-colors active:bg-wash-strong disabled:opacity-40';
@@ -167,6 +196,8 @@ export function PeopleSheet({ open, onClose }: { open: boolean; onClose: () => v
           {st('mail_error', { why: mailError })}
         </p>
       )}
+      {isNative() && open && <NoticeLine />}
+      <OutboxSection />
 
       <p className={cn(LABEL, 'mt-6')}>{st('people_title')}</p>
       {everyone.length === 0 ? (
@@ -213,6 +244,99 @@ export function PeopleSheet({ open, onClose }: { open: boolean; onClose: () => v
 
       <p className="px-6 pt-4 pb-2 text-[12.5px] leading-[18px] text-ink-3">{st('people_note')}</p>
     </Sheet>
+  );
+}
+
+/**
+ * The three links a notice of arrival depends on, each with a tick or a
+ * cross — so "no notification" says which one is missing.
+ */
+function NoticeLine() {
+  const [status, setStatus] = useState<NoticeStatus | null>(null);
+  const refresh = () => void noticeStatus().then(setStatus);
+  useEffect(() => {
+    // The permission prompt may still be on screen: look again once it is answered.
+    refresh();
+    const id = setTimeout(refresh, 4000);
+    return () => clearTimeout(id);
+  }, []);
+  if (!status) return null;
+
+  const allowed = status.permission === 'authorized' || status.permission === 'provisional';
+  const mark = (ok: boolean, label: string) => (
+    <span className={cn('flex items-center gap-1', ok ? 'text-accent' : 'text-ember')}>
+      {ok ? <Check className="size-3.5" strokeWidth={2.4} /> : <X className="size-3.5" strokeWidth={2.4} />}
+      {label}
+    </span>
+  );
+  return (
+    <div className="px-6 pt-3">
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] font-medium">
+        <span className="text-ink-3">{st('notices_title')}</span>
+        {mark(allowed, st('notice_permission'))}
+        {mark(status.registered, st('notice_push'))}
+        {mark(status.subscribed, st('notice_icloud'))}
+      </p>
+      {!status.subscribed && status.error && (
+        <p className="pt-1 text-[12px] leading-[17px] break-words text-ink-4 select-text">{status.error}</p>
+      )}
+      {(!allowed || !status.subscribed || !status.registered) && (
+        <div className="flex gap-2 pt-2">
+          {!allowed && (
+            <button onClick={() => void openAppSettings()} className={cn(PILL, 'text-accent')}>
+              {st('open_settings')}
+            </button>
+          )}
+          <button
+            onClick={async () => {
+              await allowNotices();
+              setTimeout(refresh, 1500);
+            }}
+            className={cn(PILL, 'text-accent')}
+          >
+            {st('retry')}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** What was sent and not picked up yet: kept, so nothing is lost on the way. */
+function OutboxSection() {
+  const waiting = useOutbox();
+  if (!waiting.length) return null;
+  return (
+    <>
+      <p className={cn(LABEL, 'mt-6')}>{st('outbox_title')}</p>
+      <div className="border-t border-line">
+        {waiting.map((entry) => (
+          <div key={`${entry.ref}-${entry.to.id}`} className="border-b border-line px-6 py-3">
+            <p className="truncate text-[16px] text-ink">{entry.thought.title}</p>
+            <p className="pt-0.5 text-[12.5px] text-ink-4">
+              {st('to_person', { name: entry.to.name || st('someone') })} · {dayTimeIn(new Date(entry.sentAt))}
+              {entry.mode === 'transfer' ? ` · ${st('send_transfer')}` : ''}
+            </p>
+            <div className="flex flex-wrap gap-2 pt-2">
+              <button onClick={() => void resend(entry)} className={cn(PILL, 'text-accent')}>
+                <Send className="size-4" strokeWidth={1.9} />
+                {st('resend')}
+              </button>
+              {entry.mode === 'transfer' && (
+                <button onClick={() => restore(entry)} className={cn(PILL, 'text-accent')}>
+                  <Undo2 className="size-4" strokeWidth={1.9} />
+                  {st('restore')}
+                </button>
+              )}
+              <button onClick={() => forget(entry)} className={cn(PILL, 'text-ink-3')}>
+                {st('dismiss')}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="px-6 pt-2 text-[12.5px] leading-[18px] text-ink-3">{st('outbox_note')}</p>
+    </>
   );
 }
 

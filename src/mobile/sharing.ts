@@ -3,6 +3,8 @@ import { haptic } from '@/lib/native/bridge';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
 import { isNative } from '@/lib/native/platform';
 import { readCard, type Card } from '@/lib/share/card';
+import { randomId } from '@/lib/share/crypto';
+import { forget, keepSent, type Sent } from '@/lib/share/outbox';
 import { identity, knownIdentity } from '@/lib/share/identity';
 import {
   announce,
@@ -131,17 +133,29 @@ export async function send(task: Task, to: Person[], mode: 'copy' | 'transfer'):
   }
   // The first send is when a notice from the other side starts to matter.
   void allowNotices();
-  const failed = await sendThought(to, {
-    v: 1,
+  const thought = {
+    v: 1 as const,
+    ref: randomId(),
     title: task.title,
     notes: task.notes,
     important: task.priority === 'important',
     reminderAt: task.reminderAt && Date.parse(task.reminderAt) > Date.now() ? task.reminderAt : null,
     mode,
-  });
+  };
+  const failed = await sendThought(to, thought);
   const reached = to.filter((p) => !failed.includes(p));
   if (failed.length) toast(st('send_failed', { who: names(failed) }));
   if (!reached.length) return;
+  // Kept, whole, until each of them confirms it arrived.
+  keepSent(
+    reached.map((p) => ({
+      ref: thought.ref,
+      to: { id: p.id, name: p.name },
+      thought: { title: thought.title, notes: thought.notes, important: thought.important, reminderAt: thought.reminderAt, space: task.space },
+      mode,
+      sentAt: new Date().toISOString(),
+    })),
+  );
   haptic('success');
   if (mode === 'transfer') {
     const undo = ws().transact(() => ws().remove([task.id]));
@@ -149,6 +163,33 @@ export async function send(task: Task, to: Person[], mode: 'copy' | 'transfer'):
   } else {
     toast(st('sent_to', { who: names(reached) }));
   }
+}
+
+/** Send again something not yet picked up. The recipient takes it in only once. */
+export async function resend(entry: Sent): Promise<void> {
+  const person = personOf(entry.to.id);
+  if (!person) {
+    toast(st('resend_gone'));
+    return;
+  }
+  const { title, notes, important, reminderAt } = entry.thought;
+  const failed = await sendThought([person], { v: 1, ref: entry.ref, title, notes, important, reminderAt, mode: entry.mode });
+  toast(failed.length ? st('send_failed', { who: names([person]) }) : st('sent_to', { who: names([person]) }));
+}
+
+/** Put a thought not yet picked up back in the list, and stop waiting for it. */
+export function restore(entry: Sent): void {
+  const { title, notes, important, reminderAt, space } = entry.thought;
+  ws().addTask({
+    title,
+    notes,
+    space: space ?? 'business',
+    priority: important ? 'important' : 'normal',
+    reminderAt: reminderAt && Date.parse(reminderAt) > Date.now() ? reminderAt : null,
+  });
+  forget(entry);
+  haptic('success');
+  toast(st('restored'));
 }
 
 const names = (people: Person[]): string => people.map((p) => p.name || st('someone')).join(', ');

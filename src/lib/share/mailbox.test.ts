@@ -15,6 +15,7 @@ vi.mock('@capacitor/core', () => ({
       for (const id of ids) box.splice(box.findIndex((e) => e.id === id), 1);
     },
     subscribe: async () => undefined,
+    chime: async () => undefined,
   }),
 }));
 vi.mock('@/lib/native/platform', () => ({ isNative: () => true }));
@@ -31,10 +32,11 @@ async function phone(name: string) {
   const identity = await import('./identity');
   const people = await import('./people');
   const mailbox = await import('./mailbox');
+  const outbox = await import('./outbox');
   const me = await identity.identity();
   identity.setMyName(name);
   const card = { id: me.id, name, publicKey: me.keys.publicKey };
-  return { store, people, mailbox, card };
+  return { store, people, mailbox, outbox, card };
 }
 
 /** Switch to a phone made earlier: its storage and its modules as they were. */
@@ -46,39 +48,74 @@ const use = (p: Phone) =>
     removeItem: (k: string) => void p.store.delete(k),
   });
 
-const thought = { v: 1 as const, title: 'Call the notary', notes: '', important: true, reminderAt: null, mode: 'transfer' as const };
+const inboxOf = (p: Phone) => JSON.parse(p.store.get('hence.inbox')!);
+const person = (p: Phone) => ({ ...p.card, addedAt: '' });
+const thought = { v: 1 as const, ref: 'ref-1', title: 'Call the notary', notes: '', important: true, reminderAt: null, mode: 'transfer' as const };
 
 describe('sending a thought between two phones', () => {
   beforeEach(() => {
     box.length = 0;
   });
 
-  it('goes from Alice to Bob, once both have added each other, and leaves nothing in iCloud', async () => {
+  it('goes from Alice to Bob, once both have added each other, and leaves only a receipt', async () => {
     const alice = await phone('Alice');
     const bob = await phone('Bob');
 
     // Alice scans Bob's code and says hello.
     use(alice);
     alice.people.addPerson(bob.card);
-    await alice.mailbox.sayHello({ ...bob.card, addedAt: '' });
+    await alice.mailbox.sayHello(person(bob));
 
     // Bob collects: a contact request, which he accepts.
     use(bob);
     expect(await bob.mailbox.collect()).toBe(1);
-    const [request] = JSON.parse(bob.store.get('hence.inbox')!).requests;
+    const [request] = inboxOf(bob).requests;
     expect(request.card).toEqual(alice.card);
     bob.people.addPerson(request.card);
     expect(box).toHaveLength(0);
 
     // Alice sends a thought; Bob receives it whole.
     use(alice);
-    expect(await alice.mailbox.sendThought([{ ...bob.card, addedAt: '' }], thought)).toEqual([]);
+    expect(await alice.mailbox.sendThought([person(bob)], thought)).toEqual([]);
     use(bob);
     expect(await bob.mailbox.collect()).toBe(1);
-    const inbox = JSON.parse(bob.store.get('hence.inbox')!);
-    expect(inbox.thoughts[0].thought).toEqual(thought);
-    expect(inbox.thoughts[0].from).toBe(alice.card.id);
+    expect(inboxOf(bob).thoughts[0].thought).toEqual(thought);
+    expect(inboxOf(bob).thoughts[0].from).toBe(alice.card.id);
+    // The thought is gone from iCloud; only Bob's receipt to Alice is there.
+    expect(box.map((e) => [e.kind, e.to])).toEqual([['ack', alice.card.id]]);
+  });
+
+  it('keeps what Alice sent until Bob’s receipt arrives, and takes a resend in only once', async () => {
+    const alice = await phone('Alice');
+    const bob = await phone('Bob');
+    use(bob);
+    bob.people.addPerson(alice.card);
+    use(alice);
+    alice.people.addPerson(bob.card);
+
+    alice.outbox.keepSent([
+      { ref: thought.ref, to: { id: bob.card.id, name: 'Bob' }, thought: { ...thought }, mode: 'transfer', sentAt: '' },
+    ]);
+    await alice.mailbox.sendThought([person(bob)], thought);
+    await alice.mailbox.sendThought([person(bob)], thought); // resent, before Bob looked
+
+    use(bob);
+    expect(await bob.mailbox.collect()).toBe(1);
+    expect(inboxOf(bob).thoughts).toHaveLength(1);
+
+    use(alice);
+    expect(alice.outbox.waitingFor()).toHaveLength(1);
+    await alice.mailbox.collect();
+    expect(alice.outbox.waitingFor()).toHaveLength(0);
     expect(box).toHaveLength(0);
+  });
+
+  it('leaves in iCloud what it cannot read, instead of deleting it', async () => {
+    const bob = await phone('Bob');
+    box.push({ id: 'future', to: bob.card.id, kind: 'something-newer', from: 'x'.repeat(22), data: '{}', sentAt: new Date().toISOString() });
+    use(bob);
+    expect(await bob.mailbox.collect()).toBe(0);
+    expect(box.map((e) => e.id)).toEqual(['future']);
   });
 
   it('turns a thought from someone removed into a request, with the thought waiting behind it', async () => {
@@ -88,13 +125,11 @@ describe('sending a thought between two phones', () => {
     alice.people.addPerson(bob.card);
 
     // Bob had removed Alice; she does not know, and sends.
-    await alice.mailbox.sendThought([{ ...bob.card, addedAt: '' }], thought);
+    await alice.mailbox.sendThought([person(bob)], thought);
     use(bob);
     expect(await bob.mailbox.collect()).toBe(1);
-    const inbox = JSON.parse(bob.store.get('hence.inbox')!);
-    expect(inbox.requests.map((r: { card: { name: string } }) => r.card.name)).toEqual(['Alice']);
-    expect(inbox.thoughts[0].from).toBe(alice.card.id);
-    expect(box).toHaveLength(0);
+    expect(inboxOf(bob).requests.map((r: { card: { name: string } }) => r.card.name)).toEqual(['Alice']);
+    expect(inboxOf(bob).thoughts[0].from).toBe(alice.card.id);
   });
 
   it('opens nothing from a blocked sender, nor from a stranger posing as a contact', async () => {
@@ -103,25 +138,23 @@ describe('sending a thought between two phones', () => {
     const bob = await phone('Bob');
 
     use(alice);
-    await alice.mailbox.sendThought([{ ...bob.card, addedAt: '' }], thought);
+    await alice.mailbox.sendThought([person(bob)], thought);
     // Mallory claims to be Alice, with her own key.
     use(mallory);
-    await mallory.mailbox.sendThought([{ ...bob.card, addedAt: '' }], { ...thought, title: 'Wire the money' });
+    await mallory.mailbox.sendThought([person(bob)], { ...thought, ref: 'ref-2', title: 'Wire the money' });
     box[1].from = alice.card.id;
 
     use(bob);
     bob.people.addPerson(alice.card);
     expect(await bob.mailbox.collect()).toBe(1);
-    expect(JSON.parse(bob.store.get('hence.inbox')!).thoughts.map((t: { thought: { title: string } }) => t.thought.title)).toEqual([
-      'Call the notary',
-    ]);
+    expect(inboxOf(bob).thoughts.map((t: { thought: { title: string } }) => t.thought.title)).toEqual(['Call the notary']);
 
-    // Blocked: the next one is deleted unopened.
+    // Blocked: whatever comes from her is deleted unopened.
     bob.people.blockPerson(alice.card.id);
     use(alice);
-    await alice.mailbox.sendThought([{ ...bob.card, addedAt: '' }], thought);
+    await alice.mailbox.sendThought([person(bob)], { ...thought, ref: 'ref-3' });
     use(bob);
     expect(await bob.mailbox.collect()).toBe(0);
-    expect(box).toHaveLength(0);
+    expect(box.filter((e) => e.to === bob.card.id)).toHaveLength(0);
   });
 });
