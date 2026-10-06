@@ -24,6 +24,7 @@
 		9582B6982FE993A70072D4F6 /* AppearancePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6972FE993A50072D4F6 /* AppearancePlugin.swift */; };
 		9582B69A2FE993A70072D4F7 /* TextReaderPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6992FE993A50072D4F7 /* TextReaderPlugin.swift */; };
 		9582B69C2FE993A70072D4F8 /* ICloudPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B69B2FE993A50072D4F8 /* ICloudPlugin.swift */; };
+		9582B69F2FE993A70072D4FA /* ShareBoxPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B69E2FE993A50072D4FA /* ShareBoxPlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +46,7 @@
 		9582B6972FE993A50072D4F6 /* AppearancePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearancePlugin.swift; sourceTree = "<group>"; };
 		9582B6992FE993A50072D4F7 /* TextReaderPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextReaderPlugin.swift; sourceTree = "<group>"; };
 		9582B69B2FE993A50072D4F8 /* ICloudPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudPlugin.swift; sourceTree = "<group>"; };
+		9582B69E2FE993A50072D4FA /* ShareBoxPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareBoxPlugin.swift; sourceTree = "<group>"; };
 		9582B69D2FE993A50072D4F9 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
@@ -89,6 +91,7 @@
 				9582B6972FE993A50072D4F6 /* AppearancePlugin.swift */,
 				9582B6992FE993A50072D4F7 /* TextReaderPlugin.swift */,
 				9582B69B2FE993A50072D4F8 /* ICloudPlugin.swift */,
+				9582B69E2FE993A50072D4FA /* ShareBoxPlugin.swift */,
 				9582B69D2FE993A50072D4F9 /* App.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
@@ -194,6 +197,7 @@
 				9582B6982FE993A70072D4F6 /* AppearancePlugin.swift in Sources */,
 				9582B69A2FE993A70072D4F7 /* TextReaderPlugin.swift in Sources */,
 				9582B69C2FE993A70072D4F8 /* ICloudPlugin.swift in Sources */,
+				9582B69F2FE993A70072D4FA /* ShareBoxPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

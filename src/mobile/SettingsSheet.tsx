@@ -1,4 +1,7 @@
-import { ArrowUpRight, CalendarCheck, Cloud, Download, Moon, Sun, Upload } from 'lucide-react';
+import { ArrowUpRight, CalendarCheck, ChevronRight, Cloud, Download, Moon, Sun, Upload, Users } from 'lucide-react';
+import { usePeopleBook } from '@/lib/share/people';
+import { PeopleSheet } from './PeopleSheet';
+import { st } from './shareI18n';
 import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '@/store/workspace';
 import { backUp, restore } from './backup';
@@ -408,6 +411,29 @@ function RaceSection() {
   );
 }
 
+/** The people thoughts can be sent to: a door to their own sheet. */
+function PeopleSection({ onOpen }: { onOpen: () => void }) {
+  const book = usePeopleBook();
+  if (!isNative()) return null;
+  const n = Object.keys(book.people).length;
+  return (
+    <>
+      <p className="mt-7 px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{st('people_title')}</p>
+      <div className="border-t border-b border-line">
+        <button
+          onClick={onOpen}
+          className="flex h-[58px] w-full items-center gap-4 px-6 text-start text-[17px] text-ink transition-colors active:bg-wash-strong"
+        >
+          <Users className="size-[20px] shrink-0 text-accent" strokeWidth={1.9} />
+          <span className="flex-1">{st('people_title')}</span>
+          {n > 0 && <span className="text-[14px] text-ink-4 tabular-nums">{n}</span>}
+          <ChevronRight className="size-[18px] shrink-0 text-ink-4 rtl:rotate-180" strokeWidth={1.8} />
+        </button>
+      </div>
+    </>
+  );
+}
+
 /**
  * Settings.
  *
@@ -417,9 +443,12 @@ function RaceSection() {
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const lang = useLang();
   const theme = useTheme();
+  const [peopleOpen, setPeopleOpen] = useState(false);
 
   return (
-    <Sheet open={open} onClose={onClose} label={t('settings')} title={t('settings')}>
+    <>
+    <PeopleSheet open={open && peopleOpen} onClose={() => setPeopleOpen(false)} />
+    <Sheet open={open && !peopleOpen} onClose={onClose} label={t('settings')} title={t('settings')}>
       <p className="px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('appearance')}</p>
 
       {/* Two halves of one control, so the choice reads at a glance rather
@@ -488,6 +517,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
 
       <AiSection />
 
+      <PeopleSection onOpen={() => setPeopleOpen(true)} />
+
       {calendarConfigured() && <CalendarSection />}
 
       <RaceSection />
@@ -496,5 +527,6 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
 
       <AboutSection />
     </Sheet>
+    </>
   );
 }

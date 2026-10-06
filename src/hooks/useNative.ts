@@ -3,6 +3,7 @@ import { initNative } from '@/lib/native/bridge';
 import { initNotifications, syncReminders } from '@/lib/native/notifications';
 import { readUnreadPhotos, sweepPhotos } from '@/lib/native/photos';
 import { initICloud } from '@/mobile/icloud';
+import { addFromText, initSharing } from '@/mobile/sharing';
 import { isNative } from '@/lib/native/platform';
 import { hashToRoute } from '@/store/ui';
 import { ui } from '@/store/ui';
@@ -27,6 +28,8 @@ export function useNative(): void {
       },
       // hence://task/<id> or https://…/#/task/<id>
       (url) => {
+        // hence://add#1.… — someone's code, scanned by the Camera or sent in a message.
+        if (addFromText(url)) return;
         const hash = url.includes('#') ? url.slice(url.indexOf('#')) : `#/${url.split('://')[1] ?? ''}`;
         const { route, taskId } = hashToRoute(hash);
         ui().navigate(route);
@@ -49,5 +52,7 @@ export function useNative(): void {
     // A copy in the person's own iCloud: brought back after a reinstall,
     // kept up to date after that.
     void initICloud();
+    // Thoughts sent by people, collected from iCloud.
+    void initSharing();
   }, [ready]);
 }

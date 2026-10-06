@@ -84,7 +84,27 @@ export async function photoUrl(name: string): Promise<string | null> {
   }
 }
 
-const TextReader = registerPlugin<{ read(options: { name: string }): Promise<{ text: string }> }>('TextReader');
+const TextReader = registerPlugin<{
+  read(options: { name: string }): Promise<{ text: string }>;
+  readCode(options: { name: string }): Promise<{ codes: string[] }>;
+}>('TextReader');
+
+/**
+ * Photograph a QR code and read it — how someone's Hence code is scanned.
+ * The photograph is deleted at once: it was only ever a way to read the
+ * code. Null when the camera was closed; an empty list when no code was seen.
+ */
+export async function scanCode(): Promise<string[] | null> {
+  const name = await capturePhoto();
+  if (!name) return null;
+  try {
+    return (await TextReader.readCode({ name })).codes;
+  } catch {
+    return [];
+  } finally {
+    await Filesystem.deleteFile({ path: `${FOLDER}/${name}`, directory: Directory.Data }).catch(() => {});
+  }
+}
 
 /**
  * The words in a photograph, read on the phone — a whiteboard, a business
