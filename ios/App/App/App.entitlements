@@ -15,11 +15,6 @@
 		     deleted once collected. -->
 		<string>CloudKit</string>
 	</array>
-	<!-- ONE-OFF BUILD: point CloudKit at Development, so the inbox subscription
-	     is created there once and can be deployed to Production (Production
-	     refuses a subscription shape it has never seen). Remove right after. -->
-	<key>com.apple.developer.icloud-container-environment</key>
-	<string>Development</string>
 	<!-- iCloud's notice that a thought has arrived. -->
 	<key>aps-environment</key>
 	<string>production</string>
