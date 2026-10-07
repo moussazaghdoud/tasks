@@ -25,7 +25,7 @@ export interface Team {
   members: string[];
 }
 
-interface Book {
+export interface Book {
   people: Record<string, Person>;
   teams: Team[];
   /** Nothing from these is opened or shown. */
@@ -105,6 +105,33 @@ export function saveTeam(team: { id?: string; name: string; members: string[] })
 
 export function removeTeam(id: string): void {
   commit({ ...book, teams: book.teams.filter((t) => t.id !== id) });
+}
+
+/** The whole book, as kept in the iCloud copy. */
+export const exportBook = (): Book => book;
+
+/**
+ * Bring back a book from the iCloud copy, after a reinstall or on a new
+ * iPhone: adding to what is here, never removing — someone added on this
+ * phone since stays, and so does a block.
+ */
+export function restoreBook(saved: Partial<Book> | undefined): number {
+  if (!saved) return 0;
+  const people = { ...(saved.people ?? {}), ...book.people };
+  const teams = [...book.teams, ...(saved.teams ?? []).filter((t) => !book.teams.some((mine) => mine.id === t.id))];
+  const blocked = [...new Set([...book.blocked, ...(saved.blocked ?? [])])];
+  for (const id of blocked) delete people[id];
+  const added = Object.keys(people).length - Object.keys(book.people).length;
+  if (added > 0 || teams.length !== book.teams.length || blocked.length !== book.blocked.length) {
+    commit({ people, teams, blocked });
+  }
+  return Math.max(0, added);
+}
+
+/** Be told when the book changes — for the iCloud copy. */
+export function onBookChange(run: () => void): () => void {
+  listeners.add(run);
+  return () => listeners.delete(run);
 }
 
 /** Re-render when people, teams or blocks change. */

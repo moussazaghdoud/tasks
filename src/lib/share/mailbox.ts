@@ -1,9 +1,9 @@
-import { registerPlugin } from '@capacitor/core';
 import { useSyncExternalStore } from 'react';
 import { isNative } from '@/lib/native/platform';
 import type { Card } from './card';
 import { openAnonymous, openFrom, sealAnonymous, sealFor } from './crypto';
 import { identity } from './identity';
+import { ShareBox, type Envelope, type NoticeStatus } from './native';
 import { delivered } from './outbox';
 import { addPerson, isBlocked, personOf, type Person } from './people';
 
@@ -28,33 +28,7 @@ import { addPerson, isBlocked, personOf, type Person } from './people';
  * only cleared after a month. Only blocked senders' envelopes go unopened.
  */
 
-interface ShareBoxPlugin {
-  available(): Promise<{ available: boolean }>;
-  post(options: { to: string; kind: string; from: string; data: string }): Promise<void>;
-  fetch(options: { to: string }): Promise<{ envelopes: Envelope[] }>;
-  remove(options: { ids: string[] }): Promise<void>;
-  subscribe(options: { to: string; alert: string }): Promise<void>;
-  chime(): Promise<void>;
-  status(options: { to: string }): Promise<NoticeStatus>;
-}
-
-interface Envelope {
-  id: string;
-  kind: string;
-  from: string;
-  data: string;
-  sentAt: string;
-}
-
-/** Each link a notice of arrival depends on. */
-export interface NoticeStatus {
-  permission: string;
-  registered: boolean;
-  subscribed: boolean;
-  error: string;
-}
-
-const ShareBox = registerPlugin<ShareBoxPlugin>('ShareBox');
+export type { NoticeStatus } from './native';
 
 /** What travels in a `note` envelope. */
 export interface SharedThought {

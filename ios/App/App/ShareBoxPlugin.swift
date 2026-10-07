@@ -28,8 +28,60 @@ public class ShareBoxPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "remove", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "subscribe", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "chime", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "status", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "status", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "keepIdentity", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "readIdentity", returnType: CAPPluginReturnPromise)
     ]
+
+    // MARK: - The identity, in the iCloud Keychain
+
+    /*
+     Who this Hence is to the people it shares with — its identifier, name and
+     private key — kept where iOS keeps passwords: encrypted, still there
+     after the app is deleted, and carried to a new iPhone by iCloud Keychain.
+     Without it, a reinstall would be a stranger to everyone in People.
+     */
+
+    private static let keychainQuery: [String: Any] = [
+        kSecClass as String: kSecClassGenericPassword,
+        kSecAttrService as String: "com.moussazaghdoud.hence.share",
+        kSecAttrAccount as String: "identity",
+        kSecAttrSynchronizable as String: kCFBooleanTrue as Any
+    ]
+
+    @objc func keepIdentity(_ call: CAPPluginCall) {
+        guard let value = call.getString("value"), let data = value.data(using: .utf8) else {
+            call.reject("Nothing to keep", "bad_request")
+            return
+        }
+        let query = Self.keychainQuery
+        let update: [String: Any] = [kSecValueData as String: data]
+        var status = SecItemUpdate(query as CFDictionary, update as CFDictionary)
+        if status == errSecItemNotFound {
+            var add = query
+            add[kSecValueData as String] = data
+            add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+            status = SecItemAdd(add as CFDictionary, nil)
+        }
+        if status == errSecSuccess {
+            call.resolve()
+        } else {
+            call.reject("Keychain refused (\(status))", "failed")
+        }
+    }
+
+    @objc func readIdentity(_ call: CAPPluginCall) {
+        var query = Self.keychainQuery
+        query[kSecReturnData as String] = kCFBooleanTrue
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var found: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &found)
+        if status == errSecSuccess, let data = found as? Data, let value = String(data: data, encoding: .utf8) {
+            call.resolve(["value": value])
+        } else {
+            call.resolve([:])
+        }
+    }
 
     /// The three links a notice of arrival depends on, each checked: whether
     /// notifications are allowed, whether the iPhone is registered for push,

@@ -16,6 +16,9 @@ vi.mock('@capacitor/core', () => ({
     },
     subscribe: async () => undefined,
     chime: async () => undefined,
+    // Each simulated phone starts with an empty Keychain.
+    keepIdentity: async () => undefined,
+    readIdentity: async () => ({}),
   }),
 }));
 vi.mock('@/lib/native/platform', () => ({ isNative: () => true }));

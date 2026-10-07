@@ -55,6 +55,15 @@ export function delivered(ref: string, by: string): void {
 
 export const forget = (entry: Sent): void => delivered(entry.ref, entry.to.id);
 
+/** Back from the iCloud copy: what was still waiting, added to what is here. */
+export const restoreSent = (saved: Sent[] | undefined): void => keepSent(Array.isArray(saved) ? saved : []);
+
+/** Be told when the waiting list changes — for the iCloud copy. */
+export function onOutboxChange(run: () => void): () => void {
+  listeners.add(run);
+  return () => listeners.delete(run);
+}
+
 export function useOutbox(): Sent[] {
   return useSyncExternalStore(
     (on) => {
