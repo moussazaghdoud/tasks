@@ -1,4 +1,5 @@
 import AudioToolbox
+import BackgroundTasks
 import Capacitor
 import CloudKit
 import UIKit
@@ -49,6 +50,82 @@ public class ShareBoxPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
             }
         }
+    }
+
+    // MARK: - Looking in the mailbox while the app is closed
+
+    /*
+     iCloud's own notice of arrival (the subscription above) is refused in
+     Production until its kind has once been created from a Development build.
+     Until then — and as a second chance after — iOS is asked to wake the app
+     now and then: it looks in the mailbox and, if something new is there,
+     says so with a local notification. iOS decides when; typically every
+     15 to 30 minutes for an app in regular use, less often otherwise.
+     */
+
+    static let taskID = "com.moussazaghdoud.hence.inbox"
+    private static let inboxKey = "hence.share.inbox"
+    private static let alertKey = "hence.share.alert"
+    private static let announcedKey = "hence.share.announced"
+
+    /// Called once from the app delegate, before launch ends.
+    static func registerInboxCheck() {
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: ShareBoxPlugin.taskID, using: nil) { task in
+            guard let refresh = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            ShareBoxPlugin.scheduleInboxCheck()
+            let check = Task { await ShareBoxPlugin.lookInInbox() }
+            refresh.expirationHandler = { check.cancel() }
+            Task {
+                _ = await check.value
+                refresh.setTaskCompleted(success: true)
+            }
+        }
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main
+        ) { _ in ShareBoxPlugin.scheduleInboxCheck() }
+    }
+
+    /// Ask iOS for the next look. A newer request replaces the waiting one.
+    static func scheduleInboxCheck() {
+        guard UserDefaults.standard.string(forKey: inboxKey) != nil else { return }
+        let request = BGAppRefreshTaskRequest(identifier: taskID)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
+        try? BGTaskScheduler.shared.submit(request)
+    }
+
+    /// One look: announce envelopes not announced before. Nothing is opened
+    /// or deleted here — the app does that when it comes to the screen.
+    private static func lookInInbox() async {
+        let defaults = UserDefaults.standard
+        guard let to = defaults.string(forKey: inboxKey) else { return }
+        let container = CKContainer(identifier: "iCloud.com.moussazaghdoud.hence")
+        let query = CKQuery(recordType: "Envelope", predicate: NSPredicate(format: "to == %@", to))
+        guard let page = try? await container.publicCloudDatabase.records(
+            matching: query, desiredKeys: ["kind"], resultsLimit: 50
+        ) else { return }
+
+        var waiting: [String: String] = [:]
+        for (id, result) in page.matchResults {
+            if case .success(let record) = result {
+                waiting[id.recordName] = (record["kind"] as? String) ?? ""
+            }
+        }
+        let announced = Set(defaults.stringArray(forKey: announcedKey) ?? [])
+        // Receipts are bookkeeping, not news.
+        let fresh = waiting.filter { !announced.contains($0.key) && $0.value != "ack" }
+        // Only what is still waiting needs remembering: collected ones are gone.
+        defaults.set(Array(Set(waiting.keys).intersection(announced.union(fresh.keys))), forKey: announcedKey)
+        guard !fresh.isEmpty else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = "Hence"
+        content.body = defaults.string(forKey: alertKey) ?? "You received something on Hence"
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: "hence-inbox", content: content, trigger: nil)
+        try? await UNUserNotificationCenter.current().add(request)
     }
 
     private static func describe(_ status: UNAuthorizationStatus) -> String {
@@ -152,6 +229,10 @@ public class ShareBoxPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         let alert = call.getString("alert") ?? "You received a thought on Hence"
+        // Remembered for the background look, which runs with no web view.
+        UserDefaults.standard.set(to, forKey: Self.inboxKey)
+        UserDefaults.standard.set(alert, forKey: Self.alertKey)
+        Self.scheduleInboxCheck()
         let subscription = CKQuerySubscription(
             recordType: recordType,
             predicate: NSPredicate(format: "to == %@", to),

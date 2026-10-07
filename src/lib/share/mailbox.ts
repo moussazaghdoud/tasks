@@ -337,7 +337,9 @@ async function collectNow(): Promise<number> {
 export async function listenForMail(alert: string): Promise<void> {
   if (!isNative()) return;
   const me = await identity();
-  await ShareBox.subscribe({ to: me.id, alert }).catch((error) => setMailError(messageOf(error)));
+  // A refusal here is shown by the notice line in People, not as an error:
+  // the background look announces arrivals all the same.
+  await ShareBox.subscribe({ to: me.id, alert }).catch(() => undefined);
 }
 
 /** Where each link of the notice of arrival stands, for People to show. */

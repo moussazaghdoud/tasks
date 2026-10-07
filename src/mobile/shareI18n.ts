@@ -76,6 +76,7 @@ const EN = {
   notice_permission: 'Allowed',
   notice_push: 'Push',
   notice_icloud: 'iCloud',
+  notice_background: 'Hence checks for new thoughts in the background and notifies you — usually within 15 to 30 minutes.',
   open_settings: 'Open Settings',
   retry: 'Try again',
 };
@@ -153,6 +154,7 @@ const FR: Record<ShareKey, string> = {
   notice_permission: 'Autorisées',
   notice_push: 'Push',
   notice_icloud: 'iCloud',
+  notice_background: 'Hence vérifie en arrière-plan et vous prévient — en général dans les 15 à 30 minutes.',
   open_settings: 'Ouvrir Réglages',
   retry: 'Réessayer',
 };
@@ -228,6 +230,7 @@ const IT: Record<ShareKey, string> = {
   notice_permission: 'Consentite',
   notice_push: 'Push',
   notice_icloud: 'iCloud',
+  notice_background: 'Hence controlla in background e ti avvisa — di solito entro 15–30 minuti.',
   open_settings: 'Apri Impostazioni',
   retry: 'Riprova',
 };
@@ -303,6 +306,7 @@ const ES: Record<ShareKey, string> = {
   notice_permission: 'Permitidas',
   notice_push: 'Push',
   notice_icloud: 'iCloud',
+  notice_background: 'Hence comprueba en segundo plano y te avisa — normalmente en 15 a 30 minutos.',
   open_settings: 'Abrir Ajustes',
   retry: 'Reintentar',
 };
@@ -378,6 +382,7 @@ const DE: Record<ShareKey, string> = {
   notice_permission: 'Erlaubt',
   notice_push: 'Push',
   notice_icloud: 'iCloud',
+  notice_background: 'Hence prüft im Hintergrund und benachrichtigt dich — meist innerhalb von 15 bis 30 Minuten.',
   open_settings: 'Einstellungen öffnen',
   retry: 'Erneut versuchen',
 };
@@ -453,6 +458,7 @@ const ZH: Record<ShareKey, string> = {
   notice_permission: '已允许',
   notice_push: '推送',
   notice_icloud: 'iCloud',
+  notice_background: 'Hence 会在后台检查并通知你——通常在 15 到 30 分钟内。',
   open_settings: '打开设置',
   retry: '重试',
 };

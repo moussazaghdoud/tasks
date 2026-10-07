@@ -275,12 +275,14 @@ function NoticeLine() {
         <span className="text-ink-3">{st('notices_title')}</span>
         {mark(allowed, st('notice_permission'))}
         {mark(status.registered, st('notice_push'))}
-        {mark(status.subscribed, st('notice_icloud'))}
+        {status.subscribed && mark(true, st('notice_icloud'))}
       </p>
-      {!status.subscribed && status.error && (
-        <p className="pt-1 text-[12px] leading-[17px] break-words text-ink-4 select-text">{status.error}</p>
+      {/* Without iCloud's own notice, the background look still announces
+          arrivals — later rather than at once. */}
+      {allowed && !status.subscribed && (
+        <p className="pt-1 text-[12px] leading-[17px] text-ink-4">{st('notice_background')}</p>
       )}
-      {(!allowed || !status.subscribed || !status.registered) && (
+      {(!allowed || !status.registered) && (
         <div className="flex gap-2 pt-2">
           {!allowed && (
             <button onClick={() => void openAppSettings()} className={cn(PILL, 'text-accent')}>
