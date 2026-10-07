@@ -15,6 +15,7 @@ on:
           - beta # build, sign, upload to TestFlight
           - bootstrap # one-off: register the App ID and create the app record
           - check_auth # quick: is the App Store Connect key set up correctly?
+          - devbuild # development-signed .ipa against CloudKit Development
       changelog:
         description: What testers should know about this build
         required: false
@@ -24,7 +25,8 @@ on:
         required: false
         default: ''
   push:
-    tags: ['v*']
+    # v1.2.3… → TestFlight; dev-… → the development build (fastlane devbuild).
+    tags: ['v*', 'dev-*']
 
 concurrency:
   group: ios-release
@@ -43,7 +45,7 @@ jobs:
 
       - name: Check the required secrets are present
         env:
-          LANE: ${{ inputs.lane || 'beta' }}
+          LANE: ${{ inputs.lane || (startsWith(github.ref_name, 'dev-') && 'devbuild') || 'beta' }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
@@ -54,7 +56,7 @@ jobs:
           # check_auth only proves the key works: no team, no certificates needed.
           required="ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8"
           if [ "$LANE" != "check_auth" ]; then required="$required APPLE_TEAM_ID"; fi
-          if [ "$LANE" = "beta" ]; then required="$required MATCH_GIT_URL MATCH_PASSWORD"; fi
+          if [ "$LANE" = "beta" ] || [ "$LANE" = "devbuild" ]; then required="$required MATCH_GIT_URL MATCH_PASSWORD"; fi
 
           # Report every secret, present or not, in the run summary — so a
           # missing one is obvious without digging through the log.
@@ -119,7 +121,7 @@ jobs:
         run: bundle exec fastlane ios "${LANE}"
         env:
           CI: true
-          LANE: ${{ inputs.lane || 'beta' }}
+          LANE: ${{ inputs.lane || (startsWith(github.ref_name, 'dev-') && 'devbuild') || 'beta' }}
           # App Store names are unique across all apps. If "Hence" is taken,
           # set an APP_NAME repository variable instead of editing this file.
           APP_NAME: ${{ vars.APP_NAME || 'Hence' }}

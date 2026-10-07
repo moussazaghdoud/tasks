@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Only for the development build (fastlane `devbuild`): the same as
+	     App.entitlements, pointed at CloudKit Development. Run once on a
+	     registered iPhone, it creates the inbox subscription there, so that
+	     deploying the schema lets Production accept it. -->
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.com.moussazaghdoud.hence</string>
+	</array>
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudDocuments</string>
+		<string>CloudKit</string>
+	</array>
+	<key>com.apple.developer.icloud-container-environment</key>
+	<string>Development</string>
+	<key>aps-environment</key>
+	<string>development</string>
+	<key>com.apple.developer.ubiquity-container-identifiers</key>
+	<array>
+		<string>iCloud.com.moussazaghdoud.hence</string>
+	</array>
+</dict>
+</plist>
