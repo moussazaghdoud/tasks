@@ -54,6 +54,20 @@ function local(transcript: string, notice?: string): AnalysisResult {
 let claudeUnavailable = false;
 
 /**
+ * Whether notes may be tidied by a third-party AI service at all.
+ *
+ * Off since 1.0: every note is read on the device, and nothing a person says
+ * or writes leaves it for an AI service. The phone's own analysis turned out
+ * good enough, and it settles App Review's questions on sharing data with a
+ * third-party AI (5.1.1(i), 5.1.2(i)) by not sharing any. The path stays —
+ * the server route, the consent sheet that names the company and lists what
+ * is sent — for an opt-in option later. Turning this on brings back the
+ * question in the capture bar and the switch in Settings, and the privacy
+ * policy and App Privacy label must say so again before it ships.
+ */
+export const AI_SERVICE_ENABLED = false;
+
+/**
  * Turn a memo into task drafts: Claude when configured (via the app's own
  * server route), otherwise on-device analysis. Never throws.
  */
@@ -71,7 +85,7 @@ export async function analyzeMemo(
 ): Promise<AnalysisResult> {
   const text = transcript.trim();
   if (!text) return { tasks: [], source: 'local' };
-  if (options.cloud === false) return local(text);
+  if (!AI_SERVICE_ENABLED || options.cloud === false) return local(text);
   if (claudeUnavailable) return local(text, 'On-device analysis: the server has no AI key set.');
   if (isNative() && !apiBase()) {
     claudeUnavailable = true;

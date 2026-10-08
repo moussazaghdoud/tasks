@@ -67,7 +67,7 @@ export const DE: Record<Key, string> = {
   wn_act_title: 'Tippe auf einen Gedanken, um zu handeln',
   wn_act_body: 'Erledigt, Erinnerung, E-Mail, Kalender, Teilen. Nach rechts wischen zum Abhaken, nach links zum Löschen.',
   wn_private_title: 'Es bleibt auf deinem iPhone',
-  wn_private_body: 'Kein Konto, keine Werbung, kein Tracking. Ohne deine Erlaubnis wird nichts an einen KI-Dienst gesendet.',
+  wn_private_body: 'Kein Konto, keine Werbung, kein Tracking. Deine Notizen werden auf deinem iPhone gelesen und bleiben dort — nichts geht an einen KI-Dienst.',
   wn_photo_text_title: 'Fotos, die du durchsuchen kannst',
   wn_photo_text_body: 'Hence liest die Wörter in deinen Fotos — ein Whiteboard, eine Visitenkarte — direkt auf deinem iPhone. Suche danach, um das Foto zu finden.',
   wn_newline_title: 'Sag „neue Zeile“',

@@ -67,7 +67,7 @@ export const IT: Record<Key, string> = {
   wn_act_title: 'Tocca un pensiero per agire',
   wn_act_body: 'Fatto, promemoria, e-mail, calendario, condividi. Scorri a destra per completarlo, a sinistra per eliminarlo.',
   wn_private_title: 'Resta sul tuo iPhone',
-  wn_private_body: 'Nessun account, nessuna pubblicità, nessun tracciamento. Nulla viene inviato a un servizio di IA senza il tuo consenso.',
+  wn_private_body: 'Nessun account, nessuna pubblicità, nessun tracciamento. Le tue note sono lette sul tuo iPhone e restano lì — nulla va a un servizio di IA.',
   wn_photo_text_title: 'Foto che puoi cercare',
   wn_photo_text_body: 'Hence legge le parole nelle tue foto — una lavagna, un biglietto da visita — sul tuo iPhone. Cercale per ritrovare la foto.',
   wn_newline_title: 'Di’ «a capo»',

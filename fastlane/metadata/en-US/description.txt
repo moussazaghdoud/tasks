@@ -18,6 +18,6 @@ SPEAK THE WAY YOU SPEAK
 Hence understands English, French and Simplified Chinese, and can listen in all of them at once and keep whichever reads right. The interface comes in the same three languages.
 
 PRIVATE BY DEFAULT
-No account to create. No advertising, no tracking, no analytics. Your thoughts are kept on your iPhone, with a copy in your own iCloud so a new phone finds them — we never see them. If you choose, the text of a voice note — never the audio — can be sent to an AI model to tidy it into one clean line; Hence asks before the first one, and you can turn it off at any time in Settings.
+No account to create. No advertising, no tracking, no analytics. Your thoughts are kept on your iPhone, with a copy in your own iCloud so a new phone finds them — we never see them. What you say is turned into a clear line on your iPhone itself: nothing is sent to an AI service.
 
 Dark and light, designed for one hand.

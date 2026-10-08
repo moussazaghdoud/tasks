@@ -18,6 +18,6 @@ PARLEZ COMME VOUS PARLEZ
 Hence comprend le français, l’anglais et le chinois simplifié, peut écouter les trois à la fois et garder celle qui se lit le mieux. L’interface existe dans les trois mêmes langues.
 
 PRIVÉ PAR DÉFAUT
-Aucun compte à créer. Pas de publicité, pas de pistage, pas de statistiques. Vos pensées restent sur votre iPhone, avec une copie dans votre propre iCloud pour qu’un nouveau téléphone les retrouve — nous ne les voyons jamais. Si vous le souhaitez, le texte d’une note vocale — jamais l’audio — peut être envoyé à un modèle d’IA pour en faire une ligne nette ; Hence vous le demande avant la première fois, et vous pouvez le désactiver à tout moment dans les Réglages.
+Aucun compte à créer. Pas de publicité, pas de pistage, pas de statistiques. Vos pensées restent sur votre iPhone, avec une copie dans votre propre iCloud pour qu’un nouveau téléphone les retrouve — nous ne les voyons jamais. Ce que vous dites devient une ligne claire sur votre iPhone même : rien n’est envoyé à un service d’IA.
 
 Sombre ou clair, pensé pour une seule main.

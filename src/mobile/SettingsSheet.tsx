@@ -12,6 +12,7 @@ import { apiBase, isNative } from '@/lib/native/platform';
 import { readVersion, WEB_VERSION } from '@/lib/version';
 import { describe, useLastRace } from '@/lib/voice/lastRace';
 import { setAiConsent, useAiConsent } from './aiConsent';
+import { AI_SERVICE_ENABLED } from '@/lib/voice/analyze';
 import { LANGUAGES, localeOf, setLang, t, useLang } from './i18n';
 import { toast } from '@/store/toast';
 import {
@@ -491,7 +492,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
 
       <p className="px-6 pt-3 text-[12.5px] leading-[18px] text-ink-3">{t('language_note')}</p>
 
-      <AiSection />
+      {/* No AI service in this version: nothing to switch on or off. */}
+      {AI_SERVICE_ENABLED && <AiSection />}
 
       {calendarConfigured() && <CalendarSection />}
 

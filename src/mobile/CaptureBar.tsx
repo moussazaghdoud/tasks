@@ -5,7 +5,7 @@ import { haptic } from '@/lib/native/bridge';
 import { markFresh } from '@/lib/fresh';
 import { cameraAvailable, cameraBlocked, capturePhoto, keepPhotoText, photoUrl, readPhotoText } from '@/lib/native/photos';
 import { explainBlocked } from './permissions';
-import { analyzeMemo } from '@/lib/voice/analyze';
+import { AI_SERVICE_ENABLED, analyzeMemo } from '@/lib/voice/analyze';
 import { createFromDrafts, findTaskByTitle, type ConfirmedDraft } from '@/lib/voice/createFromDrafts';
 import { startLevelMeter, startSpeech, type SpeechErrorCode, type SpeechSession } from '@/lib/voice/speech';
 import { withLineBreaks } from '@/lib/voice/spokenCommands';
@@ -108,13 +108,15 @@ export function CaptureBar() {
       // Which service the server uses right now: it can change while the app
       // sits in the background, and a yes to one is not a yes to the other.
       // A second at most; offline, the last known one stands.
-      if (said) await Promise.race([refreshProvider(), new Promise((r) => setTimeout(r, 1500))]);
+      // With the AI service off (AI_SERVICE_ENABLED), none of this runs: no
+      // question, no call, the note is read on the phone.
+      if (said && AI_SERVICE_ENABLED) await Promise.race([refreshProvider(), new Promise((r) => setTimeout(r, 1500))]);
 
       // Nothing leaves the phone for the AI service without a yes. Asked once,
       // here, where the question means something; the answer is remembered.
       // A photograph with no words has nothing to send, so it asks nothing.
-      let cloud = said ? aiConsent() === 'granted' : false;
-      if (said && aiConsent() === 'unset') {
+      let cloud = said && AI_SERVICE_ENABLED ? aiConsent() === 'granted' : false;
+      if (said && AI_SERVICE_ENABLED && aiConsent() === 'unset') {
         cloud = await new Promise<boolean>((resolve) => setConsentAnswer(() => resolve));
         setConsentAnswer(null);
       }

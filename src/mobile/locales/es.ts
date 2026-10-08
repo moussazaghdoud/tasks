@@ -67,7 +67,7 @@ export const ES: Record<Key, string> = {
   wn_act_title: 'Toca una idea para actuar',
   wn_act_body: 'Hecho, recordatorio, correo, calendario, compartir. Desliza a la derecha para terminarla, a la izquierda para borrarla.',
   wn_private_title: 'Se queda en tu iPhone',
-  wn_private_body: 'Sin cuenta, sin anuncios, sin rastreo. No se envía nada a un servicio de IA sin tu permiso.',
+  wn_private_body: 'Sin cuenta, sin anuncios, sin rastreo. Tus notas se leen en tu iPhone y se quedan ahí — nada va a un servicio de IA.',
   wn_photo_text_title: 'Fotos que puedes buscar',
   wn_photo_text_body: 'Hence lee las palabras de tus fotos — una pizarra, una tarjeta de visita — en tu iPhone. Búscalas para encontrar la foto.',
   wn_newline_title: 'Di «nueva línea»',

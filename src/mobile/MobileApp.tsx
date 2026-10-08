@@ -31,6 +31,7 @@ import {
 } from './calendar';
 import { applyLook, useLook } from './look';
 import { refreshProvider } from './aiProvider';
+import { AI_SERVICE_ENABLED } from '@/lib/voice/analyze';
 import { applyTheme, useTheme } from './theme';
 import { SpaceTabs, visibleTabs } from './SpaceTabs';
 import { ThoughtRow } from './ThoughtRow';
@@ -68,6 +69,8 @@ export function MobileApp() {
     void refreshAccounts();
     // Which AI service the server uses, so it is named before anything is
     // sent — at launch, and each time the app comes back to the screen.
+    // With no AI service in this version, the server is not asked at all.
+    if (!AI_SERVICE_ENABLED) return;
     void refreshProvider();
     const onVisible = () => {
       if (document.visibilityState === 'visible') void refreshProvider();
