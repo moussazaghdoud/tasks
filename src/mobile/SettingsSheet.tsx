@@ -155,6 +155,11 @@ function CalendarSection() {
 function AiSection() {
   const on = useAiConsent() === 'granted';
   const provider = useAiProvider();
+  // Named here too: the switch says to whom notes go, not "an LLM".
+  const named = {
+    name: provider === 'gemini' ? 'Gemini' : 'Claude',
+    who: t(provider === 'gemini' ? 'ai_who_gemini' : 'ai_who_claude'),
+  };
   return (
     <>
       <p className="mt-7 px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('ai_section')}</p>
@@ -168,7 +173,7 @@ function AiSection() {
           }}
           className="flex h-[58px] w-full items-center gap-4 px-6 text-start transition-colors active:bg-wash-strong"
         >
-          <span className="flex-1 text-[17px] text-ink">{t('ai_toggle')}</span>
+          <span className="flex-1 text-[17px] text-ink">{t('ai_toggle', named)}</span>
           {/* Drawn like the system switch, so it reads as one without a label. */}
           <span
             aria-hidden
@@ -187,7 +192,7 @@ function AiSection() {
         </button>
       </div>
       <p className="px-6 pt-3 text-[12.5px] leading-[18px] text-ink-3">
-        {t('ai_setting_note')} {t('ai_provider_now', { who: t(provider === 'gemini' ? 'ai_who_gemini' : 'ai_who_claude') })}
+        {t('ai_setting_note', named)}
       </p>
     </>
   );

@@ -1,4 +1,5 @@
-import { Sparkles } from 'lucide-react';
+import { ArrowUpRight, Sparkles } from 'lucide-react';
+import { apiBase, isNative } from '@/lib/native/platform';
 import { useAiProvider } from './aiProvider';
 import { t } from './i18n';
 import { Sheet } from './Sheet';
@@ -10,6 +11,11 @@ import { Sheet } from './Sheet';
  * point is a real choice, not a speed bump in front of "Allow". Declining
  * still captures the note; it is simply read on the device instead, the same
  * as when there is no connection.
+ *
+ * App Review (5.1.1(i), 5.1.2(i)) asks three things of it, and it says all
+ * three in so many words: WHAT is sent — every item, listed; WHO receives it
+ * — the company, named; and it ASKS before anything is sent. The privacy
+ * policy is one tap away.
  */
 export function AiConsentSheet({
   open,
@@ -21,7 +27,14 @@ export function AiConsentSheet({
 }) {
   // Named, always: the question is only an answer if it says who is asking.
   const provider = useAiProvider();
-  const named = { name: provider === 'gemini' ? 'Gemini' : 'Claude', who: t(provider === 'gemini' ? 'ai_who_gemini' : 'ai_who_claude') };
+  const gemini = provider === 'gemini';
+  const named = {
+    name: gemini ? 'Gemini' : 'Claude',
+    who: t(gemini ? 'ai_who_gemini' : 'ai_who_claude'),
+    company: t(gemini ? 'ai_company_gemini' : 'ai_company_claude'),
+  };
+  const policy = `${isNative() ? apiBase() : ''}/privacy`;
+
   return (
     // Dismissing without choosing counts as "not this time": the note is
     // kept on the device and the question comes back next time.
@@ -32,11 +45,24 @@ export function AiConsentSheet({
         </span>
         <h2 className="mt-4 text-[21px] leading-7 font-semibold tracking-[-0.02em] text-ink">{t('ai_title', named)}</h2>
         <p className="mt-2.5 text-[15px] leading-[22px] text-ink-2">{t('ai_body', named)}</p>
-        <p className="mt-2.5 text-[13px] leading-[19px] text-ink-3">{t('ai_detail')}</p>
+        <ul className="mt-2 list-disc space-y-1 ps-5 text-[15px] leading-[22px] text-ink-2">
+          <li>{t('ai_sends_note')}</li>
+          <li>{t('ai_sends_context')}</li>
+        </ul>
+        <p className="mt-2.5 text-[13px] leading-[19px] text-ink-3">{t('ai_detail', named)}</p>
+        <a
+          href={policy}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-flex items-center gap-1 text-[13px] font-medium text-accent"
+        >
+          {t('ai_policy')}
+          <ArrowUpRight className="size-3.5" strokeWidth={2} />
+        </a>
 
         <button
           onClick={() => onChoose(true)}
-          className="mt-6 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-on-accent transition-transform active:scale-[0.985]"
+          className="mt-5 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-on-accent transition-transform active:scale-[0.985]"
         >
           {t('ai_allow')}
         </button>
