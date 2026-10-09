@@ -14,7 +14,9 @@ import { isNative } from '@/lib/native/platform';
  * never leaves the phone.
  */
 
-export const ARTS = ['dawn', 'lagoon', 'dusk', 'meadow', 'mist', 'aurora', 'dunes', 'night'] as const;
+// Dawn, Lagoon, Mist and Night were tried and left out; a choice of one of
+// them falls back to no background.
+export const ARTS = ['dusk', 'meadow', 'aurora', 'dunes'] as const;
 export type Art = (typeof ARTS)[number];
 
 /**

@@ -292,19 +292,20 @@ function BackdropPicker() {
       <button role="radio" aria-checked={chosen.kind === 'none'} aria-label={t('backdrop_none')} onClick={() => choose({ kind: 'none' })} className={cn(tile(chosen.kind === 'none'), 'grid place-items-center bg-paper')}>
         <Ban className="size-5 text-ink-4" strokeWidth={1.8} />
       </button>
-      {ARTS.map((id, i) => {
-        const on = chosen.kind === 'art' && chosen.id === id;
-        return (
-          <button key={id} role="radio" aria-checked={on} aria-label={`${t('backdrop_section')} ${i + 1}`} onClick={() => choose({ kind: 'art', id })} className={tile(on)}>
-            <span className={`backdrop-art-${id} absolute inset-0`} />
-          </button>
-        );
-      })}
+      {/* Photographs first, then the app's own art. */}
       {PHOTOS.map((photo, i) => {
         const on = chosen.kind === 'photo' && chosen.id === photo.id;
         return (
-          <button key={photo.id} role="radio" aria-checked={on} aria-label={`${t('backdrop_section')} ${ARTS.length + i + 1}`} onClick={() => choose({ kind: 'photo', id: photo.id })} className={tile(on)}>
+          <button key={photo.id} role="radio" aria-checked={on} aria-label={`${t('backdrop_section')} ${i + 1}`} onClick={() => choose({ kind: 'photo', id: photo.id })} className={tile(on)}>
             <img src={photo.src} alt="" className="absolute inset-0 size-full object-cover" />
+          </button>
+        );
+      })}
+      {ARTS.map((id, i) => {
+        const on = chosen.kind === 'art' && chosen.id === id;
+        return (
+          <button key={id} role="radio" aria-checked={on} aria-label={`${t('backdrop_section')} ${PHOTOS.length + i + 1}`} onClick={() => choose({ kind: 'art', id })} className={tile(on)}>
+            <span className={`backdrop-art-${id} absolute inset-0`} />
           </button>
         );
       })}
