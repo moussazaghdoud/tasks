@@ -28,6 +28,7 @@ export const PHOTOS: Array<{ id: string; src: string }> = [
   { id: 'meadow', src: '/backdrops/meadow.jpg' },
   { id: 'lake-tree', src: '/backdrops/lake-tree.jpg' },
   { id: 'bare-tree', src: '/backdrops/bare-tree.jpg' },
+  { id: 'mountain-lake', src: '/backdrops/mountain-lake.jpg' },
 ];
 
 export type Backdrop = { kind: 'none' } | { kind: 'art'; id: Art } | { kind: 'photo'; id: string } | { kind: 'mine'; version: number };

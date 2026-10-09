@@ -8,3 +8,4 @@ river.jpg      Matthew Smith   https://unsplash.com/photos/rFBA42UFpLs
 meadow.jpg     Artem Gorbachev https://unsplash.com/photos/_abj5YZ8Zvc
 lake-tree.jpg  Geoff Byron     https://unsplash.com/photos/v8P5icMYclo
 bare-tree.jpg  Brent Pace      https://unsplash.com/photos/uwygv1OmM-c
+mountain-lake.jpg  Ken Cheung  https://unsplash.com/photos/KonWFWUaAuk
