@@ -26,6 +26,7 @@ export const PHOTOS: Array<{ id: string; src: string }> = [
   { id: 'mountains', src: '/backdrops/mountains.jpg' },
   { id: 'river', src: '/backdrops/river.jpg' },
   { id: 'meadow', src: '/backdrops/meadow.jpg' },
+  { id: 'lake-tree', src: '/backdrops/lake-tree.jpg' },
 ];
 
 export type Backdrop = { kind: 'none' } | { kind: 'art'; id: Art } | { kind: 'photo'; id: string } | { kind: 'mine'; version: number };
