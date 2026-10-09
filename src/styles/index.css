@@ -327,9 +327,9 @@
     var(--color-day-5),
     var(--color-accent)
   );
-  scale: calc(1 + var(--level) * 0.5);
-  box-shadow: 0 0 calc(10px + var(--level) * 34px) calc(var(--level) * 6px) color-mix(in srgb, var(--color-accent) 55%, transparent);
-  animation: orb-turn 5s linear infinite;
+  scale: calc(0.92 + var(--level) * 0.7);
+  box-shadow: 0 0 calc(10px + var(--level) * 40px) calc(var(--level) * 8px) color-mix(in srgb, var(--color-accent) 60%, transparent);
+  animation: orb-turn 3s linear infinite;
   transition:
     scale 90ms ease-out,
     box-shadow 120ms ease-out;
@@ -346,12 +346,13 @@
   position: relative;
 }
 .voice-orb-ring {
-  border: 2px solid var(--color-accent);
-  opacity: calc(0.15 + var(--level) * 0.6);
-  animation: orb-ripple 1.8s ease-out infinite;
+  border: calc(2px + var(--level) * 2px) solid var(--color-tomorrow);
+  opacity: calc(0.25 + var(--level) * 0.75);
+  animation: orb-ripple 1.4s ease-out infinite;
 }
 .voice-orb-ring-late {
-  animation-delay: 0.9s;
+  border-color: var(--color-accent);
+  animation-delay: 0.7s;
 }
 @keyframes orb-turn {
   to {
@@ -363,7 +364,7 @@
     transform: scale(1);
   }
   to {
-    transform: scale(1.9);
+    transform: scale(2.2);
     opacity: 0;
   }
 }

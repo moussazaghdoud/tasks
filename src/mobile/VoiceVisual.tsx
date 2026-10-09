@@ -17,7 +17,13 @@ import { understand } from './understood';
  */
 
 type Level = { level: number };
-const levelStyle = (level: number) => ({ '--level': Math.min(1, Math.max(0, level)).toFixed(3) }) as React.CSSProperties;
+/**
+ * The microphone reports ordinary speech as roughly 0.15–0.5. A square root
+ * lifts the quiet end, so a soft voice already moves things and a raised one
+ * fills the range — linear, the orb barely stirred.
+ */
+const levelStyle = (level: number) =>
+  ({ '--level': Math.min(1, Math.sqrt(Math.max(0, level)) * 1.3).toFixed(3) }) as React.CSSProperties;
 
 /** Soft colour drifting behind the sheet, brighter as the voice rises. */
 export function Aurora({ level }: Level) {
