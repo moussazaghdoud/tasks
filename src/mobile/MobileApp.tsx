@@ -31,6 +31,7 @@ import {
 } from './calendar';
 import { applyLook, useLook } from './look';
 import { refreshProvider } from './aiProvider';
+import { BackdropLayer } from './BackdropLayer';
 import { AI_SERVICE_ENABLED } from '@/lib/voice/analyze';
 import { applyTheme, useTheme } from './theme';
 import { SpaceTabs, visibleTabs } from './SpaceTabs';
@@ -153,7 +154,10 @@ export function MobileApp() {
   const searching = query !== null;
 
   return (
-    <div className="flex h-dvh flex-col bg-paper font-display">
+    // app-root steps aside (transparent) when a background is chosen; isolate
+    // keeps that background above the page and below everything else.
+    <div className="app-root relative isolate flex h-dvh flex-col bg-paper font-display">
+      <BackdropLayer />
       <header className="sticky top-0 z-30 shrink-0 bg-paper/88 pt-safe backdrop-blur-xl">
         <div className="flex min-h-[74px] items-center gap-2 px-[22px] pt-2 pb-3">
           {searching ? (

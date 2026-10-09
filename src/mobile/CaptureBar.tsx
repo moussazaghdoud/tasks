@@ -1,6 +1,5 @@
 import { Camera, Keyboard, LoaderCircle, Mic, ScanText, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
 import { markFresh } from '@/lib/fresh';
 import { cameraAvailable, cameraBlocked, capturePhoto, keepPhotoText, photoUrl, readPhotoText } from '@/lib/native/photos';
@@ -21,7 +20,7 @@ import { dayTimeIn, speechLocale, speechLocales, t } from './i18n';
 import { currentSpace, spaceOf } from './space';
 import { setReminder } from './thoughtActions';
 import { Sheet } from './Sheet';
-import { Waveform } from './Waveform';
+import { Aurora, LiveTranscript, VoiceOrb } from './VoiceVisual';
 
 /** Stop on a long pause, so putting the phone down still captures the thought. */
 const SILENCE_MS = 3200;
@@ -402,8 +401,10 @@ export function CaptureBar() {
 
       <div className="fixed inset-x-0 bottom-0 z-50">
         {busy ? (
-          <div className="animate-sheet-up rounded-t-[28px] border-t border-line bg-raised px-5 pt-5 pb-[max(18px,env(safe-area-inset-bottom))] shadow-float">
-            <div className="flex items-start justify-between">
+          <div className="relative animate-sheet-up overflow-hidden rounded-t-[28px] border-t border-line bg-raised px-5 pt-5 pb-[max(18px,env(safe-area-inset-bottom))] shadow-float">
+            {/* Colour that breathes with the voice, behind everything else. */}
+            {phase === 'listening' && <Aurora level={level} />}
+            <div className="relative z-10 flex items-start justify-between">
               <p className="pt-1 text-[11px] font-semibold tracking-[0.16em] text-accent uppercase">
                 {phase === 'listening' ? t('listening') : t('thinking')}
               </p>
@@ -432,7 +433,7 @@ export function CaptureBar() {
             {/* The photograph, while you say what it is. Small: it is the
                 thing you are talking about, not the thing you are reading. */}
             {photoSrc && (
-              <div className="mt-3">
+              <div className="relative z-10 mt-3">
                 <div className="relative overflow-hidden rounded-[18px] border border-line">
                   <img src={photoSrc} alt={t('photo_attached')} className="max-h-[26dvh] w-full object-cover" />
                   {/* While its words are read: a line passing over it, the
@@ -457,26 +458,18 @@ export function CaptureBar() {
               </div>
             )}
 
-            <div ref={scroller} className="mt-3 max-h-[34dvh] min-h-[76px] overflow-y-auto">
-              <p
-                className={cn(
-                  'text-[22px] leading-[31px] tracking-[-0.01em]',
-                  transcript ? 'text-ink' : 'text-ink-4',
-                  phase === 'thinking' && 'text-ink-3',
-                )}
-              >
-                {transcript || t('say_something')}
-              </p>
+            <div ref={scroller} className="relative z-10 mt-3 max-h-[34dvh] min-h-[76px] overflow-y-auto">
+              <LiveTranscript text={transcript} placeholder={t('say_something')} muted={phase === 'thinking'} />
             </div>
 
-            <div className="mt-4 mb-1">
-              {phase === 'listening' ? <Waveform level={level} /> : <ThinkingLine />}
+            <div className="relative z-10 mt-2 mb-1">
+              {phase === 'listening' ? <VoiceOrb level={level} /> : <ThinkingLine />}
             </div>
 
             {phase === 'listening' && (
               <button
                 onClick={finish}
-                className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-on-accent transition-transform active:scale-[0.985]"
+                className="relative z-10 mt-2 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-on-accent transition-transform active:scale-[0.985]"
               >
                 {t('done')}
               </button>

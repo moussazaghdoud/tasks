@@ -1,5 +1,18 @@
 import { App } from '@capacitor/app';
-import { Bell, CalendarCheck, CornerDownLeft, Languages, Lock, Mic, Palette, ScanText, Trash2, type LucideIcon } from 'lucide-react';
+import {
+  Bell,
+  CalendarCheck,
+  CornerDownLeft,
+  Image as ImageIcon,
+  Languages,
+  Lock,
+  Mic,
+  Palette,
+  ScanText,
+  Sparkles,
+  Trash2,
+  type LucideIcon,
+} from 'lucide-react';
 import { isNative } from '@/lib/native/platform';
 import { ws } from '@/store/workspace';
 import type { Key } from './i18n';
@@ -22,6 +35,8 @@ const RELEASES: Array<{ version: string; notes: Note[] }> = [
   {
     version: '1.0.1',
     notes: [
+      { icon: Sparkles, title: 'wn_voice_title', body: 'wn_voice_body' },
+      { icon: ImageIcon, title: 'wn_backdrop_title', body: 'wn_backdrop_body' },
       { icon: Languages, title: 'wn_lang_title', body: 'wn_lang_body' },
       { icon: Palette, title: 'wn_look_title', body: 'wn_look_body' },
       { icon: ScanText, title: 'wn_photo_text_title', body: 'wn_photo_text_body' },
@@ -73,7 +88,7 @@ export function announcementFor(current: string, seen: string | null, hasThought
   ).flatMap((r) => r.notes);
   // Someone arriving from before this sheet existed hears about this version only.
   const trimmed = seen ? notes : (RELEASES.find((r) => r.version === current)?.notes ?? []);
-  return trimmed.length ? { kind: 'update', version: current, notes: trimmed.slice(0, 8) } : null;
+  return trimmed.length ? { kind: 'update', version: current, notes: trimmed.slice(0, 9) } : null;
 }
 
 /** What this launch should say, if anything. Only in the iPhone app. */

@@ -39,6 +39,25 @@ const ENTER_FR = /(?<![’'\p{L}])(?<!\b(?:une|en|les|des|son|sa|mon|ma|ton|ta|v
 const MARK = '\u0000';
 
 /**
+ * Where each spoken "new line" sits in what was said, as [start, end) ranges
+ * in that same text — so the words can be shown understood while they are
+ * still being spoken. The same patterns as withLineBreaks, so what lights up
+ * is exactly what will become a line break.
+ */
+export function lineBreakSpans(said: string): Array<[number, number]> {
+  const spans: Array<[number, number]> = [];
+  for (const re of [...ALWAYS, ENTER_EN, ENTER_FR]) {
+    for (const m of said.matchAll(new RegExp(re.source, re.flags))) {
+      if (m.index === undefined || !m[0].trim()) continue;
+      // The ENTER patterns take the space around the word with them.
+      const lead = m[0].length - m[0].trimStart().length;
+      spans.push([m.index + lead, m.index + lead + m[0].trim().length]);
+    }
+  }
+  return spans.sort((a, b) => a[0] - b[0]);
+}
+
+/**
  * What was said, with each spoken "new line" turned into a real one. Lines
  * left empty — a command said twice, or at either end — are dropped.
  */

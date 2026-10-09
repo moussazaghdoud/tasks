@@ -534,6 +534,27 @@ function tidy(text: string): string {
 }
 
 /**
+ * Where the spoken reminder sits in what was said — "remind me tomorrow at
+ * nine" — as a [start, end) range in that same text, so it can light up while
+ * it is being said. Null when there is no reminder extractReminder would
+ * schedule, or when the words had to be rewritten as digits to read it (the
+ * range would no longer line up with what is on screen; the moment itself is
+ * still shown beside the words).
+ */
+export function reminderSpan(transcript: string, now: Date = new Date()): [number, number] | null {
+  if (!extractReminder(transcript, now).at) return null;
+  if (spokenNumbers(transcript) !== transcript) return null;
+  for (const trigger of TRIGGERS) {
+    const m = transcript.match(trigger);
+    if (!m || m.index === undefined) continue;
+    const end = m.index + m[0].length;
+    const attached = readClause(transcript.slice(end), now);
+    return [m.index, attached ? end + attached.length : end];
+  }
+  return null;
+}
+
+/**
  * Pull a spoken reminder out of a memo.
  *
  * Returns the moment asked for, and the memo without the asking. When there

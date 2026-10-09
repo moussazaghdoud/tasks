@@ -1,4 +1,5 @@
-import { ArrowUpRight, CalendarCheck, Cloud, Download, Moon, Sun, Upload } from 'lucide-react';
+import { ArrowUpRight, Ban, CalendarCheck, Cloud, Download, ImagePlus, Moon, Sun, Upload } from 'lucide-react';
+import { ARTS, myPhotoUrl, PHOTOS, pickMyPhoto, setBackdrop, useBackdrop, type Backdrop } from './backdrop';
 import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '@/store/workspace';
 import { backUp, restore } from './backup';
@@ -264,6 +265,74 @@ function LookPicker({ dark }: { dark: boolean }) {
 }
 
 /**
+ * A picture behind the list, chosen the way a style is: none, the app's own
+ * art, the photographs it ships with, or one of the person's own.
+ */
+function BackdropPicker() {
+  const chosen = useBackdrop();
+  const [mine, setMine] = useState<string | null>(null);
+  const version = chosen.kind === 'mine' ? chosen.version : 0;
+  useEffect(() => {
+    let live = true;
+    void myPhotoUrl().then((url) => live && setMine(url ? `${url}?v=${version}` : null));
+    return () => {
+      live = false;
+    };
+  }, [version]);
+
+  const tile = (on: boolean) =>
+    cn('relative block h-[104px] w-[64px] shrink-0 overflow-hidden rounded-[16px] border-2', on ? 'border-accent' : 'border-line');
+  const choose = (next: Backdrop) => {
+    haptic('light');
+    setBackdrop(next);
+  };
+
+  return (
+    <div className="mb-5 flex gap-3 overflow-x-auto px-6 pb-1" role="radiogroup" aria-label={t('backdrop_section')}>
+      <button role="radio" aria-checked={chosen.kind === 'none'} aria-label={t('backdrop_none')} onClick={() => choose({ kind: 'none' })} className={cn(tile(chosen.kind === 'none'), 'grid place-items-center bg-paper')}>
+        <Ban className="size-5 text-ink-4" strokeWidth={1.8} />
+      </button>
+      {ARTS.map((id, i) => {
+        const on = chosen.kind === 'art' && chosen.id === id;
+        return (
+          <button key={id} role="radio" aria-checked={on} aria-label={`${t('backdrop_section')} ${i + 1}`} onClick={() => choose({ kind: 'art', id })} className={tile(on)}>
+            <span className={`backdrop-art-${id} absolute inset-0`} />
+          </button>
+        );
+      })}
+      {PHOTOS.map((photo, i) => {
+        const on = chosen.kind === 'photo' && chosen.id === photo.id;
+        return (
+          <button key={photo.id} role="radio" aria-checked={on} aria-label={`${t('backdrop_section')} ${ARTS.length + i + 1}`} onClick={() => choose({ kind: 'photo', id: photo.id })} className={tile(on)}>
+            <img src={photo.src} alt="" className="absolute inset-0 size-full object-cover" />
+          </button>
+        );
+      })}
+      {isNative() && (
+        // Their own: tapping always opens the picker, so it can be changed;
+        // once there is one, it shows in the tile.
+        <button
+          role="radio"
+          aria-checked={chosen.kind === 'mine'}
+          aria-label={t('backdrop_mine')}
+          onClick={() => void pickMyPhoto().then((ok) => ok && haptic('success'))}
+          className={cn(tile(chosen.kind === 'mine'), 'grid place-items-center bg-sunk')}
+        >
+          {mine ? (
+            <img src={mine} alt="" className="absolute inset-0 size-full object-cover" />
+          ) : (
+            <span className="flex flex-col items-center gap-1 px-1 text-center text-[10.5px] leading-[13px] text-ink-3">
+              <ImagePlus className="size-5 text-accent" strokeWidth={1.8} />
+              {t('backdrop_mine')}
+            </span>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
  * Thoughts live only on this iPhone and leave with the app when it is
  * deleted. A backup is the file that brings them back.
  */
@@ -456,6 +525,9 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
 
       <p className="px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('look_section')}</p>
       <LookPicker dark={theme === 'dark'} />
+
+      <p className="px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('backdrop_section')}</p>
+      <BackdropPicker />
 
       <p className="px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('language')}</p>
 
