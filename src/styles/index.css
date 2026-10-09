@@ -263,9 +263,13 @@
   width: 70%;
   aspect-ratio: 1;
   border-radius: 50%;
-  filter: blur(46px);
-  opacity: calc(0.16 + var(--level) * 0.38);
-  transition: opacity 160ms ease-out;
+  filter: blur(26px);
+  opacity: calc(0.32 + var(--level) * 0.55);
+  /* Swells with the voice; the drift animations move it on top of that. */
+  transform: scale(calc(0.9 + var(--level) * 0.45));
+  transition:
+    opacity 140ms ease-out,
+    transform 140ms ease-out;
 }
 .voice-aurora span:nth-child(1) {
   background: var(--color-accent);
@@ -309,7 +313,14 @@
   position: relative;
   display: grid;
   place-items: center;
-  height: 76px;
+  height: 96px;
+}
+/* The waves run the full width behind the orb. */
+.voice-waves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 .voice-orb,
 .voice-orb-ring {
