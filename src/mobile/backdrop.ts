@@ -17,8 +17,16 @@ import { isNative } from '@/lib/native/platform';
 export const ARTS = ['dawn', 'lagoon', 'dusk', 'meadow', 'mist', 'aurora', 'dunes', 'night'] as const;
 export type Art = (typeof ARTS)[number];
 
-/** Photographs that ship with the app, under public/backdrops/. */
-export const PHOTOS: Array<{ id: string; src: string }> = [];
+/**
+ * Photographs that ship with the app, under public/backdrops/: free under
+ * the Unsplash License (no Unsplash+ images, which need a subscription),
+ * cropped to the screen. Credits in public/backdrops/CREDITS.txt.
+ */
+export const PHOTOS: Array<{ id: string; src: string }> = [
+  { id: 'mountains', src: '/backdrops/mountains.jpg' },
+  { id: 'river', src: '/backdrops/river.jpg' },
+  { id: 'meadow', src: '/backdrops/meadow.jpg' },
+];
 
 export type Backdrop = { kind: 'none' } | { kind: 'art'; id: Art } | { kind: 'photo'; id: string } | { kind: 'mine'; version: number };
 

@@ -1,0 +1,8 @@
+Background photographs shipped with Hence. Each is free under the Unsplash
+License (https://unsplash.com/license): free to use, including commercially,
+without permission; credit is not required but given here with thanks.
+Cropped to 1080x1920 and compressed.
+
+mountains.jpg  Ivana Cajina    https://unsplash.com/photos/HDd-NQ_AMNQ
+river.jpg      Matthew Smith   https://unsplash.com/photos/rFBA42UFpLs
+meadow.jpg     Artem Gorbachev https://unsplash.com/photos/_abj5YZ8Zvc
