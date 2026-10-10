@@ -3,7 +3,19 @@ import { useEffect, useState } from 'react';
 import { haptic } from '@/lib/native/bridge';
 import { apiBase, isNative } from '@/lib/native/platform';
 import { closePro, FREE_OPEN_LIMIT, useProSheet, type ProReason } from '@/lib/pro/limits';
-import { buy, loadOffers, PRODUCTS, redeemCode, restorePurchases, usePro, type Offer, type Period } from '@/lib/pro/store';
+import {
+  buy,
+  isTester,
+  loadOffers,
+  PRODUCTS,
+  redeemCode,
+  restorePurchases,
+  setTryFree,
+  triesFree,
+  usePro,
+  type Offer,
+  type Period,
+} from '@/lib/pro/store';
 import { cn } from '@/lib/platform';
 import { toast } from '@/store/toast';
 import { Sheet } from './Sheet';
@@ -45,6 +57,7 @@ export function ProSheet() {
   const [offers, setOffers] = useState<Offer[] | null>(null);
   const [chosen, setChosen] = useState<string>(PRODUCTS.yearly);
   const [busy, setBusy] = useState(false);
+  const [tryingFree, setTryingFree] = useState(triesFree());
 
   useEffect(() => {
     if (!open || offers?.length) return;
@@ -94,6 +107,26 @@ export function ProSheet() {
         </span>
         <h2 className="mt-4 text-[26px] leading-8 font-bold tracking-[-0.03em] text-ink">{pt('pro_title')}</h2>
         <p className="mt-1 text-[15px] text-ink-3">{pt('pro_tagline')}</p>
+
+        {/* TestFlight only: Pro is given to testers; this shows them what free sees. */}
+        {isTester() && (
+          <label className="mt-4 flex items-center gap-3 rounded-[14px] border border-dashed border-line-strong px-4 py-3">
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14px] font-semibold text-ink">{pt('try_free')}</span>
+              <span className="block text-[12.5px] leading-[17px] text-ink-3">{pt('tester_note')}</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={tryingFree}
+              onChange={(e) => {
+                setTryFree(e.target.checked);
+                setTryingFree(e.target.checked);
+                haptic('light');
+              }}
+              className="size-6 shrink-0 accent-[var(--color-accent)]"
+            />
+          </label>
+        )}
 
         {pro ? (
           <div className="mt-5">

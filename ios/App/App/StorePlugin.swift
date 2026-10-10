@@ -24,8 +24,26 @@ public class StorePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "purchase", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "entitlements", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "restore", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "redeem", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "redeem", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "environment", returnType: CAPPluginReturnPromise)
     ]
+
+    /// Where this copy of the app came from: "testflight" (and development
+    /// builds), or "appstore". Testers get Pro without buying it.
+    @objc func environment(_ call: CAPPluginCall) {
+        Task {
+            if #available(iOS 16.0, *),
+               let result = try? await AppTransaction.shared,
+               case .verified(let transaction) = result {
+                call.resolve(["environment": transaction.environment == .production ? "appstore" : "testflight"])
+                return
+            }
+            // Before iOS 16, or when the App Store cannot say: TestFlight
+            // copies carry a sandbox receipt.
+            let sandbox = Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+            call.resolve(["environment": sandbox ? "testflight" : "appstore"])
+        }
+    }
 
     /// Apple's own sheet for an offer code made in App Store Connect — how
     /// Pro is given away. What it unlocks arrives through Transaction.updates.

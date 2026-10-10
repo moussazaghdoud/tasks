@@ -43,35 +43,54 @@ interface StorePlugin {
   entitlements(): Promise<{ active: string[] }>;
   restore(): Promise<{ active: string[] }>;
   redeem(): Promise<void>;
+  environment(): Promise<{ environment: 'testflight' | 'appstore' }>;
   addListener(event: 'entitlements', listener: (data: { active: string[] }) => void): Promise<{ remove: () => Promise<void> }>;
 }
 
 const Store = registerPlugin<StorePlugin>('Store');
 
 const KEY = 'hence.pro';
+/** A TestFlight copy: Pro without buying, so testers are never held back. */
+const TESTER_KEY = 'hence.pro.tester';
+/** A tester trying the free version on purpose. */
+const TRY_FREE_KEY = 'hence.pro.try-free';
 
-function remembered(): boolean {
-  if (!isNative()) return true;
+const read = (key: string): boolean => {
   try {
-    return localStorage.getItem(KEY) === '1';
+    return localStorage.getItem(key) === '1';
   } catch {
     return false;
   }
-}
-
-let pro = remembered();
-const listeners = new Set<() => void>();
-
-function settle(active: string[]): void {
-  const next = !isNative() || active.some((id) => ALL.includes(id));
+};
+const write = (key: string, on: boolean): void => {
   try {
-    localStorage.setItem(KEY, next ? '1' : '0');
+    localStorage.setItem(key, on ? '1' : '0');
   } catch {
     /* this session only */
   }
-  if (next === pro) return;
+};
+
+/** Bought, as StoreKit last said. */
+let owned = !isNative() || read(KEY);
+let tester = isNative() && read(TESTER_KEY);
+let tryFree = read(TRY_FREE_KEY);
+let pro = owned || (tester && !tryFree);
+const listeners = new Set<() => void>();
+
+function recompute(): void {
+  const next = owned || (tester && !tryFree);
+  if (next === pro) {
+    listeners.forEach((l) => l());
+    return;
+  }
   pro = next;
   listeners.forEach((l) => l());
+}
+
+function settle(active: string[]): void {
+  owned = !isNative() || active.some((id) => ALL.includes(id));
+  write(KEY, owned);
+  recompute();
 }
 
 export const isPro = (): boolean => pro;
@@ -86,9 +105,28 @@ export const usePro = (): boolean =>
     () => true,
   );
 
-/** At launch: ask StoreKit what is owned, and keep listening. */
+/** Whether this is a TestFlight copy, where Pro is given. */
+export const isTester = (): boolean => tester;
+export const triesFree = (): boolean => tryFree;
+
+/** A tester switching to the free version and back, to see what free sees. */
+export function setTryFree(on: boolean): void {
+  tryFree = on;
+  write(TRY_FREE_KEY, on);
+  recompute();
+}
+
+/** At launch: where the app came from, what is owned, and keep listening. */
 export async function initStore(): Promise<void> {
   if (!isNative()) return;
+  try {
+    const { environment } = await Store.environment();
+    tester = environment === 'testflight';
+    write(TESTER_KEY, tester);
+    recompute();
+  } catch {
+    /* the remembered answer stands */
+  }
   try {
     await Store.addListener('entitlements', ({ active }) => settle(active));
     settle((await Store.entitlements()).active);
@@ -141,7 +179,8 @@ export async function redeemCode(): Promise<boolean> {
 export async function restorePurchases(): Promise<boolean | null> {
   try {
     settle((await Store.restore()).active);
-    return pro;
+    // A purchase found, not the Pro testers are given.
+    return owned;
   } catch {
     return null;
   }
