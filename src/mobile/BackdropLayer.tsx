@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { applyBackdrop, myPhotoUrl, PHOTOS, useBackdrop } from './backdrop';
+import { usePro } from '@/lib/pro/store';
+import { applyBackdrop, myPhotoUrl, PHOTOS, useBackdrop, type Backdrop } from './backdrop';
 
 /**
  * The chosen background, behind everything: fixed to the screen while the
@@ -7,7 +8,9 @@ import { applyBackdrop, myPhotoUrl, PHOTOS, useBackdrop } from './backdrop';
  * stay as easy to read as on plain paper.
  */
 export function BackdropLayer() {
-  const chosen = useBackdrop();
+  const picked = useBackdrop();
+  // Backgrounds are Pro: if Pro ends, the choice is kept but not shown.
+  const chosen: Backdrop = usePro() ? picked : { kind: 'none' };
   const [mine, setMine] = useState<string | null>(null);
 
   useEffect(() => {

@@ -26,6 +26,8 @@ import { identity, setMyName, useMyName } from '@/lib/share/identity';
 import { noticeStatus, useMailError, type NoticeStatus } from '@/lib/share/mailbox';
 import { people as listPeople, removeTeam, renamePerson, saveTeam, usePeopleBook, type Person, type Team } from '@/lib/share/people';
 import { cn } from '@/lib/platform';
+import { openPro } from '@/lib/pro/limits';
+import { isPro } from '@/lib/pro/store';
 import { toast } from '@/store/toast';
 import { Sheet } from './Sheet';
 import { dayTimeIn, t } from './i18n';
@@ -233,7 +235,7 @@ export function PeopleSheet({ open, onClose }: { open: boolean; onClose: () => v
             {editing && !editing.id ? (
               <TeamEditor team={editing} people={everyone} onDone={() => setEditing(null)} />
             ) : (
-              <button onClick={() => setEditing({ name: '', members: [] })} className={ROW}>
+              <button onClick={() => (isPro() ? setEditing({ name: '', members: [] }) : openPro('team'))} className={ROW}>
                 <Plus className="size-[20px] shrink-0 text-accent" strokeWidth={1.9} />
                 <span className="flex-1">{st('team_new')}</span>
               </button>

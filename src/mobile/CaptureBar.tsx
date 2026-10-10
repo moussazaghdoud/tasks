@@ -21,6 +21,8 @@ import { currentSpace, spaceOf } from './space';
 import { setReminder } from './thoughtActions';
 import { Sheet } from './Sheet';
 import { Aurora, LiveTranscript, VoiceOrb } from './VoiceVisual';
+import { mayCapture, openCount, openPro } from '@/lib/pro/limits';
+import { isPro } from '@/lib/pro/store';
 
 /** Stop on a long pause, so putting the phone down still captures the thought. */
 const SILENCE_MS = 3200;
@@ -252,6 +254,9 @@ export function CaptureBar() {
 
   const start = useCallback(() => {
     if (phase !== 'idle') return;
+    // Free holds thirty open thoughts. Asked here, before a word is said —
+    // never part-way through, where it would cost the thought.
+    if (!captureAllowed()) return;
     haptic('medium');
     heard.current = '';
     heardIn.current = null;
@@ -333,6 +338,7 @@ export function CaptureBar() {
    */
   const photograph = useCallback(async () => {
     if (phase !== 'idle') return;
+    if (!captureAllowed()) return;
     haptic('light');
     // Refused before: the camera would not open, and nothing would happen.
     if (await cameraBlocked()) {
@@ -521,7 +527,7 @@ export function CaptureBar() {
               <Mic className="size-7" strokeWidth={2} />
             </button>
             <button
-              onClick={() => setTyping(true)}
+              onClick={() => captureAllowed() && setTyping(true)}
               aria-label={t('type_placeholder')}
               className="grid size-12 place-items-center rounded-full text-ink-3 transition-colors active:bg-wash-strong"
             >
@@ -552,6 +558,17 @@ export function CaptureBar() {
       />
     </>
   );
+}
+
+/**
+ * Whether a new capture may begin: always on Pro, and below thirty open
+ * thoughts on free. When it may not, Hence Pro is offered, saying why.
+ */
+function captureAllowed(): boolean {
+  if (mayCapture(isPro(), openCount(ws().tasks))) return true;
+  haptic('light');
+  openPro('limit');
+  return false;
 }
 
 function ThinkingLine() {

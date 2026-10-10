@@ -1,6 +1,9 @@
-import { ArrowUpRight, Ban, CalendarCheck, ChevronRight, Cloud, Download, ImagePlus, Moon, Sun, Upload, Users } from 'lucide-react';
+import { ArrowUpRight, Ban, CalendarCheck, ChevronRight, Cloud, Download, ImagePlus, Moon, Sparkles, Sun, Upload, Users } from 'lucide-react';
 import { usePeopleBook } from '@/lib/share/people';
 import { ARTS, myPhotoUrl, PHOTOS, pickMyPhoto, setBackdrop, useBackdrop, type Backdrop } from './backdrop';
+import { FREE_OPEN_LIMIT, openCount, openPro } from '@/lib/pro/limits';
+import { usePro } from '@/lib/pro/store';
+import { pt } from './proI18n';
 import { PeopleSheet } from './PeopleSheet';
 import { st } from './shareI18n';
 import { useEffect, useRef, useState } from 'react';
@@ -268,6 +271,33 @@ function LookPicker({ dark }: { dark: boolean }) {
 }
 
 /**
+ * Hence Pro, first in Settings: what free leaves (open thoughts used) and
+ * the door to Pro, or that Pro is on. Only in the iPhone app.
+ */
+function ProRow() {
+  const pro = usePro();
+  const open = useWorkspace((s) => openCount(s.tasks));
+  if (!isNative()) return null;
+  return (
+    <button
+      onClick={() => openPro('settings')}
+      className="mx-6 mb-6 flex w-[calc(100%-3rem)] items-center gap-3 rounded-[18px] border border-accent/25 bg-accent-soft px-4 py-3.5 text-start active:opacity-80"
+    >
+      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-on-accent">
+        <Sparkles className="size-5" strokeWidth={2} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[16px] font-semibold text-ink">{pt('pro_title')}</span>
+        <span className="block text-[13px] text-ink-3">
+          {pro ? pt('row_active') : pt('open_count', { n: Math.min(open, FREE_OPEN_LIMIT), max: FREE_OPEN_LIMIT })}
+        </span>
+      </span>
+      {!pro && <span className="shrink-0 text-[14px] font-semibold text-accent">{pt('row_upgrade')}</span>}
+    </button>
+  );
+}
+
+/**
  * A picture behind the list, chosen the way a style is: none, the app's own
  * art, the photographs it ships with, or one of the person's own.
  */
@@ -285,8 +315,14 @@ function BackdropPicker() {
 
   const tile = (on: boolean) =>
     cn('relative block h-[104px] w-[64px] shrink-0 overflow-hidden rounded-[16px] border-2', on ? 'border-accent' : 'border-line');
+  const pro = usePro();
+  // Backgrounds are Pro; "none" is always there.
   const choose = (next: Backdrop) => {
     haptic('light');
+    if (next.kind !== 'none' && !pro) {
+      openPro('backdrop');
+      return;
+    }
     setBackdrop(next);
   };
 
@@ -319,7 +355,7 @@ function BackdropPicker() {
           role="radio"
           aria-checked={chosen.kind === 'mine'}
           aria-label={t('backdrop_mine')}
-          onClick={() => void pickMyPhoto().then((ok) => ok && haptic('success'))}
+          onClick={() => (pro ? void pickMyPhoto().then((ok) => ok && haptic('success')) : openPro('backdrop'))}
           className={cn(tile(chosen.kind === 'mine'), 'grid place-items-center bg-sunk')}
         >
           {mine ? (
@@ -525,6 +561,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
     <>
     <PeopleSheet open={open && peopleOpen} onClose={() => setPeopleOpen(false)} />
     <Sheet open={open && !peopleOpen} onClose={onClose} label={t('settings')} title={t('settings')}>
+      <ProRow />
+
       <p className="px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('appearance')}</p>
 
       {/* Two halves of one control, so the choice reads at a glance rather

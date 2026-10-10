@@ -4,6 +4,8 @@ import type { Task } from '@/domain/types';
 import { identity, setMyName, useMyName } from '@/lib/share/identity';
 import { people as listPeople, usePeopleBook } from '@/lib/share/people';
 import { cn } from '@/lib/platform';
+import { maySend, openPro } from '@/lib/pro/limits';
+import { usePro } from '@/lib/pro/store';
 import { Sheet } from './Sheet';
 import { st } from './shareI18n';
 import { announceName, send } from './sharing';
@@ -21,11 +23,17 @@ export function SendSheet({ task, open, onClose }: { task: Task; open: boolean; 
     if (!open) setChosen([]);
   }, [open]);
 
-  const toggle = (ids: string[]) =>
-    setChosen((now) => {
-      const all = ids.every((id) => now.includes(id));
-      return all ? now.filter((id) => !ids.includes(id)) : [...new Set([...now, ...ids])];
-    });
+  const pro = usePro();
+  const toggle = (ids: string[], viaTeam = false) => {
+    const all = ids.every((id) => chosen.includes(id));
+    const next = all ? chosen.filter((id) => !ids.includes(id)) : [...new Set([...chosen, ...ids])];
+    // Free sends to one person at a time, and not to teams. Unticking is always allowed.
+    if (!all && !maySend(pro, next.length, viaTeam)) {
+      openPro(viaTeam ? 'team' : 'share');
+      return;
+    }
+    setChosen(next);
+  };
 
   // A thought from no one arrives as "Someone": a name comes first.
   const myName = useMyName();
@@ -83,7 +91,7 @@ export function SendSheet({ task, open, onClose }: { task: Task; open: boolean; 
               .map((team) => {
                 const ids = team.members.filter((id) => book.people[id]);
                 return (
-                  <button key={team.id} onClick={() => toggle(ids)} className={cn(row, 'border-b border-line')}>
+                  <button key={team.id} onClick={() => toggle(ids, true)} className={cn(row, 'border-b border-line')}>
                     {tick(ids.every((id) => chosen.includes(id)))}
                     <Users className="size-[19px] shrink-0 text-ink-3" strokeWidth={1.8} />
                     <span className="flex-1 truncate">{team.name}</span>

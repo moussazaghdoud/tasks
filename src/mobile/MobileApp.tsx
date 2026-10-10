@@ -35,6 +35,7 @@ import {
 import { applyLook, useLook } from './look';
 import { refreshProvider } from './aiProvider';
 import { BackdropLayer } from './BackdropLayer';
+import { ProSheet } from './ProSheet';
 import { AI_SERVICE_ENABLED } from '@/lib/voice/analyze';
 import { applyTheme, useTheme } from './theme';
 import { SpaceTabs, visibleTabs } from './SpaceTabs';
@@ -304,6 +305,8 @@ export function MobileApp() {
       <InboxSheet open={inboxOpen} onClose={closeInbox} />
       <PeopleSheet open={!!pendingCard && !settingsOpen} onClose={dropPending} />
       <WhatsNewSheet />
+      {/* Last, so it opens above whichever sheet offered it. */}
+      <ProSheet />
     </div>
   );
 }
