@@ -110,6 +110,11 @@ export interface Task {
    * Empty when it holds none; absent until it has been read.
    */
   photoText?: string;
+  /**
+   * Who sent this thought from their own Hence, as they were called when it
+   * was accepted. Absent on every thought captured here.
+   */
+  sharedBy?: { id: ID; name: string };
   subtasks: Subtask[];
   links: TaskLink[];
   tags: string[];

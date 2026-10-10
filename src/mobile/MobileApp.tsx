@@ -1,5 +1,5 @@
 import { Check, Mic, Search, Settings2, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Space, Task } from '@/domain/types';
 import { isOnDay, todayKey } from '@/lib/dates';
 import { cn } from '@/lib/platform';
@@ -16,6 +16,9 @@ import {
   useSpeechLang,
   type SpokenChoice,
 } from './i18n';
+import { InboxBanner, InboxSheet } from './InboxSheet';
+import { PeopleSheet } from './PeopleSheet';
+import { dropPending, usePendingCard } from './sharing';
 import { SettingsSheet } from './SettingsSheet';
 import { Sheet } from './Sheet';
 import { setView, spaceOf, useView } from './space';
@@ -63,6 +66,10 @@ export function MobileApp() {
   // Business is where a thought captured from there would land.
   const space: Space = view === 'agenda' ? 'business' : view;
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [inboxOpen, setInboxOpen] = useState(false);
+  const closeInbox = useCallback(() => setInboxOpen(false), []);
+  // Someone's link, opened before you chose a name: People asks for it.
+  const pendingCard = usePendingCard();
 
   // Ask the phone whether Outlook is connected as soon as the app opens.
   // The sign-in survives restarts in the Keychain; nothing used to ask.
@@ -219,6 +226,8 @@ export function MobileApp() {
       </header>
 
       <main className="app-main min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 pb-[184px]">
+        {/* Something someone sent, waiting for an answer. */}
+        {!searching && <InboxBanner onOpen={() => setInboxOpen(true)} />}
         {view === 'agenda' ? (
           <AgendaList />
         ) : open.length === 0 && doneToday.length === 0 ? (
@@ -292,6 +301,8 @@ export function MobileApp() {
       <CaptureBar />
       <ThoughtSheet taskId={openId} onClose={() => setOpenId(null)} />
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <InboxSheet open={inboxOpen} onClose={closeInbox} />
+      <PeopleSheet open={!!pendingCard && !settingsOpen} onClose={dropPending} />
       <WhatsNewSheet />
     </div>
   );

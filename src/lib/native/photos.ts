@@ -33,10 +33,10 @@ export const cameraAvailable = (): boolean => isNative();
  * This is the first thing in the app that grows without limit, so it is worth
  * being mean about.
  */
-export async function capturePhoto(): Promise<string | null> {
+export async function capturePhoto(source: CameraSource = CameraSource.Camera): Promise<string | null> {
   try {
     const photo = await Camera.getPhoto({
-      source: CameraSource.Camera,
+      source,
       resultType: CameraResultType.Base64,
       quality: 72,
       width: 1600,
@@ -84,7 +84,28 @@ export async function photoUrl(name: string): Promise<string | null> {
   }
 }
 
-const TextReader = registerPlugin<{ read(options: { name: string }): Promise<{ text: string }> }>('TextReader');
+const TextReader = registerPlugin<{
+  read(options: { name: string }): Promise<{ text: string }>;
+  readCode(options: { name: string }): Promise<{ codes: string[] }>;
+}>('TextReader');
+
+/**
+ * Photograph a QR code — or pick a screenshot of one — and read it: how
+ * someone's Hence code is scanned. The copy is deleted at once: it was only
+ * ever a way to read the code. Null when nothing was taken or picked; an
+ * empty list when no code was seen.
+ */
+export async function scanCode(from: 'camera' | 'library' = 'camera'): Promise<string[] | null> {
+  const name = await capturePhoto(from === 'library' ? CameraSource.Photos : CameraSource.Camera);
+  if (!name) return null;
+  try {
+    return (await TextReader.readCode({ name })).codes;
+  } catch {
+    return [];
+  } finally {
+    await Filesystem.deleteFile({ path: `${FOLDER}/${name}`, directory: Directory.Data }).catch(() => {});
+  }
+}
 
 /**
  * The words in a photograph, read on the phone — a whiteboard, a business

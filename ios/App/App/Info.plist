@@ -50,8 +50,18 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Hence looks in its mailbox now and then while closed, so a thought
+	     someone sent is announced without opening the app. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.moussazaghdoud.hence.inbox</string>
+	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Hence opens your photo library only when you choose a picture yourself, as a background for your list. Nothing else in your library is read, and photos you take in the app are never added to it.</string>
+	<string>Hence opens your photo library only when you choose a picture yourself — a background for your list, or a screenshot of someone's Hence code. Nothing else in your library is read, and photos you take in the app are never added to it.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Hence does not save anything to your photo library. Photos you take in the app are kept privately inside the app.</string>
 	<key>NSCameraUsageDescription</key>

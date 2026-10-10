@@ -10,18 +10,22 @@ import {
   Pencil,
   Repeat,
   RotateCcw,
+  Send,
   Share2,
   Trash2,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { haptic } from '@/lib/native/bridge';
+import { isNative } from '@/lib/native/platform';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
 import { photoUrl } from '@/lib/native/photos';
 import { toggleComplete } from '@/actions/taskActions';
 import { toast } from '@/store/toast';
 import { useWorkspace, ws } from '@/store/workspace';
 import type { Space } from '@/domain/types';
+import { SendSheet } from './SendSheet';
 import { Sheet, SheetAction, SheetDivider } from './Sheet';
+import { st } from './shareI18n';
 import { dayTimeIn, relativeIn, repeatLabel, t, timeIn } from './i18n';
 import { spaceOf } from './space';
 import { addToCalendar, openEmail, reminderChoices, setReminder, shareThought } from './thoughtActions';
@@ -35,11 +39,13 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
   const task = useWorkspace((s) => (taskId ? s.tasks[taskId] : undefined));
   const [remindOpen, setRemindOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
 
   useEffect(() => {
     if (!taskId) {
       setRemindOpen(false);
       setEditOpen(false);
+      setSendOpen(false);
     }
   }, [taskId]);
 
@@ -55,7 +61,7 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
 
   return (
     <>
-      <Sheet open={!!taskId && !remindOpen && !editOpen} onClose={onClose} label={task.title}>
+      <Sheet open={!!taskId && !remindOpen && !editOpen && !sendOpen} onClose={onClose} label={task.title}>
         <ThoughtPhoto name={task.photo} text={task.photoText} />
         <ThoughtTitle key={task.id} id={task.id} title={task.title} />
         <p className="px-6 pt-1 pb-4 text-[13px] text-ink-4">{t('captured_at', { when: relativeIn(task.createdAt) })}</p>
@@ -107,6 +113,8 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
             toast(t('moved_to', { space: t(to) }), { action: { label: t('undo'), run: undo } });
           })}
         />
+        {/* To another Hence, through iCloud: the iPhone app only. */}
+        {isNative() && <SheetAction icon={Send} label={st('act_send_to')} onClick={() => setSendOpen(true)} />}
         <SheetAction icon={Mail} label={t('act_email')} onClick={act(() => openEmail(task))} />
         <SheetAction icon={CalendarPlus} label={t('act_calendar')} onClick={act(() => addToCalendar(task))} />
         <SheetAction icon={Share2} label={t('act_share')} onClick={act(() => shareThought(task))} />
@@ -129,6 +137,15 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
         task={task}
         onClose={() => {
           setEditOpen(false);
+          onClose();
+        }}
+      />
+
+      <SendSheet
+        open={sendOpen}
+        task={task}
+        onClose={() => {
+          setSendOpen(false);
           onClose();
         }}
       />

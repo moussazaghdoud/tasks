@@ -1,6 +1,8 @@
 import { registerPlugin } from '@capacitor/core';
 import { useSyncExternalStore } from 'react';
 import { isNative } from '@/lib/native/platform';
+import { onOutboxChange, restoreSent, waitingFor, type Sent } from '@/lib/share/outbox';
+import { exportBook, onBookChange, people, restoreBook, type Book } from '@/lib/share/people';
 import { toast } from '@/store/toast';
 import { useWorkspace, ws } from '@/store/workspace';
 import { mergeSnapshots, readBackup } from './backup';
@@ -56,13 +58,37 @@ let ready = false;
 let saving: Promise<void> | null = null;
 
 /**
+ * The people this Hence shares with travel in the same iCloud copy as the
+ * thoughts: names, public keys, teams, blocks, and what is still waiting to
+ * be picked up. The identity itself — the private key — is not here: it is
+ * in the iCloud Keychain (see lib/share/identity.ts).
+ */
+function sharingCopy(): { people: Book; outbox: Sent[] } {
+  return { people: exportBook(), outbox: waitingFor() };
+}
+
+function restoreSharing(json: string): void {
+  try {
+    const share = (JSON.parse(json) as { share?: { people?: Partial<Book>; outbox?: Sent[] } }).share;
+    if (!share) return;
+    restoreBook(share.people);
+    restoreSent(share.outbox);
+  } catch {
+    /* a copy from before sharing existed */
+  }
+}
+
+/**
  * An app with no thoughts — just installed, or reinstalled — brings back the
- * copy in iCloud. iCloud can take a moment to tell a fresh install what it
- * holds, so it asks again a little later before giving up.
+ * copy in iCloud; so does one with no people. iCloud can take a moment to
+ * tell a fresh install what it holds, so it asks again a little later before
+ * giving up.
  */
 async function restoreIfEmpty(): Promise<void> {
   for (const wait of [0, 5_000, 15_000]) {
-    if (Object.keys(ws().tasks).length) return;
+    const needThoughts = !Object.keys(ws().tasks).length;
+    const needPeople = !people().length;
+    if (!needThoughts && !needPeople) return;
     if (wait) await sleep(wait);
     const found = await ICloud.load().catch(() => null);
     if (!found || !found.available) {
@@ -70,6 +96,8 @@ async function restoreIfEmpty(): Promise<void> {
       return;
     }
     if (!found.json) continue;
+    if (needPeople) restoreSharing(found.json);
+    if (!needThoughts) return;
     const copy = readBackup(found.json);
     if (!copy) return;
 
@@ -94,10 +122,18 @@ export async function saveToICloud(): Promise<void> {
   const snapshot = ws().exportSnapshot();
   // Never replace a copy with nothing: an emptied app is more often an
   // accident than a wish.
-  if (!snapshot.tasks.length) return;
+  if (!snapshot.tasks.length && !people().length) return;
   publish({ kind: 'saving' });
   saving = ICloud.save({
-    json: JSON.stringify({ app: 'hence', kind: 'backup', version: 1, createdAt: new Date().toISOString(), snapshot, photos: {} }),
+    json: JSON.stringify({
+      app: 'hence',
+      kind: 'backup',
+      version: 1,
+      createdAt: new Date().toISOString(),
+      snapshot,
+      photos: {},
+      share: sharingCopy(),
+    }),
     photos: snapshot.tasks.map((task) => task.photo).filter((name): name is string => !!name),
   })
     .then(() => publish({ kind: 'saved', at: Date.now() }))
@@ -114,11 +150,17 @@ export async function initICloud(): Promise<void> {
   ready = true;
 
   let timer: ReturnType<typeof setTimeout> | null = null;
-  useWorkspace.subscribe((now, before) => {
-    if (now.tasks === before.tasks && now.projects === before.projects && now.people === before.people) return;
+  const later = () => {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => void saveToICloud(), 4_000);
+  };
+  useWorkspace.subscribe((now, before) => {
+    if (now.tasks === before.tasks && now.projects === before.projects && now.people === before.people) return;
+    later();
   });
+  // Someone added, renamed, blocked; something sent or picked up.
+  onBookChange(later);
+  onOutboxChange(later);
   // Leaving the app is the last chance before it may be closed.
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') void saveToICloud();

@@ -22,5 +22,6 @@ public class AppViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(AppearancePlugin())
         bridge?.registerPluginInstance(TextReaderPlugin())
         bridge?.registerPluginInstance(ICloudPlugin())
+        bridge?.registerPluginInstance(ShareBoxPlugin())
     }
 }

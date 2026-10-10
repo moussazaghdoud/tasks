@@ -7,7 +7,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // The background look into the mailbox has to be known to iOS before
+        // launch ends; a plugin loads too late for that.
+        ShareBoxPlugin.registerInboxCheck()
         return true
     }
 

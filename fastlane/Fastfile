@@ -233,6 +233,64 @@ platform :ios do
     UI.success("Uploaded #{version} (#{build_number}) to TestFlight.")
   end
 
+  # TestFlight builds always talk to CloudKit Production, and Production
+  # refuses a kind of subscription it has never seen created in Development.
+  # This lane makes a development-signed .ipa, for iPhones registered in the
+  # developer portal, that runs against CloudKit Development: installed once
+  # and opened, it creates the inbox subscription there. Deploying the schema
+  # then lets every TestFlight and App Store build create its own.
+  desc 'Development-signed build against CloudKit Development (kept as a run artifact)'
+  lane :devbuild do
+    key = asc_api_key
+
+    match(
+      type: 'development',
+      app_identifier: APP_IDENTIFIER,
+      api_key: key,
+      readonly: false,
+      # The profile must list the iPhone just registered.
+      force_for_new_devices: true,
+      storage_mode: 'git',
+      git_url: ENV.fetch('MATCH_GIT_URL'),
+      git_basic_authorization: ENV['MATCH_GIT_BASIC_AUTHORIZATION']
+    )
+
+    mapping = lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING] || {}
+    profile_name = mapping[APP_IDENTIFIER] || ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"]
+    UI.user_error!('match did not return a development profile name') if profile_name.to_s.empty?
+
+    update_code_signing_settings(
+      path: PROJECT,
+      use_automatic_signing: false,
+      team_id: ENV.fetch('APPLE_TEAM_ID'),
+      targets: [SCHEME],
+      bundle_identifier: APP_IDENTIFIER,
+      code_sign_identity: 'Apple Development',
+      profile_name: profile_name
+    )
+
+    version = env_or('MARKETING_VERSION', package_version)
+    build_number = env_or('BUILD_NUMBER', Time.now.strftime('%Y%m%d%H%M'))
+
+    build_app(
+      project: PROJECT,
+      scheme: SCHEME,
+      configuration: 'Release',
+      export_method: 'development',
+      output_directory: 'build',
+      output_name: 'Hence-development.ipa',
+      xcargs: "MARKETING_VERSION=#{version} CURRENT_PROJECT_VERSION=#{build_number} " \
+              "DEVELOPMENT_TEAM=#{ENV.fetch('APPLE_TEAM_ID')} CODE_SIGN_ENTITLEMENTS=App/App.dev.entitlements",
+      export_options: {
+        provisioningProfiles: { APP_IDENTIFIER => profile_name }
+      }
+    )
+
+    write_summary("### Development build ready\n\nDownload **ios-build** below (Artifacts), unzip it, and install " \
+                  "`Hence-development.ipa` on the registered iPhone.")
+    UI.success("Built #{version} (#{build_number}) for development.")
+  end
+
   desc 'Submit the build currently in TestFlight for App Store review'
   lane :release do |options|
     key = asc_api_key
