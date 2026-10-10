@@ -166,8 +166,8 @@ public class ShareBoxPlugin: CAPPlugin, CAPBridgedPlugin {
             }
         }
         let announced = Set(defaults.stringArray(forKey: announcedKey) ?? [])
-        // Receipts are bookkeeping, not news.
-        let fresh = waiting.filter { !announced.contains($0.key) && $0.value != "ack" }
+        // Receipts and "taken" are bookkeeping, not news; a "done" is.
+        let fresh = waiting.filter { !announced.contains($0.key) && $0.value != "ack" && $0.value != "taken" }
         // Only what is still waiting needs remembering: collected ones are gone.
         defaults.set(Array(Set(waiting.keys).intersection(announced.union(fresh.keys))), forKey: announcedKey)
         guard !fresh.isEmpty else { return }

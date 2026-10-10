@@ -103,6 +103,13 @@ export function InboxSheet({ open, onClose }: { open: boolean; onClose: () => vo
           </p>
           <p className="mt-1 text-[17px] leading-[24px] whitespace-pre-line text-ink">{item.thought.title}</p>
           {item.thought.notes && <p className="mt-1 text-[14px] leading-[20px] whitespace-pre-line text-ink-3">{item.thought.notes}</p>}
+          {/* Sent to a team, and someone already took it. */}
+          {item.takenBy && (
+            <p className="mt-1.5 text-[13px] font-medium text-ember">{st('taken_by', { name: item.takenBy.name || st('someone') })}</p>
+          )}
+          {item.thought.team && !item.takenBy && (
+            <p className="mt-1.5 text-[13px] text-ink-3">{st('team_label', { name: item.thought.team.name })}</p>
+          )}
           {item.thought.reminderAt && (
             <p className="mt-1.5 flex items-center gap-1.5 text-[13px] text-ink-3">
               <Bell className="size-3.5" strokeWidth={2} />

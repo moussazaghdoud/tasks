@@ -1,4 +1,5 @@
-import { Bell, Check, Repeat, Send, Trash2 } from 'lucide-react';
+import { Bell, Check, CheckCheck, Repeat, Send, Trash2, UserCheck } from 'lucide-react';
+import { usePro } from '@/lib/pro/store';
 import { personOf } from '@/lib/share/people';
 import { st } from './shareI18n';
 import { memo, useEffect, useState } from 'react';
@@ -67,6 +68,39 @@ function reminderLabel(iso: string): string {
  * thing allowed to appear beneath it is a reminder, because that is a promise
  * the app made to interrupt you later, and you should be able to see it.
  */
+/**
+ * A thought sent to others and kept here. To whom it went; then, on Pro,
+ * what came back: who took it, and who finished it — the last word wins.
+ */
+function DelegatedLine({ delegated }: { delegated: NonNullable<Task['delegated']> }) {
+  const pro = usePro();
+  if (pro && delegated.doneBy) {
+    return (
+      <span className="flex items-center gap-1.5 text-accent">
+        <CheckCheck className="size-3" strokeWidth={2.4} />
+        {st('done_by', { name: delegated.doneBy.name || st('someone') })}
+      </span>
+    );
+  }
+  if (pro && delegated.takenBy) {
+    return (
+      <span className="flex items-center gap-1.5 text-tomorrow">
+        <UserCheck className="size-3" strokeWidth={2.1} />
+        {st('taken_by', { name: delegated.takenBy.name || st('someone') })}
+      </span>
+    );
+  }
+  const names = delegated.team
+    ? st('team_label', { name: delegated.team })
+    : delegated.to.map((p) => p.name || st('someone')).join(', ');
+  return (
+    <span className="flex items-center gap-1.5 text-ink-3">
+      <Send className="size-3" strokeWidth={2.1} />
+      {st('sent_label', { names })}
+    </span>
+  );
+}
+
 export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Task; onOpen: () => void }) {
   const done = task.status === 'done';
   const important = task.priority === 'important';
@@ -197,7 +231,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
             >
               {task.title}
             </span>
-            {!done && (task.reminderAt || task.recurrence || task.sharedBy) && (
+            {!done && (task.reminderAt || task.recurrence || task.sharedBy || task.delegated) && (
               <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium tracking-[0.045em] uppercase">
                 {task.sharedBy && (
                   <span className="flex items-center gap-1.5 text-tomorrow">
@@ -205,6 +239,15 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
                     {st('from_person', { name: personOf(task.sharedBy.id)?.name || task.sharedBy.name || st('someone') })}
                   </span>
                 )}
+                {/* Sent to a team, and someone else took it: no need to do it twice. */}
+                {task.sharedBy?.takenBy && (
+                  <span className="flex items-center gap-1.5 text-ember">
+                    <UserCheck className="size-3" strokeWidth={2.1} />
+                    {st('taken_by', { name: task.sharedBy.takenBy.name || st('someone') })}
+                  </span>
+                )}
+                {/* Delegated and kept here: to whom, then what came back (Pro). */}
+                {task.delegated && <DelegatedLine delegated={task.delegated} />}
                 {task.reminderAt && (
                   <span className={cn('flex items-center gap-1.5', overdue ? 'text-ember' : 'text-accent')}>
                     <Bell className="size-3" strokeWidth={2.1} />

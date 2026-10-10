@@ -114,7 +114,29 @@ export interface Task {
    * Who sent this thought from their own Hence, as they were called when it
    * was accepted. Absent on every thought captured here.
    */
-  sharedBy?: { id: ID; name: string };
+  sharedBy?: {
+    id: ID;
+    name: string;
+    /** Names the send, so a "done" or "taken" can be matched to it. */
+    ref?: string;
+    /** Sent to a team: who else received it, so they can be told who took it. */
+    team?: { name: string; members: Array<{ id: ID; name: string; publicKey: string }> };
+    /** Someone else in the team took it. */
+    takenBy?: { id: ID; name: string };
+    /** The sender has been told it is done. */
+    doneSent?: boolean;
+  };
+  /**
+   * Sent to someone and kept here (Duplicate): to whom, and what has come
+   * back since — who took it, who finished it.
+   */
+  delegated?: {
+    ref: string;
+    to: Array<{ id: ID; name: string }>;
+    team?: string;
+    takenBy?: { id: ID; name: string };
+    doneBy?: { id: ID; name: string; at: string };
+  };
   subtasks: Subtask[];
   links: TaskLink[];
   tags: string[];

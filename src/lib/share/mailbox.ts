@@ -41,6 +41,20 @@ export interface SharedThought {
   reminderAt: string | null;
   /** Whether the sender kept a copy. */
   mode: 'copy' | 'transfer';
+  /** Sent to a team: its name and everyone who received it (not the sender). */
+  team?: { name: string; members: Card[] };
+}
+
+/**
+ * A short word back about a thought someone sent: `taken` when a member of
+ * the team accepted it (told to the sender and the other members), `done`
+ * when the recipient finished it (told to the sender).
+ */
+export interface Signal {
+  kind: 'taken' | 'done';
+  ref: string;
+  from: Card;
+  title?: string;
 }
 
 /** Someone who would like to be able to send you thoughts. */
@@ -56,6 +70,8 @@ export interface Incoming {
   from: string;
   thought: SharedThought;
   at: string;
+  /** Someone else in the team has already taken it. */
+  takenBy?: { id: string; name: string };
 }
 
 interface Inbox {
@@ -196,7 +212,19 @@ function clean(thought: SharedThought): SharedThought {
     important: thought.important === true,
     reminderAt: typeof thought.reminderAt === 'string' && !Number.isNaN(Date.parse(thought.reminderAt)) ? thought.reminderAt : null,
     mode: thought.mode === 'transfer' ? 'transfer' : 'copy',
+    team: cleanTeam(thought.team),
   };
+}
+
+const isCard = (c: unknown): c is Card => {
+  const card = c as Card | null;
+  return typeof card?.id === 'string' && typeof card.publicKey === 'string' && typeof card.name === 'string';
+};
+
+function cleanTeam(team: SharedThought['team']): SharedThought['team'] {
+  if (!team || typeof team.name !== 'string' || !Array.isArray(team.members)) return undefined;
+  const members = team.members.filter(isCard).slice(0, 50).map((m) => ({ id: m.id, name: m.name.slice(0, 40), publicKey: m.publicKey }));
+  return members.length ? { name: team.name.slice(0, 40), members } : undefined;
 }
 
 const readable = (thought: SharedThought | null | undefined): thought is SharedThought =>
@@ -220,6 +248,7 @@ async function collectNow(): Promise<number> {
   /** Read, or from someone blocked: only these leave iCloud. */
   const done: string[] = [];
   const receipts: Array<{ to: string; key: string; ref: string }> = [];
+  const signals: Signal[] = [];
   let arrived = 0;
 
   /** Keep a thought — once, however many times it is sent or read. */
@@ -278,6 +307,24 @@ async function collectNow(): Promise<number> {
         const { ref } = await openFrom<{ ref: string }>(me.keys.privateJwk, sender.publicKey, envelope.data);
         done.push(envelope.id);
         if (typeof ref === 'string') delivered(ref, sender.id);
+      } else if (envelope.kind === 'taken' || envelope.kind === 'done') {
+        // Sealed like a note: their card beside it, the content between
+        // their key and ours. Team members may not be in each other's book,
+        // so a stranger proves only that they hold the key on their card.
+        const { card, sealed } = await openAnonymous<{ card: Card; sealed: string }>(me.keys.privateJwk, envelope.data);
+        if (!card?.id || card.id !== envelope.from || typeof sealed !== 'string') throw new Error('mismatched card');
+        const known = personOf(card.id);
+        const word = await openFrom<{ ref: string; title?: string }>(me.keys.privateJwk, known ? known.publicKey : card.publicKey, sealed);
+        if (typeof word?.ref !== 'string') throw new Error('unreadable signal');
+        done.push(envelope.id);
+        const by = { id: card.id, name: known?.name || card.name };
+        if (envelope.kind === 'taken') {
+          // Still waiting here for an answer: say who already took it.
+          for (let i = 0; i < thoughts.length; i++) {
+            if (thoughts[i].thought.ref === word.ref && card.id !== me.id) thoughts[i] = { ...thoughts[i], takenBy: by };
+          }
+        }
+        signals.push({ kind: envelope.kind, ref: word.ref, from: { ...card, name: by.name }, title: typeof word.title === 'string' ? word.title.slice(0, 200) : undefined });
       } else if (envelope.kind === 'thought') {
         const sender = personOf(envelope.from);
         if (!sender) throw new Error('old thought from a stranger');
@@ -304,7 +351,40 @@ async function collectNow(): Promise<number> {
     const data = await sealFor(me.keys.privateJwk, receipt.key, { ref: receipt.ref });
     await ShareBox.post({ to: receipt.to, kind: 'ack', from: me.id, data }).catch(() => undefined);
   }
+  // Who took what, and what is done: for the list to show.
+  for (const signal of signals) signalListeners.forEach((l) => l(signal));
   return arrived;
+}
+
+const signalListeners = new Set<(signal: Signal) => void>();
+
+/** Be told when a "taken" or a "done" arrives. */
+export function onSignal(listener: (signal: Signal) => void): () => void {
+  signalListeners.add(listener);
+  return () => signalListeners.delete(listener);
+}
+
+/**
+ * Tell these people a thought was taken or is done. Sealed like a note, with
+ * my card beside it, so a team member who never added me can still check it
+ * is me. Resolves with how many it reached.
+ */
+export async function sendSignal(kind: 'taken' | 'done', to: Array<{ id: string; publicKey: string }>, word: { ref: string; title?: string }): Promise<number> {
+  const me = await identity();
+  const card = await myCard();
+  let reached = 0;
+  for (const person of to) {
+    if (person.id === me.id) continue;
+    try {
+      const sealed = await sealFor(me.keys.privateJwk, person.publicKey, word);
+      const data = await sealAnonymous(person.publicKey, { card, sealed });
+      await ShareBox.post({ to: person.id, kind, from: me.id, data });
+      reached++;
+    } catch (error) {
+      setMailError(messageOf(error));
+    }
+  }
+  return reached;
 }
 
 /** Ask iCloud to notify this iPhone when something arrives. */

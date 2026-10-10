@@ -41,8 +41,14 @@ export function SendSheet({ task, open, onClose }: { task: Task; open: boolean; 
 
   const go = (mode: 'copy' | 'transfer') => {
     const to = everyone.filter((p) => chosen.includes(p.id));
+    // To a team when a whole team is ticked: it then travels with who else
+    // has it, so whoever takes it can tell the others.
+    const team = book.teams.find((t) => {
+      const members = t.members.filter((id) => book.people[id]);
+      return members.length > 1 && members.every((id) => chosen.includes(id));
+    });
     onClose();
-    void send(task, to, mode);
+    void send(task, to, mode, team?.name);
   };
 
   const saveName = async () => {

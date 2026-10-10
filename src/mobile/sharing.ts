@@ -13,18 +13,23 @@ import {
   messageOf,
   dropFrom,
   listenForMail,
+  onSignal,
   sayHello,
+  sendSignal,
   sendThought,
   settleRequest,
   settleThought,
   sharingAvailable,
   type ContactRequest,
   type Incoming,
+  type SharedThought,
+  type Signal,
 } from '@/lib/share/mailbox';
+import { isPro } from '@/lib/pro/store';
 import { addPerson, blockPerson, people, personOf, removePerson, type Person } from '@/lib/share/people';
 import type { Task } from '@/domain/types';
 import { toast } from '@/store/toast';
-import { ws } from '@/store/workspace';
+import { useWorkspace, ws } from '@/store/workspace';
 import { t } from './i18n';
 import { st } from './shareI18n';
 
@@ -126,14 +131,19 @@ export async function allowNotices(): Promise<void> {
  * Send a thought. Transferring takes it off this list — with an undo, which
  * brings back your copy; theirs has already left.
  */
-export async function send(task: Task, to: Person[], mode: 'copy' | 'transfer'): Promise<void> {
+/**
+ * Send a thought. To a team, it carries who else received it, so whoever
+ * takes it can tell the others; kept here (Duplicate), it remembers to whom
+ * it went, so what comes back — taken, done — can show on it.
+ */
+export async function send(task: Task, to: Person[], mode: 'copy' | 'transfer', team?: string): Promise<void> {
   if (!(await sharingAvailable())) {
     toast(st('share_unavailable'));
     return;
   }
   // The first send is when a notice from the other side starts to matter.
   void allowNotices();
-  const thought = {
+  const thought: SharedThought = {
     v: 1 as const,
     ref: randomId(),
     title: task.title,
@@ -141,7 +151,9 @@ export async function send(task: Task, to: Person[], mode: 'copy' | 'transfer'):
     important: task.priority === 'important',
     reminderAt: task.reminderAt && Date.parse(task.reminderAt) > Date.now() ? task.reminderAt : null,
     mode,
+    team: team ? { name: team, members: to.map((p) => ({ id: p.id, name: p.name, publicKey: p.publicKey })) } : undefined,
   };
+  const ref = thought.ref!;
   const failed = await sendThought(to, thought);
   const reached = to.filter((p) => !failed.includes(p));
   if (failed.length) toast(st('send_failed', { who: names(failed) }));
@@ -149,7 +161,7 @@ export async function send(task: Task, to: Person[], mode: 'copy' | 'transfer'):
   // Kept, whole, until each of them confirms it arrived.
   keepSent(
     reached.map((p) => ({
-      ref: thought.ref,
+      ref,
       to: { id: p.id, name: p.name },
       thought: { title: thought.title, notes: thought.notes, important: thought.important, reminderAt: thought.reminderAt, space: task.space },
       mode,
@@ -161,6 +173,7 @@ export async function send(task: Task, to: Person[], mode: 'copy' | 'transfer'):
     const undo = ws().transact(() => ws().remove([task.id]));
     toast(st('transferred_to', { who: names(reached) }), { action: { label: t('undo'), run: undo } });
   } else {
+    ws().updateTask(task.id, { delegated: { ref, to: reached.map((p) => ({ id: p.id, name: p.name })), team } });
     toast(st('sent_to', { who: names(reached) }));
   }
 }
@@ -196,18 +209,73 @@ const names = (people: Person[]): string => people.map((p) => p.name || st('some
 
 export function acceptThought(item: Incoming): void {
   const { thought } = item;
+  const sender = personOf(item.from);
   ws().addTask({
     title: thought.title,
     notes: thought.notes,
     space: 'business',
-    // Kept on the thought, so it reads as someone else's in the list.
-    sharedBy: { id: item.from, name: personOf(item.from)?.name ?? '' },
+    // Kept on the thought, so it reads as someone else's in the list, and so
+    // what happens to it can be told back to them.
+    sharedBy: { id: item.from, name: sender?.name ?? '', ref: thought.ref, team: thought.team, takenBy: item.takenBy },
     priority: thought.important ? 'important' : 'normal',
     reminderAt: thought.reminderAt && Date.parse(thought.reminderAt) > Date.now() ? thought.reminderAt : null,
   });
   settleThought(item.id);
   haptic('success');
   toast(st('accepted'));
+  // Sent to a team: tell the sender and the others that it is taken, so
+  // nobody does it twice.
+  if (thought.team && thought.ref && sender) {
+    void sendSignal('taken', [sender, ...thought.team.members], { ref: thought.ref, title: thought.title });
+  }
+}
+
+/**
+ * Something that came back about a thought: someone took it, or finished
+ * it. Shown on the thought it concerns — the copy kept by the sender, or the
+ * same thought received by the rest of the team — and, for the sender on
+ * Pro, said in a moment's message.
+ */
+function hear(signal: Signal): void {
+  const name = signal.from.name || st('someone');
+  const tasks = Object.values(ws().tasks);
+  let mine: Task | undefined;
+  for (const task of tasks) {
+    if (task.delegated?.ref === signal.ref) {
+      mine = task;
+      ws().updateTask(
+        task.id,
+        signal.kind === 'done'
+          ? { delegated: { ...task.delegated, doneBy: { id: signal.from.id, name, at: new Date().toISOString() } } }
+          : { delegated: { ...task.delegated, takenBy: { id: signal.from.id, name } } },
+      );
+    } else if (signal.kind === 'taken' && task.sharedBy?.ref === signal.ref && !task.sharedBy.takenBy) {
+      ws().updateTask(task.id, { sharedBy: { ...task.sharedBy, takenBy: { id: signal.from.id, name } } });
+    }
+  }
+  if (!isPro()) return;
+  const title = signal.title ?? mine?.title ?? '';
+  if (signal.kind === 'done') toast(st('finished_toast', { name, title }));
+  else if (mine) toast(st('took_toast', { name, title }));
+}
+
+/**
+ * A thought someone sent, finished here: tell them, once. Watched on every
+ * change, so it works however it was finished — a tap, a swipe, a voice.
+ */
+function watchCompletions(): void {
+  useWorkspace.subscribe((now, before) => {
+    if (now.tasks === before.tasks) return;
+    for (const task of Object.values(now.tasks)) {
+      const from = task.sharedBy;
+      if (!from?.ref || from.doneSent || task.status !== 'done') continue;
+      if (before.tasks[task.id]?.status === 'done') continue;
+      const sender = personOf(from.id);
+      if (!sender) continue;
+      ws().updateTask(task.id, { sharedBy: { ...from, doneSent: true } });
+      void sendSignal('done', [sender], { ref: from.ref, title: task.title });
+    }
+  });
 }
 
 export function declineThought(item: Incoming): void {
@@ -255,6 +323,8 @@ export function report(person: { id: string; name: string }): void {
  */
 export async function initSharing(): Promise<void> {
   if (!isNative() || !(await sharingAvailable())) return;
+  onSignal(hear);
+  watchCompletions();
   void listenForMail(st('share_push'));
   void check();
   document.addEventListener('visibilitychange', () => {

@@ -135,6 +135,50 @@ describe('sending a thought between two phones', () => {
     expect(inboxOf(bob).thoughts[0].from).toBe(alice.card.id);
   });
 
+  it('tells the team who took a thought, and the sender when it is done', async () => {
+    const alice = await phone('Alice');
+    const bob = await phone('Bob');
+    const carol = await phone('Carol');
+    for (const p of [bob, carol]) {
+      use(p);
+      p.people.addPerson(alice.card);
+    }
+    use(alice);
+    alice.people.addPerson(bob.card);
+    alice.people.addPerson(carol.card);
+
+    // Alice sends to the team; the thought carries who else has it.
+    const team = { name: 'Office', members: [bob.card, carol.card] };
+    await alice.mailbox.sendThought([person(bob), person(carol)], { ...thought, mode: 'copy', team });
+    use(bob);
+    await bob.mailbox.collect();
+    use(carol);
+    await carol.mailbox.collect();
+    expect(inboxOf(carol).thoughts[0].thought.team.members.map((m: { name: string }) => m.name)).toEqual(['Bob', 'Carol']);
+
+    // Bob takes it: Alice and Carol are told. Carol never added Bob.
+    use(bob);
+    expect(await bob.mailbox.sendSignal('taken', [alice.card, ...team.members], { ref: thought.ref, title: thought.title })).toBe(2);
+    use(carol);
+    await carol.mailbox.collect();
+    expect(inboxOf(carol).thoughts[0].takenBy).toEqual({ id: bob.card.id, name: 'Bob' });
+
+    const heard: Array<[string, string]> = [];
+    use(alice);
+    alice.mailbox.onSignal((s) => heard.push([s.kind, s.from.name]));
+    await alice.mailbox.collect();
+
+    // Bob finishes it: Alice hears that too.
+    use(bob);
+    await bob.mailbox.sendSignal('done', [alice.card], { ref: thought.ref, title: thought.title });
+    use(alice);
+    await alice.mailbox.collect();
+    expect(heard).toEqual([
+      ['taken', 'Bob'],
+      ['done', 'Bob'],
+    ]);
+  });
+
   it('opens nothing from a blocked sender, nor from a stranger posing as a contact', async () => {
     const alice = await phone('Alice');
     const mallory = await phone('Mallory');
