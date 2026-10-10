@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { haptic } from '@/lib/native/bridge';
 import { apiBase, isNative } from '@/lib/native/platform';
 import { closePro, FREE_OPEN_LIMIT, useProSheet, type ProReason } from '@/lib/pro/limits';
-import { buy, loadOffers, PRODUCTS, restorePurchases, usePro, type Offer, type Period } from '@/lib/pro/store';
+import { buy, loadOffers, PRODUCTS, redeemCode, restorePurchases, usePro, type Offer, type Period } from '@/lib/pro/store';
 import { cn } from '@/lib/platform';
 import { toast } from '@/store/toast';
 import { Sheet } from './Sheet';
@@ -171,9 +171,21 @@ export function ProSheet() {
           </>
         )}
 
-        <button onClick={() => void restore()} disabled={busy} className="mt-3 w-full py-2 text-center text-[14px] font-medium text-accent disabled:opacity-40">
-          {pt('restore')}
-        </button>
+        <div className="mt-3 flex justify-center gap-6">
+          <button onClick={() => void restore()} disabled={busy} className="py-2 text-[14px] font-medium text-accent disabled:opacity-40">
+            {pt('restore')}
+          </button>
+          {/* A code someone was given: Apple's own redeem sheet. */}
+          {!pro && (
+            <button
+              onClick={() => void redeemCode().then((shown) => !shown && toast(pt('store_unavailable')))}
+              disabled={busy}
+              className="py-2 text-[14px] font-medium text-accent disabled:opacity-40"
+            >
+              {pt('redeem')}
+            </button>
+          )}
+        </div>
 
         <p className="mt-2 text-[11.5px] leading-[16px] text-ink-4">{pt('legal')}</p>
         <p className="mt-2 flex gap-4 text-[12px] font-medium">

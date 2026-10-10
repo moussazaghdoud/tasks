@@ -42,6 +42,7 @@ interface StorePlugin {
   purchase(options: { id: string }): Promise<{ status: 'purchased' | 'pending' | 'cancelled' | 'unverified' | 'unknown'; active?: string[] }>;
   entitlements(): Promise<{ active: string[] }>;
   restore(): Promise<{ active: string[] }>;
+  redeem(): Promise<void>;
   addListener(event: 'entitlements', listener: (data: { active: string[] }) => void): Promise<{ remove: () => Promise<void> }>;
 }
 
@@ -119,6 +120,20 @@ export async function buy(id: string): Promise<BuyResult> {
     return 'failed';
   } catch {
     return 'failed';
+  }
+}
+
+/**
+ * "Redeem a code": Apple's own sheet for an offer code made in App Store
+ * Connect. What it unlocks comes back through the entitlements listener.
+ * Resolves false when the sheet could not be shown.
+ */
+export async function redeemCode(): Promise<boolean> {
+  try {
+    await Store.redeem();
+    return true;
+  } catch {
+    return false;
   }
 }
 

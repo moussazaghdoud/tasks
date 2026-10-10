@@ -1,5 +1,6 @@
 import Capacitor
 import StoreKit
+import UIKit
 
 /**
  Hence Pro, bought through the App Store with StoreKit 2.
@@ -22,8 +23,30 @@ public class StorePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "products", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "purchase", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "entitlements", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "restore", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "restore", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "redeem", returnType: CAPPluginReturnPromise)
     ]
+
+    /// Apple's own sheet for an offer code made in App Store Connect — how
+    /// Pro is given away. What it unlocks arrives through Transaction.updates.
+    @objc func redeem(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            if #available(iOS 16.0, *),
+               let scene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                Task { @MainActor in
+                    do {
+                        try await AppStore.presentOfferCodeRedeemSheet(in: scene)
+                        call.resolve()
+                    } catch {
+                        call.reject(error.localizedDescription, "failed")
+                    }
+                }
+            } else {
+                SKPaymentQueue.default().presentCodeRedemptionSheet()
+                call.resolve()
+            }
+        }
+    }
 
     private var updates: Task<Void, Never>?
 
