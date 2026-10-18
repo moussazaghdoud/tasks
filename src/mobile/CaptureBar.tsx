@@ -1,4 +1,4 @@
-import { Camera, Keyboard, LoaderCircle, Mic, ScanText, X } from 'lucide-react';
+import { BookOpen, Camera, Keyboard, LoaderCircle, Mic, ScanText, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { confirmAction, haptic } from '@/lib/native/bridge';
 import { markFresh } from '@/lib/fresh';
@@ -17,7 +17,9 @@ import { AiConsentSheet } from './AiConsentSheet';
 import { aiConsent, setAiConsent } from './aiConsent';
 import { refreshProvider } from './aiProvider';
 import { dayTimeIn, speechLocale, speechLocales, t } from './i18n';
-import { currentSpace, spaceOf } from './space';
+import { currentSpace, currentView, spaceOf, useView } from './space';
+import { definitionAsked, termOf } from '@/lib/know/trigger';
+import { defineAndTell } from './knowActions';
 import { setReminder } from './thoughtActions';
 import { Sheet } from './Sheet';
 import { Aurora, LiveTranscript, VoiceOrb } from './VoiceVisual';
@@ -81,6 +83,8 @@ export function CaptureBar() {
   /** Explain the fallback once per session, not after every sentence. */
   const noticed = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);
+  // In Know, the orb defines instead of capturing, and says so.
+  const view = useView();
 
   const teardown = useCallback(() => {
     stopMeter.current?.();
@@ -105,6 +109,20 @@ export function CaptureBar() {
         return;
       }
       setPhase('thinking');
+
+      // A definition asked for goes to the glossary, not the list: in the
+      // Know tab, whatever was said is the term; elsewhere, only "Define
+      // VXLAN", "What is EVPN" and the like, about a short term.
+      if (said && !withPhoto) {
+        const inKnow = currentView() === 'know';
+        const term = inKnow ? termOf(said) : definitionAsked(said);
+        if (term) {
+          await defineAndTell(term, inKnow ? null : said);
+          setPhase('idle');
+          setTranscript('');
+          return;
+        }
+      }
 
       // Which service the server uses right now: it can change while the app
       // sits in the background, and a yes to one is not a yes to the other.
@@ -507,7 +525,8 @@ export function CaptureBar() {
                 </button>
               </div>
             )}
-            {cameraAvailable() ? (
+            {/* No photograph in Know: a picture is not a term to define. */}
+            {cameraAvailable() && view !== 'know' ? (
               <button
                 onClick={() => void photograph()}
                 aria-label={t('take_photo')}
@@ -524,7 +543,7 @@ export function CaptureBar() {
               aria-label={t('capture')}
               className="capture-orb grid size-[70px] touch-none place-items-center rounded-full text-on-accent transition-transform duration-150 select-none active:scale-95"
             >
-              <Mic className="size-7" strokeWidth={2} />
+              {view === 'know' ? <BookOpen className="size-7" strokeWidth={2} /> : <Mic className="size-7" strokeWidth={2} />}
             </button>
             <button
               onClick={() => captureAllowed() && setTyping(true)}

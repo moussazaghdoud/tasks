@@ -11,7 +11,8 @@ import { setView, type View } from './space';
  * everyone who never will.
  */
 export function visibleTabs(agenda: boolean): View[] {
-  return agenda ? ['agenda', 'business', 'private'] : ['business', 'private'];
+  // Know comes last: it is where things are looked up, not where the day is.
+  return agenda ? ['agenda', 'business', 'private', 'know'] : ['business', 'private', 'know'];
 }
 
 /**

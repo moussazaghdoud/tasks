@@ -1,8 +1,11 @@
 import { useSyncExternalStore } from 'react';
 import type { Space, Task } from '@/domain/types';
 
-/** What the list is showing. The agenda is read-only; the other two are spaces. */
-export type View = 'agenda' | Space;
+/**
+ * What the list is showing. The agenda is read-only; Know is the glossary;
+ * the other two are spaces.
+ */
+export type View = 'agenda' | 'know' | Space;
 
 /**
  * Which half of your life you are looking at.
@@ -17,7 +20,7 @@ const KEY = 'hence.space';
 function read(): View {
   try {
     const stored = localStorage.getItem(KEY);
-    return stored === 'private' || stored === 'agenda' ? stored : 'business';
+    return stored === 'private' || stored === 'agenda' || stored === 'know' ? stored : 'business';
   } catch {
     return 'business';
   }
@@ -31,8 +34,8 @@ export const spaceOf = (task: Task): Space => task.space ?? 'business';
 
 export const currentView = (): View => current;
 
-/** Where a thought captured right now belongs. The agenda holds none. */
-export const currentSpace = (): Space => (current === 'agenda' ? 'business' : current);
+/** Where a thought captured right now belongs. The agenda and Know hold none. */
+export const currentSpace = (): Space => (current === 'agenda' || current === 'know' ? 'business' : current);
 
 export function setView(next: View): void {
   if (next === current) return;

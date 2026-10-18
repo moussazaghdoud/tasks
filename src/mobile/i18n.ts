@@ -200,6 +200,7 @@ const EN = {
   agenda_all_day: 'All day',
   retry: 'Try again',
   private: 'Private',
+  know: 'Know',
 
   listening: 'Listening',
   thinking: 'One moment',
@@ -442,6 +443,7 @@ const FR: Record<Key, string> = {
   agenda_all_day: 'Journée',
   retry: 'Réessayer',
   private: 'Perso',
+  know: 'Savoir',
 
   listening: 'À l’écoute',
   thinking: 'Un instant',
@@ -681,6 +683,7 @@ const ZH: Record<Key, string> = {
   agenda_all_day: '全天',
   retry: '重试',
   private: '私人',
+  know: '知识',
 
   listening: '正在聆听',
   thinking: '请稍候',

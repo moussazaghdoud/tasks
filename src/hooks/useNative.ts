@@ -5,6 +5,7 @@ import { readUnreadPhotos, sweepPhotos } from '@/lib/native/photos';
 import { initICloud } from '@/mobile/icloud';
 import { addFromText, initSharing } from '@/mobile/sharing';
 import { initStore } from '@/lib/pro/store';
+import { scheduleReviewNotice } from '@/lib/know/reviews';
 import { isNative } from '@/lib/native/platform';
 import { hashToRoute } from '@/store/ui';
 import { ui } from '@/store/ui';
@@ -57,5 +58,7 @@ export function useNative(): void {
     void initSharing();
     // What Hence Pro this Apple ID owns, and every change to it from now on.
     void initStore();
+    // Know's morning review, kept in step with what is due.
+    void scheduleReviewNotice();
   }, [ready]);
 }

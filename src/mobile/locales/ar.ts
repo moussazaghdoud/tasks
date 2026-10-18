@@ -47,6 +47,7 @@ export const AR: Record<Key, string> = {
   agenda_all_day: 'طوال اليوم',
   retry: 'إعادة المحاولة',
   private: 'خاص',
+  know: 'معرفة',
   listening: 'يستمع',
   thinking: 'لحظة',
   say_something: 'قل ما يدور في ذهنك…',

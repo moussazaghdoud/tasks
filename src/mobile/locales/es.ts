@@ -47,6 +47,7 @@ export const ES: Record<Key, string> = {
   agenda_all_day: 'Todo el día',
   retry: 'Reintentar',
   private: 'Personal',
+  know: 'Saber',
   listening: 'Escuchando',
   thinking: 'Un momento',
   say_something: 'Di lo que tienes en mente…',

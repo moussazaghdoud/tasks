@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { haptic } from '@/lib/native/bridge';
 import { apiBase, isNative } from '@/lib/native/platform';
 import { closePro, FREE_OPEN_LIMIT, useProSheet, type ProReason } from '@/lib/pro/limits';
+import { FREE_PER_MONTH } from '@/lib/know/store';
 import {
   buy,
   isTester,
@@ -30,6 +31,7 @@ const REASON: Record<ProReason, ProKey | null> = {
   backdrop: 'reason_backdrop',
   share: 'reason_share',
   team: 'reason_team',
+  know: 'reason_know',
   settings: null,
 };
 
@@ -140,12 +142,12 @@ export function ProSheet() {
           <>
             {why && (
               <p className="mt-4 rounded-[14px] border border-accent/25 bg-accent-soft px-4 py-3 text-[14px] leading-[20px] text-accent">
-                {pt(why, { max: FREE_OPEN_LIMIT })}
+                {pt(why, { max: reason === 'know' ? FREE_PER_MONTH : FREE_OPEN_LIMIT })}
               </p>
             )}
 
             <ul className="mt-4 space-y-2">
-              {(['benefit_unlimited', 'benefit_backdrops', 'benefit_share', 'benefit_receipts'] as ProKey[]).map((key) => (
+              {(['benefit_unlimited', 'benefit_know', 'benefit_backdrops', 'benefit_share', 'benefit_receipts'] as ProKey[]).map((key) => (
                 <li key={key} className="flex items-start gap-2.5 text-[15px] leading-[21px] text-ink-2">
                   <Check className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={2.6} />
                   {pt(key)}

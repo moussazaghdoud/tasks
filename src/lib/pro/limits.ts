@@ -29,7 +29,7 @@ export const mayCapture = (pro: boolean, open: number): boolean => pro || open <
 export const maySend = (pro: boolean, recipients: number, viaTeam: boolean): boolean =>
   pro || (recipients <= 1 && !viaTeam);
 
-export type ProReason = 'limit' | 'backdrop' | 'share' | 'team' | 'settings';
+export type ProReason = 'limit' | 'backdrop' | 'share' | 'team' | 'know' | 'settings';
 
 let sheet: { open: boolean; reason: ProReason } = { open: false, reason: 'settings' };
 const listeners = new Set<() => void>();

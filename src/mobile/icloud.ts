@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react';
 import { isNative } from '@/lib/native/platform';
 import { onOutboxChange, restoreSent, waitingFor, type Sent } from '@/lib/share/outbox';
 import { exportBook, onBookChange, people, restoreBook, type Book } from '@/lib/share/people';
+import { definitions, onDefinitionsChange, restoreDefinitions, type Definition } from '@/lib/know/store';
 import { toast } from '@/store/toast';
 import { useWorkspace, ws } from '@/store/workspace';
 import { mergeSnapshots, readBackup } from './backup';
@@ -78,6 +79,15 @@ function restoreSharing(json: string): void {
   }
 }
 
+/** The glossary from Know travels in the same copy. */
+function restoreKnow(json: string): void {
+  try {
+    restoreDefinitions((JSON.parse(json) as { know?: Definition[] }).know);
+  } catch {
+    /* a copy from before Know existed */
+  }
+}
+
 /**
  * An app with no thoughts — just installed, or reinstalled — brings back the
  * copy in iCloud; so does one with no people. iCloud can take a moment to
@@ -88,7 +98,8 @@ async function restoreIfEmpty(): Promise<void> {
   for (const wait of [0, 5_000, 15_000]) {
     const needThoughts = !Object.keys(ws().tasks).length;
     const needPeople = !people().length;
-    if (!needThoughts && !needPeople) return;
+    const needKnow = !definitions().length;
+    if (!needThoughts && !needPeople && !needKnow) return;
     if (wait) await sleep(wait);
     const found = await ICloud.load().catch(() => null);
     if (!found || !found.available) {
@@ -97,6 +108,7 @@ async function restoreIfEmpty(): Promise<void> {
     }
     if (!found.json) continue;
     if (needPeople) restoreSharing(found.json);
+    if (needKnow) restoreKnow(found.json);
     if (!needThoughts) return;
     const copy = readBackup(found.json);
     if (!copy) return;
@@ -122,7 +134,7 @@ export async function saveToICloud(): Promise<void> {
   const snapshot = ws().exportSnapshot();
   // Never replace a copy with nothing: an emptied app is more often an
   // accident than a wish.
-  if (!snapshot.tasks.length && !people().length) return;
+  if (!snapshot.tasks.length && !people().length && !definitions().length) return;
   publish({ kind: 'saving' });
   saving = ICloud.save({
     json: JSON.stringify({
@@ -133,6 +145,7 @@ export async function saveToICloud(): Promise<void> {
       snapshot,
       photos: {},
       share: sharingCopy(),
+      know: definitions(),
     }),
     photos: snapshot.tasks.map((task) => task.photo).filter((name): name is string => !!name),
   })
@@ -161,6 +174,8 @@ export async function initICloud(): Promise<void> {
   // Someone added, renamed, blocked; something sent or picked up.
   onBookChange(later);
   onOutboxChange(later);
+  // A term defined, edited, reviewed.
+  onDefinitionsChange(later);
   // Leaving the app is the last chance before it may be closed.
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') void saveToICloud();

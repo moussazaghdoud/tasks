@@ -35,6 +35,10 @@ import {
 import { applyLook, useLook } from './look';
 import { refreshProvider } from './aiProvider';
 import { BackdropLayer } from './BackdropLayer';
+import { useDefinitions } from '@/lib/know/store';
+import { kt } from './knowI18n';
+import { KnowList } from './KnowList';
+import { KnowSheet } from './KnowSheet';
 import { ProSheet } from './ProSheet';
 import { AI_SERVICE_ENABLED } from '@/lib/voice/analyze';
 import { applyTheme, useTheme } from './theme';
@@ -63,9 +67,10 @@ export function MobileApp() {
   const [showDone, setShowDone] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const view = useView();
-  // The agenda holds no thoughts; the lists below still need a space, and
-  // Business is where a thought captured from there would land.
-  const space: Space = view === 'agenda' ? 'business' : view;
+  // The agenda and Know hold no thoughts; the lists below still need a
+  // space, and Business is where a thought captured from there would land.
+  const space: Space = view === 'agenda' || view === 'know' ? 'business' : view;
+  const glossary = useDefinitions();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [inboxOpen, setInboxOpen] = useState(false);
   const closeInbox = useCallback(() => setInboxOpen(false), []);
@@ -198,7 +203,7 @@ export function MobileApp() {
                   {name ? `, ${name.split(' ')[0]}` : ''}
                 </p>
                 <h1 className="mt-[3px] text-[26px] leading-8 font-bold tracking-[-0.03em] text-ink">
-                  {view === 'agenda' ? meetingCount(ahead) : thoughtCount(open.length)}
+                  {view === 'agenda' ? meetingCount(ahead) : view === 'know' ? termCount(glossary.length) : thoughtCount(open.length)}
                 </h1>
               </div>
               <SpeechLangSwitch />
@@ -229,7 +234,9 @@ export function MobileApp() {
       <main className="app-main min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 pb-[184px]">
         {/* Something someone sent, waiting for an answer. */}
         {!searching && <InboxBanner onOpen={() => setInboxOpen(true)} />}
-        {view === 'agenda' ? (
+        {view === 'know' ? (
+          <KnowList query={query} />
+        ) : view === 'agenda' ? (
           <AgendaList />
         ) : open.length === 0 && doneToday.length === 0 ? (
           <Empty searching={searching} />
@@ -301,6 +308,7 @@ export function MobileApp() {
 
       <CaptureBar />
       <ThoughtSheet taskId={openId} onClose={() => setOpenId(null)} />
+      <KnowSheet />
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <InboxSheet open={inboxOpen} onClose={closeInbox} />
       <PeopleSheet open={!!pendingCard && !settingsOpen} onClose={dropPending} />
@@ -312,6 +320,9 @@ export function MobileApp() {
 }
 
 /** The headline over a list of thoughts. */
+/** The headline over the glossary. */
+const termCount = (n: number): string => (n === 0 ? kt('head_none') : n === 1 ? kt('head_one') : kt('head_many', { n }));
+
 const thoughtCount = (n: number): string =>
   n === 0 ? t('nothing_kept') : n === 1 ? t('thoughts_one') : t('thoughts_many', { n });
 

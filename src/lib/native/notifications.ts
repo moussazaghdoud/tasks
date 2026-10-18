@@ -10,6 +10,7 @@ import { LocalNotifications, type PendingLocalNotificationSchema } from '@capaci
 import type { Task } from '@/domain/types';
 import { ui } from '@/store/ui';
 import { useWorkspace, ws } from '@/store/workspace';
+import { setView } from '@/mobile/space';
 import { isNative } from './platform';
 
 /** iOS notification ids are 32-bit ints; task ids are strings. */
@@ -37,6 +38,9 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 }
 
 /** Make the scheduled notifications match the tasks that carry a reminder. */
+/** Notification ids scheduled by something other than a task (see lib/know/reviews.ts). */
+const NOT_TASKS = new Set([990_001]);
+
 export async function syncReminders(): Promise<void> {
   if (!isNative()) return;
   try {
@@ -47,7 +51,8 @@ export async function syncReminders(): Promise<void> {
     const wantedIds = new Set(wanted.map((t) => notificationId(t.id)));
     const pendingIds = new Set(pending.map((n) => n.id));
 
-    const stale = pending.filter((n) => !wantedIds.has(n.id));
+    // Notifications that are not a task's — Know's morning review — are not ours to cancel.
+    const stale = pending.filter((n) => !wantedIds.has(n.id) && !NOT_TASKS.has(n.id));
     if (stale.length) await LocalNotifications.cancel({ notifications: stale.map((n) => ({ id: n.id })) });
 
     const toSchedule = wanted.filter((t) => !pendingIds.has(notificationId(t.id)));
@@ -73,6 +78,8 @@ export async function initNotifications(): Promise<void> {
   await LocalNotifications.addListener('localNotificationActionPerformed', (event) => {
     const taskId = event.notification.extra?.taskId as string | undefined;
     if (taskId && ws().tasks[taskId]) ui().openTask(taskId);
+    // Know's morning review opens the glossary, where what is due waits on top.
+    if (event.notification.extra?.route === 'know') setView('know');
   });
 
   let timer: ReturnType<typeof setTimeout> | null = null;
