@@ -625,7 +625,8 @@ function TypeSheet({
   };
 
   return (
-    <Sheet open={open} onClose={onClose} label="Type a thought">
+    // Opens the keyboard at once, so it waits for it rather than jumping.
+    <Sheet open={open} onClose={onClose} label="Type a thought" waitForKeyboard>
       <div className="px-5 pb-2">
         {photo && (
           <img
@@ -639,21 +640,25 @@ function TypeSheet({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            // Return starts a new line, as in any note; the thought is kept
+            // with Save. With a hardware keyboard, Cmd/Ctrl+Return saves.
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
               submit();
             }
           }}
-          rows={3}
           placeholder={t('type_placeholder')}
-          className="w-full resize-none bg-transparent text-[20px] leading-[29px] text-ink outline-none placeholder:text-ink-4"
+          // All the room above the keyboard: the web view has already shrunk
+          // to it, so dvh is what is left on screen.
+          style={{ height: photo ? 'calc(64dvh - 170px)' : 'calc(86dvh - 150px)' }}
+          className="min-h-[96px] w-full resize-none bg-transparent text-[20px] leading-[29px] text-ink outline-none placeholder:text-ink-4"
         />
         <button
           onClick={submit}
           disabled={!text.trim() && !photo}
           className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-on-accent transition-opacity disabled:opacity-30"
         >
-          {t('capture')}
+          {t('save')}
         </button>
       </div>
     </Sheet>

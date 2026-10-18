@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
+import { isNative } from '@/lib/native/platform';
 import { t } from './i18n';
 
 /**
@@ -19,6 +20,7 @@ export function Sheet({
   children,
   label,
   title,
+  waitForKeyboard,
 }: {
   open: boolean;
   onClose: () => void;
@@ -26,9 +28,17 @@ export function Sheet({
   label: string;
   /** Shown in a bar with a Done button — for a sheet you read, not one you pick from. */
   title?: string;
+  /**
+   * For a sheet that opens the keyboard at once. In the iPhone app the web
+   * view shrinks only once the keyboard is up, so a sheet sliding in at the
+   * same moment is covered by the rising keyboard, then jumps back above it.
+   * This one waits, unseen, for the keyboard, and then simply appears.
+   */
+  waitForKeyboard?: boolean;
 }) {
   const [dy, setDy] = useState(0);
   const [keyboard, setKeyboard] = useState(0);
+  const [shown, setShown] = useState(true);
   const dragging = useRef(false);
   const start = useRef(0);
   const scroller = useRef<HTMLDivElement>(null);
@@ -39,6 +49,31 @@ export function Sheet({
       haptic('light');
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !waitForKeyboard || !isNative()) {
+      setShown(true);
+      return;
+    }
+    setShown(false);
+    let live = true;
+    let handle: { remove: () => Promise<void> } | undefined;
+    const reveal = () => live && setShown(true);
+    // A hardware keyboard, or a keyboard that never comes: show it anyway.
+    const timer = setTimeout(reveal, 650);
+    void import('@capacitor/keyboard')
+      .then(({ Keyboard }) => Keyboard.addListener('keyboardDidShow', reveal))
+      .then((h) => {
+        handle = h;
+        if (!live) void h.remove();
+      })
+      .catch(reveal);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+      void handle?.remove();
+    };
+  }, [open, waitForKeyboard]);
 
   /**
    * Lift the sheet clear of the on-screen keyboard.
@@ -83,7 +118,11 @@ export function Sheet({
           }}
           // Never taller than most of the screen: a sheet that reaches the
           // status bar has swallowed the screen, and the way out goes with it.
-          className="flex max-h-[86dvh] animate-sheet-up flex-col rounded-t-[28px] border-t border-line bg-raised pb-[max(14px,env(safe-area-inset-bottom))] font-display shadow-float"
+          className={cn(
+            'flex max-h-[86dvh] flex-col rounded-t-[28px] border-t border-line bg-raised pb-[max(14px,env(safe-area-inset-bottom))] font-display shadow-float',
+            // Waiting for the keyboard: there (so its field can take focus) but unseen.
+            !shown ? 'opacity-0' : waitForKeyboard ? 'animate-fade' : 'animate-sheet-up',
+          )}
           // A drag starting anywhere on the sheet closes it, as long as the
           // content is scrolled to the top — the same rule iOS uses, so a
           // sheet that is scrolled down scrolls rather than closing.
