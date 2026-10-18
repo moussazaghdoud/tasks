@@ -646,9 +646,14 @@ function TypeSheet({
     // Opens the keyboard at once, so it waits for it rather than jumping.
     <Sheet open={open} onClose={() => void cancel()} label="Type a thought" waitForKeyboard>
       <div className="px-5 pb-2">
-        <div className="-mt-1 mb-1 flex">
-          <button onClick={() => void cancel()} className="-ms-2 h-10 px-2 text-[17px] text-ink-3 active:opacity-60">
-            {t('cancel')}
+        {/* A cross at the top right, where iOS puts a sheet's way out. */}
+        <div className="-mt-2 mb-1 flex justify-end">
+          <button
+            onClick={() => void cancel()}
+            aria-label={t('cancel')}
+            className="-me-2 grid size-10 place-items-center rounded-full text-ink-3 active:bg-wash-strong"
+          >
+            <X className="size-5" strokeWidth={2} />
           </button>
         </div>
         {photo && (
