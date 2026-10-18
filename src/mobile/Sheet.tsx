@@ -139,7 +139,9 @@ export function Sheet({
           onTouchEnd={() => {
             dragging.current = false;
             if (dy > 100) onClose();
-            else setDy(0);
+            // Back into place — also when closing was declined (a "keep
+            // editing" answer), so the sheet does not stay half thrown.
+            setDy(0);
           }}
         >
           {/* The grab area is the whole top strip, not just the bar you can see. */}

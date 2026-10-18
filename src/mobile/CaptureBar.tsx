@@ -1,6 +1,6 @@
 import { Camera, Keyboard, LoaderCircle, Mic, ScanText, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { haptic } from '@/lib/native/bridge';
+import { confirmAction, haptic } from '@/lib/native/bridge';
 import { markFresh } from '@/lib/fresh';
 import { cameraAvailable, cameraBlocked, capturePhoto, keepPhotoText, photoUrl, readPhotoText } from '@/lib/native/photos';
 import { explainBlocked } from './permissions';
@@ -624,10 +624,33 @@ function TypeSheet({
     if (value || photo) onSubmit(value);
   };
 
+  /**
+   * Leaving without saving — Cancel, a swipe down, a tap beside the sheet.
+   * Words typed are asked about first; an empty field just closes.
+   */
+  const cancel = async () => {
+    if (text.trim()) {
+      const sure = await confirmAction(t('discard_body'), t('discard_title'), {
+        ok: t('discard_ok'),
+        cancel: t('keep_editing'),
+      });
+      if (!sure) {
+        ref.current?.focus();
+        return;
+      }
+    }
+    onClose();
+  };
+
   return (
     // Opens the keyboard at once, so it waits for it rather than jumping.
-    <Sheet open={open} onClose={onClose} label="Type a thought" waitForKeyboard>
+    <Sheet open={open} onClose={() => void cancel()} label="Type a thought" waitForKeyboard>
       <div className="px-5 pb-2">
+        <div className="-mt-1 mb-1 flex">
+          <button onClick={() => void cancel()} className="-ms-2 h-10 px-2 text-[17px] text-ink-3 active:opacity-60">
+            {t('cancel')}
+          </button>
+        </div>
         {photo && (
           <img
             src={photo}
@@ -650,7 +673,7 @@ function TypeSheet({
           placeholder={t('type_placeholder')}
           // All the room above the keyboard: the web view has already shrunk
           // to it, so dvh is what is left on screen.
-          style={{ height: photo ? 'calc(64dvh - 170px)' : 'calc(86dvh - 150px)' }}
+          style={{ height: photo ? 'calc(64dvh - 214px)' : 'calc(86dvh - 194px)' }}
           className="min-h-[96px] w-full resize-none bg-transparent text-[20px] leading-[29px] text-ink outline-none placeholder:text-ink-4"
         />
         <button
