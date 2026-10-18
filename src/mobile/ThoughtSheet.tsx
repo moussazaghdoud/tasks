@@ -14,7 +14,7 @@ import {
   Share2,
   Trash2,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { haptic } from '@/lib/native/bridge';
 import { isNative } from '@/lib/native/platform';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
@@ -64,7 +64,14 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
     <>
       <Sheet open={!!taskId && !remindOpen && !editOpen && !sendOpen} onClose={onClose} label={task.title}>
         <ThoughtPhoto name={task.photo} text={task.photoText} />
-        <ThoughtTitle key={task.id} id={task.id} title={task.title} />
+        {/* Tapping the words changes them — in the window they were typed in. */}
+        <button
+          onClick={() => setEditOpen(true)}
+          aria-label={t('act_edit')}
+          className="block w-full px-6 pt-1 text-start text-[21px] leading-[29px] font-medium tracking-[-0.015em] whitespace-pre-line text-ink"
+        >
+          {task.title}
+        </button>
         <p className="px-6 pt-1 pb-4 text-[13px] text-ink-4">{t('captured_at', { when: relativeIn(task.createdAt) })}</p>
 
         <SheetDivider />
@@ -193,38 +200,6 @@ function ThoughtPhoto({ name, text }: { name?: string; text?: string }) {
         </div>
       )}
     </div>
-  );
-}
-
-/** The thought itself, editable in place — no separate edit screen. */
-function ThoughtTitle({ id, title }: { id: string; title: string }) {
-  const [value, setValue] = useState(title);
-  const ref = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => setValue(title), [title]);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.height = '0px';
-    el.style.height = `${el.scrollHeight}px`;
-  }, [value]);
-
-  return (
-    <textarea
-      ref={ref}
-      value={value}
-      aria-label={t('a11y_thought')}
-      rows={1}
-      // Line breaks already in the thought are kept; Return here means done.
-      onChange={(e) => setValue(e.target.value)}
-      onBlur={() => (value.trim() ? ws().renameTask(id, value.trim()) : setValue(title))}
-      onKeyDown={(e) => {
-        if (e.key !== 'Enter') return;
-        e.preventDefault();
-        e.currentTarget.blur();
-      }}
-      className="w-full resize-none bg-transparent px-6 pt-1 text-[21px] leading-[29px] font-medium tracking-[-0.015em] text-ink outline-none"
-    />
   );
 }
 
