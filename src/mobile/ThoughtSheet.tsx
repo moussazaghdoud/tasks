@@ -240,7 +240,7 @@ function EditSheet({ open, task, onClose }: { open: boolean; task: Task; onClose
       label={t('act_edit')}
       initialText={task.title}
       initialNotes={task.notes}
-      showNotes
+      showNotes={!!task.notes?.trim()}
       initialSpace={from}
       onClose={onClose}
       onSave={({ text, notes, space }) => {
