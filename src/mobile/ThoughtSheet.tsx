@@ -22,7 +22,8 @@ import { photoUrl } from '@/lib/native/photos';
 import { toggleComplete } from '@/actions/taskActions';
 import { toast } from '@/store/toast';
 import { useWorkspace, ws } from '@/store/workspace';
-import type { Space } from '@/domain/types';
+import type { Space, Task } from '@/domain/types';
+import { Composer } from './Composer';
 import { SendSheet } from './SendSheet';
 import { Sheet, SheetAction, SheetDivider } from './Sheet';
 import { st } from './shareI18n';
@@ -228,108 +229,30 @@ function ThoughtTitle({ id, title }: { id: string; title: string }) {
 }
 
 /**
- * Change the words.
- *
- * Dictation gets a name wrong, or the thought turns out to be about something
- * slightly different. The thought's own line has always been editable where it
- * sits, but nothing said so; this is the same edit with a door on it — Cancel
- * and Save where iOS puts them, and the keyboard already open.
+ * Change the words — in the same window a thought is typed in, with its
+ * note below and Business or Private at the top: changing that moves it.
  */
-function EditSheet({
-  open,
-  task,
-  onClose,
-}: {
-  open: boolean;
-  task: { id: string; title: string; notes: string };
-  onClose: () => void;
-}) {
-  const [title, setTitle] = useState(task.title);
-  const [notes, setNotes] = useState(task.notes);
-  const field = useRef<HTMLTextAreaElement>(null);
-
-  // Start from what the thought says now, every time the sheet opens.
-  useEffect(() => {
-    if (!open) return;
-    setTitle(task.title);
-    setNotes(task.notes);
-    // The caret goes to the end: people come here to correct the tail of a
-    // sentence far more often than the head of it.
-    const id = setTimeout(() => {
-      const el = field.current;
-      if (!el) return;
-      el.focus();
-      el.setSelectionRange(el.value.length, el.value.length);
-    }, 120);
-    return () => clearTimeout(id);
-  }, [open, task.title, task.notes]);
-
-  const grow = (el: HTMLTextAreaElement | null) => {
-    if (!el) return;
-    el.style.height = '0px';
-    el.style.height = `${Math.min(el.scrollHeight, 220)}px`;
-  };
-
-  const clean = title.trim();
-  const changed = clean !== task.title.trim() || notes.trim() !== task.notes.trim();
-
-  const save = () => {
-    if (!clean) return;
-    const undo = ws().transact(() => {
-      ws().renameTask(task.id, clean);
-      ws().updateTask(task.id, { notes: notes.trim() });
-    });
-    haptic('success');
-    onClose();
-    toast(t('edit_saved'), { action: { label: t('undo'), run: undo } });
-  };
-
+function EditSheet({ open, task, onClose }: { open: boolean; task: Task; onClose: () => void }) {
+  const from = spaceOf(task);
   return (
-    <Sheet open={open} onClose={onClose} label={t('act_edit')}>
-      <div className="flex items-center gap-3 px-6 pt-1 pb-3">
-        <button onClick={onClose} className="-ms-2 h-11 shrink-0 px-2 text-[17px] text-ink-3 active:opacity-60">
-          {t('cancel')}
-        </button>
-        <h2 className="min-w-0 flex-1 truncate text-center text-[17px] font-semibold text-ink">{t('act_edit')}</h2>
-        <button
-          onClick={save}
-          disabled={!clean || !changed}
-          className="-me-2 h-11 shrink-0 px-2 text-[17px] font-semibold text-accent transition-opacity active:opacity-60 disabled:opacity-30"
-        >
-          {t('save')}
-        </button>
-      </div>
-
-      <div className="px-5 pb-4">
-        <textarea
-          ref={(el) => {
-            field.current = el;
-            grow(el);
-          }}
-          value={title}
-          rows={1}
-          aria-label={t('a11y_thought')}
-          onChange={(e) => {
-            // Return adds a line, as a dictated "new line" does.
-            setTitle(e.target.value);
-            grow(e.currentTarget);
-          }}
-          className="w-full resize-none rounded-[16px] border border-line bg-sunk px-4 py-3 text-[17px] leading-[24px] text-ink outline-none focus:border-accent/50"
-        />
-        <textarea
-          value={notes}
-          rows={2}
-          placeholder={t('edit_note_placeholder')}
-          aria-label={t('edit_note_placeholder')}
-          onChange={(e) => {
-            setNotes(e.target.value);
-            grow(e.currentTarget);
-          }}
-          ref={grow}
-          className="mt-2.5 w-full resize-none rounded-[16px] border border-line bg-sunk px-4 py-3 text-[15px] leading-[22px] text-ink-2 outline-none placeholder:text-ink-4 focus:border-accent/50"
-        />
-      </div>
-    </Sheet>
+    <Composer
+      open={open}
+      label={t('act_edit')}
+      initialText={task.title}
+      initialNotes={task.notes}
+      showNotes
+      initialSpace={from}
+      onClose={onClose}
+      onSave={({ text, notes, space }) => {
+        if (!text) return;
+        const undo = ws().transact(() => {
+          ws().renameTask(task.id, text);
+          ws().updateTask(task.id, { notes, space });
+        });
+        haptic('success');
+        toast(space !== from ? t('moved_to', { space: t(space) }) : t('edit_saved'), { action: { label: t('undo'), run: undo } });
+      }}
+    />
   );
 }
 

@@ -1,6 +1,6 @@
 import { Camera, Keyboard, LoaderCircle, Mic, ScanText, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { confirmAction, haptic } from '@/lib/native/bridge';
+import { haptic } from '@/lib/native/bridge';
 import { markFresh } from '@/lib/fresh';
 import { cameraAvailable, cameraBlocked, capturePhoto, keepPhotoText, photoUrl, readPhotoText } from '@/lib/native/photos';
 import { explainBlocked } from './permissions';
@@ -19,8 +19,9 @@ import { refreshProvider } from './aiProvider';
 import { dayTimeIn, speechLocale, speechLocales, t } from './i18n';
 import { currentSpace, spaceOf } from './space';
 import { setReminder } from './thoughtActions';
-import { Sheet } from './Sheet';
 import { Aurora, LiveTranscript, VoiceOrb } from './VoiceVisual';
+import { Composer } from './Composer';
+import type { Space } from '@/domain/types';
 import { mayCapture, openCount, openPro } from '@/lib/pro/limits';
 import { isPro } from '@/lib/pro/store';
 
@@ -89,9 +90,13 @@ export function CaptureBar() {
     setLevel(0);
   }, []);
 
-  /** Turn what was said into captured thoughts. */
+  /**
+   * Turn what was said into captured thoughts — in the space chosen in the
+   * typing window, or the one on screen.
+   */
   const capture = useCallback(
-    async (text: string) => {
+    async (text: string, chosen?: Space) => {
+      const into = chosen ?? currentSpace();
       const said = text.trim();
       const withPhoto = photo.current;
       const textJob = photoText.current;
@@ -148,7 +153,7 @@ export function CaptureBar() {
             // Only within this half, though: quietly filing a private thought
             // onto a work task would be the worst kind of helpful.
             const related = d.relatedTo ? findTaskByTitle(d.relatedTo) : undefined;
-            return related && spaceOf(related) === currentSpace() ? { ...d, stepOf: related.id } : d;
+            return related && spaceOf(related) === into ? { ...d, stepOf: related.id } : d;
           })
         : [];
 
@@ -174,8 +179,9 @@ export function CaptureBar() {
       }
 
       // Read at the moment of capture, not when this component mounted: the
-      // thought belongs to whichever half was open when it was spoken.
-      const { tasks: made, steps, undo } = createFromDrafts(drafts, said, currentSpace());
+      // thought belongs to the half chosen in the typing window, or else to
+      // whichever was open when it was spoken.
+      const { tasks: made, steps, undo } = createFromDrafts(drafts, said, into);
       // The photograph belongs to the thought just made. Undo removes the
       // thought, and the file it leaves behind is swept at the next launch.
       if (withPhoto && made[0]) {
@@ -537,15 +543,18 @@ export function CaptureBar() {
         )}
       </div>
 
-      <TypeSheet
+      {/* Typing a thought: the same window as changing one. */}
+      <Composer
         open={typing}
-        initial={draft}
+        label={t('type_placeholder')}
+        initialText={draft}
+        initialSpace={currentSpace()}
         photo={photoSrc}
         onClose={() => {
           setTyping(false);
           setDraft('');
         }}
-        onSubmit={(text) => void capture(text)}
+        onSave={({ text, space }) => void capture(text, space)}
       />
       <AiConsentSheet
         open={!!consentAnswer}
@@ -582,113 +591,5 @@ function ThinkingLine() {
         />
       ))}
     </div>
-  );
-}
-
-/** Typing is the quiet alternative, and it opens only when asked for. */
-function TypeSheet({
-  open,
-  initial = '',
-  photo,
-  onClose,
-  onSubmit,
-}: {
-  open: boolean;
-  /** Words already heard, when typing takes over from speaking mid-sentence. */
-  initial?: string;
-  /** A photograph waiting for its words, shown so it is plainly still there. */
-  photo?: string | null;
-  onClose: () => void;
-  onSubmit: (text: string) => void;
-}) {
-  const [text, setText] = useState('');
-  const ref = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (open) {
-      setText(initial);
-      requestAnimationFrame(() => {
-        ref.current?.focus();
-        // The caret goes after what was already heard, not before it.
-        const end = ref.current?.value.length ?? 0;
-        ref.current?.setSelectionRange(end, end);
-      });
-    }
-  }, [open, initial]);
-
-  const submit = () => {
-    const value = text.trim();
-    onClose();
-    // A photograph is a thought on its own, so an empty line still counts
-    // when there is one waiting.
-    if (value || photo) onSubmit(value);
-  };
-
-  /**
-   * Leaving without saving — Cancel, a swipe down, a tap beside the sheet.
-   * Words typed are asked about first; an empty field just closes.
-   */
-  const cancel = async () => {
-    if (text.trim()) {
-      const sure = await confirmAction(t('discard_body'), t('discard_title'), {
-        ok: t('discard_ok'),
-        cancel: t('keep_editing'),
-      });
-      if (!sure) {
-        ref.current?.focus();
-        return;
-      }
-    }
-    onClose();
-  };
-
-  return (
-    // Opens the keyboard at once, so it waits for it rather than jumping.
-    <Sheet open={open} onClose={() => void cancel()} label="Type a thought" waitForKeyboard>
-      <div className="px-5 pb-2">
-        {/* A cross at the top right, where iOS puts a sheet's way out. */}
-        <div className="-mt-2 mb-1 flex justify-end">
-          <button
-            onClick={() => void cancel()}
-            aria-label={t('cancel')}
-            className="-me-2 grid size-10 place-items-center rounded-full text-ink-3 active:bg-wash-strong"
-          >
-            <X className="size-5" strokeWidth={2} />
-          </button>
-        </div>
-        {photo && (
-          <img
-            src={photo}
-            alt={t('photo_attached')}
-            className="mb-3 max-h-[22dvh] w-full rounded-[16px] border border-line object-cover"
-          />
-        )}
-        <textarea
-          ref={ref}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            // Return starts a new line, as in any note; the thought is kept
-            // with Save. With a hardware keyboard, Cmd/Ctrl+Return saves.
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              submit();
-            }
-          }}
-          placeholder={t('type_placeholder')}
-          // All the room above the keyboard: the web view has already shrunk
-          // to it, so dvh is what is left on screen.
-          style={{ height: photo ? 'calc(64dvh - 214px)' : 'calc(86dvh - 194px)' }}
-          className="min-h-[96px] w-full resize-none bg-transparent text-[20px] leading-[29px] text-ink outline-none placeholder:text-ink-4"
-        />
-        <button
-          onClick={submit}
-          disabled={!text.trim() && !photo}
-          className="mt-2 h-14 w-full rounded-[18px] bg-accent text-[16px] font-semibold tracking-[-0.01em] text-on-accent transition-opacity disabled:opacity-30"
-        >
-          {t('save')}
-        </button>
-      </div>
-    </Sheet>
   );
 }
