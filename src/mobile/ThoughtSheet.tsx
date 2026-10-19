@@ -5,6 +5,7 @@ import {
   CalendarClock,
   CalendarPlus,
   Check,
+  Copy,
   Flag,
   Mail,
   Pencil,
@@ -15,7 +16,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { haptic } from '@/lib/native/bridge';
+import { copyText, haptic } from '@/lib/native/bridge';
 import { isNative } from '@/lib/native/platform';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
 import { photoUrl } from '@/lib/native/photos';
@@ -63,7 +64,7 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
   return (
     <>
       <Sheet open={!!taskId && !remindOpen && !editOpen && !sendOpen} onClose={onClose} label={task.title}>
-        <ThoughtPhoto name={task.photo} text={task.photoText} />
+        <ThoughtPhoto key={task.id} id={task.id} name={task.photo} text={task.photoText} />
         {/* Tapping the words changes them — in the window they were typed in. */}
         <button
           onClick={() => setEditOpen(true)}
@@ -171,8 +172,10 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
 }
 
 /** The photograph the thought was captured with, at the top where it was. */
-function ThoughtPhoto({ name, text }: { name?: string; text?: string }) {
+function ThoughtPhoto({ id, name, text }: { id: string; name?: string; text?: string }) {
   const [src, setSrc] = useState<string | null>(null);
+  const [value, setValue] = useState(text ?? '');
+  useEffect(() => setValue(text ?? ''), [text]);
   useEffect(() => {
     if (!name) return;
     let live = true;
@@ -189,14 +192,32 @@ function ThoughtPhoto({ name, text }: { name?: string; text?: string }) {
         alt={t('photo_attached')}
         className="max-h-[40dvh] w-full rounded-[18px] border border-line object-cover"
       />
-      {/* What the phone read in it: selectable, so a number or an address
-          can be copied without retyping it. */}
+      {/* What the phone read in it: corrected in place where it misread, and
+          copied in one tap, so a number or an address is never retyped. */}
       {text && (
-        <div className="mt-3 rounded-[14px] border border-line bg-sunk px-4 py-3">
-          <p className="text-[11px] font-semibold tracking-[0.12em] text-ink-4 uppercase">{t('photo_text')}</p>
-          <p className="mt-1.5 max-h-[22dvh] overflow-y-auto text-[14px] leading-[20px] whitespace-pre-line text-ink-2 select-text">
-            {text}
-          </p>
+        <div className="mt-3 rounded-[14px] border border-line bg-sunk px-4 pt-2 pb-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold tracking-[0.12em] text-ink-4 uppercase">{t('photo_text')}</p>
+            <button
+              onClick={async () => {
+                if (!(await copyText(value))) return;
+                haptic('light');
+                toast(t('copied'));
+              }}
+              className="-me-2 flex h-9 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-semibold text-accent active:bg-wash-strong"
+            >
+              <Copy className="size-4" strokeWidth={2} />
+              {t('copy')}
+            </button>
+          </div>
+          <textarea
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onBlur={() => value !== text && ws().updateTask(id, { photoText: value })}
+            aria-label={t('photo_text')}
+            rows={5}
+            className="mt-1 max-h-[22dvh] w-full resize-none bg-transparent text-[14px] leading-[20px] text-ink-2 outline-none"
+          />
         </div>
       )}
     </div>

@@ -158,6 +158,7 @@ export const AR: Record<Key, string> = {
   deleted: 'حُذفت',
   undo: 'تراجع',
   copied: 'نُسخ',
+  copy: 'نسخ',
   calendar: 'التقويم',
   connect_calendar: 'غير مرتبط — المس للربط',
   calendar_email_placeholder: 'بريدك في Microsoft',

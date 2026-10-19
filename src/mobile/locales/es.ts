@@ -158,6 +158,7 @@ export const ES: Record<Key, string> = {
   deleted: 'Borrada',
   undo: 'Deshacer',
   copied: 'Copiado',
+  copy: 'Copiar',
   calendar: 'Calendario',
   connect_calendar: 'Sin conectar — toca para conectar',
   calendar_email_placeholder: 'Tu correo de Microsoft',

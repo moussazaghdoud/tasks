@@ -17,7 +17,7 @@ import { AiConsentSheet } from './AiConsentSheet';
 import { aiConsent, setAiConsent } from './aiConsent';
 import { refreshProvider } from './aiProvider';
 import { dayTimeIn, speechLocale, speechLocales, t } from './i18n';
-import { currentSpace, spaceOf } from './space';
+import { currentSpace, setView, spaceOf } from './space';
 import { setReminder } from './thoughtActions';
 import { Aurora, LiveTranscript, VoiceOrb } from './VoiceVisual';
 import { Composer } from './Composer';
@@ -195,6 +195,9 @@ export function CaptureBar() {
       photo.current = null;
       setPhotoSrc(null);
       markFresh(made.map((t) => t.id));
+      // Land where the thought went: a private one typed from the agenda or
+      // from Business is then on screen, not somewhere else.
+      if (made.length) setView(into);
       haptic('success');
       setPhase('idle');
       setTranscript('');

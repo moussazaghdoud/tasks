@@ -317,6 +317,7 @@ const EN = {
   deleted: 'Deleted',
   undo: 'Undo',
   copied: 'Copied',
+  copy: 'Copy',
 
   calendar: 'Calendar',
   connect_calendar: 'Not connected — tap to connect',
@@ -559,6 +560,7 @@ const FR: Record<Key, string> = {
   deleted: 'Supprimé',
   undo: 'Annuler',
   copied: 'Copié',
+  copy: 'Copier',
 
   calendar: 'Calendrier',
   connect_calendar: 'Non connecté — appuyez pour connecter',
@@ -799,6 +801,7 @@ const ZH: Record<Key, string> = {
   deleted: '已删除',
   undo: '撤销',
   copied: '已复制',
+  copy: '复制',
 
   calendar: '日历',
   connect_calendar: '未连接 — 点击连接',
