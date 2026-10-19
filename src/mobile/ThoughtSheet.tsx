@@ -19,7 +19,7 @@ import { useEffect, useState } from 'react';
 import { copyText, haptic } from '@/lib/native/bridge';
 import { isNative } from '@/lib/native/platform';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
-import { photoUrl } from '@/lib/native/photos';
+import { headlineOf, photoUrl } from '@/lib/native/photos';
 import { toggleComplete } from '@/actions/taskActions';
 import { toast } from '@/store/toast';
 import { useWorkspace, ws } from '@/store/workspace';
@@ -53,6 +53,8 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
 
   if (!task) return null;
   const done = task.status === 'done';
+  // Named after the words in its photograph: those words are the thought.
+  const fromPhoto = isNamedByPhoto(task);
   const important = task.priority === 'important';
 
   const act = (fn: () => void | Promise<void>) => () => {
@@ -64,15 +66,18 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
   return (
     <>
       <Sheet open={!!taskId && !remindOpen && !editOpen && !sendOpen} onClose={onClose} label={task.title}>
-        <ThoughtPhoto key={task.id} id={task.id} name={task.photo} text={task.photoText} />
-        {/* Tapping the words changes them — in the window they were typed in. */}
-        <button
-          onClick={() => setEditOpen(true)}
-          aria-label={t('act_edit')}
-          className="block w-full px-6 pt-1 text-start text-[21px] leading-[29px] font-medium tracking-[-0.015em] whitespace-pre-line text-ink"
-        >
-          {task.title}
-        </button>
+        <ThoughtPhoto name={task.photo} text={task.photoText} onEdit={() => setEditOpen(true)} />
+        {/* Tapping the words changes them — in the window they were typed in.
+            A thought named by its photograph has its words above instead. */}
+        {!fromPhoto && (
+          <button
+            onClick={() => setEditOpen(true)}
+            aria-label={t('act_edit')}
+            className="block w-full px-6 pt-1 text-start text-[21px] leading-[29px] font-medium tracking-[-0.015em] whitespace-pre-line text-ink"
+          >
+            {task.title}
+          </button>
+        )}
         <p className="px-6 pt-1 pb-4 text-[13px] text-ink-4">{t('captured_at', { when: relativeIn(task.createdAt) })}</p>
 
         <SheetDivider />
@@ -171,11 +176,21 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
   );
 }
 
-/** The photograph the thought was captured with, at the top where it was. */
-function ThoughtPhoto({ id, name, text }: { id: string; name?: string; text?: string }) {
+/**
+ * A photograph taken without a word is named after the first words read in
+ * it — until someone gives it a name of their own.
+ */
+function isNamedByPhoto(task: Task): boolean {
+  return !!task.photoText?.trim() && task.title === headlineOf(task.photoText);
+}
+
+/**
+ * The photograph the thought was captured with, at the top where it was, and
+ * what the phone read in it: copied in one tap, so a number or an address is
+ * never retyped, and corrected with the pencil where it misread.
+ */
+function ThoughtPhoto({ name, text, onEdit }: { name?: string; text?: string; onEdit: () => void }) {
   const [src, setSrc] = useState<string | null>(null);
-  const [value, setValue] = useState(text ?? '');
-  useEffect(() => setValue(text ?? ''), [text]);
   useEffect(() => {
     if (!name) return;
     let live = true;
@@ -184,40 +199,44 @@ function ThoughtPhoto({ id, name, text }: { id: string; name?: string; text?: st
       live = false;
     };
   }, [name]);
-  if (!name || !src) return null;
+  if (!name) return null;
   return (
     <div className="px-6 pb-3">
-      <img
-        src={src}
-        alt={t('photo_attached')}
-        className="max-h-[40dvh] w-full rounded-[18px] border border-line object-cover"
-      />
-      {/* What the phone read in it: corrected in place where it misread, and
-          copied in one tap, so a number or an address is never retyped. */}
-      {text && (
+      {src && (
+        <img
+          src={src}
+          alt={t('photo_attached')}
+          className="max-h-[40dvh] w-full rounded-[18px] border border-line object-cover"
+        />
+      )}
+      {text?.trim() && (
         <div className="mt-3 rounded-[14px] border border-line bg-sunk px-4 pt-2 pb-3">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold tracking-[0.12em] text-ink-4 uppercase">{t('photo_text')}</p>
-            <button
-              onClick={async () => {
-                if (!(await copyText(value))) return;
-                haptic('light');
-                toast(t('copied'));
-              }}
-              className="-me-2 flex h-9 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-semibold text-accent active:bg-wash-strong"
-            >
-              <Copy className="size-4" strokeWidth={2} />
-              {t('copy')}
-            </button>
+            <div className="-me-2 flex items-center">
+              <button
+                onClick={async () => {
+                  if (!(await copyText(text))) return;
+                  haptic('light');
+                  toast(t('copied'));
+                }}
+                aria-label={t('copy')}
+                className="grid size-9 place-items-center rounded-full text-accent active:bg-wash-strong"
+              >
+                <Copy className="size-[18px]" strokeWidth={2} />
+              </button>
+              <button
+                onClick={onEdit}
+                aria-label={t('act_edit')}
+                className="grid size-9 place-items-center rounded-full text-accent active:bg-wash-strong"
+              >
+                <Pencil className="size-[18px]" strokeWidth={2} />
+              </button>
+            </div>
           </div>
-          <textarea
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onBlur={() => value !== text && ws().updateTask(id, { photoText: value })}
-            aria-label={t('photo_text')}
-            rows={5}
-            className="mt-1 max-h-[22dvh] w-full resize-none bg-transparent text-[14px] leading-[20px] text-ink-2 outline-none"
-          />
+          <p className="mt-1 max-h-[26dvh] overflow-y-auto text-[15px] leading-[22px] whitespace-pre-line text-ink-2 select-text">
+            {text}
+          </p>
         </div>
       )}
     </div>
@@ -230,11 +249,12 @@ function ThoughtPhoto({ id, name, text }: { id: string; name?: string; text?: st
  */
 function EditSheet({ open, task, onClose }: { open: boolean; task: Task; onClose: () => void }) {
   const from = spaceOf(task);
+  const fromPhoto = isNamedByPhoto(task);
   return (
     <Composer
       open={open}
-      label={t('act_edit')}
-      initialText={task.title}
+      label={fromPhoto ? t('photo_text') : t('act_edit')}
+      initialText={fromPhoto ? task.photoText! : task.title}
       initialNotes={task.notes}
       showNotes={!!task.notes?.trim()}
       initialSpace={from}
@@ -242,8 +262,13 @@ function EditSheet({ open, task, onClose }: { open: boolean; task: Task; onClose
       onSave={({ text, notes, space }) => {
         if (!text) return;
         const undo = ws().transact(() => {
-          ws().renameTask(task.id, text);
-          ws().updateTask(task.id, { notes, space });
+          if (fromPhoto) {
+            // The words were corrected: the thought keeps being named after them.
+            ws().updateTask(task.id, { photoText: text, title: headlineOf(text) || task.title, notes, space });
+          } else {
+            ws().renameTask(task.id, text);
+            ws().updateTask(task.id, { notes, space });
+          }
         });
         haptic('success');
         toast(space !== from ? t('moved_to', { space: t(space) }) : t('edit_saved'), { action: { label: t('undo'), run: undo } });
