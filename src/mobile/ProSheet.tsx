@@ -5,6 +5,7 @@ import { apiBase, isNative } from '@/lib/native/platform';
 import { closePro, FREE_OPEN_LIMIT, useProSheet, type ProReason } from '@/lib/pro/limits';
 import {
   buy,
+  isFounder,
   isTester,
   loadOffers,
   PRODUCTS,
@@ -130,11 +131,14 @@ export function ProSheet() {
 
         {pro ? (
           <div className="mt-5">
-            <p className="text-[16px] font-medium text-accent">{pt('pro_active')}</p>
+            <p className="text-[16px] font-medium text-accent">{isFounder() ? pt('founder_active') : pt('pro_active')}</p>
+            {/* A founding member has nothing to manage. */}
+            {!isFounder() && (
             <a href={MANAGE} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-[15px] font-medium text-accent">
               {pt('manage')}
               <ArrowUpRight className="size-4" strokeWidth={2} />
             </a>
+            )}
           </div>
         ) : (
           <>

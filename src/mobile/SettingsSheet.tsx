@@ -2,7 +2,7 @@ import { ArrowUpRight, Ban, CalendarCheck, ChevronRight, Cloud, Download, ImageP
 import { usePeopleBook } from '@/lib/share/people';
 import { ARTS, myPhotoUrl, PHOTOS, pickMyPhoto, setBackdrop, useBackdrop, type Backdrop } from './backdrop';
 import { FREE_OPEN_LIMIT, openCount, openPro } from '@/lib/pro/limits';
-import { usePro } from '@/lib/pro/store';
+import { isFounder, usePro } from '@/lib/pro/store';
 import { pt } from './proI18n';
 import { PeopleSheet } from './PeopleSheet';
 import { st } from './shareI18n';
@@ -289,7 +289,7 @@ function ProRow() {
       <span className="min-w-0 flex-1">
         <span className="block text-[16px] font-semibold text-ink">{pt('pro_title')}</span>
         <span className="block text-[13px] text-ink-3">
-          {pro ? pt('row_active') : pt('open_count', { n: Math.min(open, FREE_OPEN_LIMIT), max: FREE_OPEN_LIMIT })}
+          {pro ? (isFounder() ? pt('row_founder') : pt('row_active')) : pt('open_count', { n: Math.min(open, FREE_OPEN_LIMIT), max: FREE_OPEN_LIMIT })}
         </span>
       </span>
       {!pro && <span className="shrink-0 text-[14px] font-semibold text-accent">{pt('row_upgrade')}</span>}

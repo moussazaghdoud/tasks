@@ -43,7 +43,7 @@ interface StorePlugin {
   entitlements(): Promise<{ active: string[] }>;
   restore(): Promise<{ active: string[] }>;
   redeem(): Promise<void>;
-  environment(): Promise<{ environment: 'testflight' | 'appstore' }>;
+  environment(): Promise<{ environment: 'testflight' | 'appstore'; originalBuild?: string }>;
   addListener(event: 'entitlements', listener: (data: { active: string[] }) => void): Promise<{ remove: () => Promise<void> }>;
 }
 
@@ -52,8 +52,19 @@ const Store = registerPlugin<StorePlugin>('Store');
 const KEY = 'hence.pro';
 /** A TestFlight copy: Pro without buying, so testers are never held back. */
 const TESTER_KEY = 'hence.pro.tester';
+/** Someone who first downloaded Hence before it had anything to sell. */
+const FOUNDER_KEY = 'hence.pro.founder';
 /** A tester trying the free version on purpose. */
 const TRY_FREE_KEY = 'hence.pro.try-free';
+
+/**
+ * Founding members: everyone whose first download from the App Store was a
+ * build before this one — 1.0, free and without limits — keeps Pro for
+ * life, so nobody loses what they already had. Tied to the Apple ID by the
+ * App Store, so a reinstall or a new iPhone keeps it. Builds are numbered by
+ * the release workflow's run; every build from this one on is 1.1 or later.
+ */
+export const FOUNDERS_BEFORE_BUILD = 105;
 
 const read = (key: string): boolean => {
   try {
@@ -73,12 +84,13 @@ const write = (key: string, on: boolean): void => {
 /** Bought, as StoreKit last said. */
 let owned = !isNative() || read(KEY);
 let tester = isNative() && read(TESTER_KEY);
+let founder = isNative() && read(FOUNDER_KEY);
 let tryFree = read(TRY_FREE_KEY);
-let pro = owned || (tester && !tryFree);
+let pro = owned || founder || (tester && !tryFree);
 const listeners = new Set<() => void>();
 
 function recompute(): void {
-  const next = owned || (tester && !tryFree);
+  const next = owned || founder || (tester && !tryFree);
   if (next === pro) {
     listeners.forEach((l) => l());
     return;
@@ -108,6 +120,8 @@ export const usePro = (): boolean =>
 /** Whether this is a TestFlight copy, where Pro is given. */
 export const isTester = (): boolean => tester;
 export const triesFree = (): boolean => tryFree;
+/** Pro for life as a founding member, with nothing bought. */
+export const isFounder = (): boolean => founder && !owned;
 
 /** A tester switching to the free version and back, to see what free sees. */
 export function setTryFree(on: boolean): void {
@@ -120,9 +134,17 @@ export function setTryFree(on: boolean): void {
 export async function initStore(): Promise<void> {
   if (!isNative()) return;
   try {
-    const { environment } = await Store.environment();
+    const { environment, originalBuild } = await Store.environment();
     tester = environment === 'testflight';
     write(TESTER_KEY, tester);
+    // Only a copy from the App Store says truly where it started; a
+    // TestFlight copy always claims "1.0". Without an answer (before iOS 16)
+    // the remembered one stands.
+    if (environment === 'appstore' && originalBuild) {
+      const first = Number(originalBuild);
+      founder = Number.isFinite(first) && first > 0 && first < FOUNDERS_BEFORE_BUILD;
+      write(FOUNDER_KEY, founder);
+    }
     recompute();
   } catch {
     /* the remembered answer stands */

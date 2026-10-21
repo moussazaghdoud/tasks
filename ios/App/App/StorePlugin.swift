@@ -29,13 +29,18 @@ public class StorePlugin: CAPPlugin, CAPBridgedPlugin {
     ]
 
     /// Where this copy of the app came from: "testflight" (and development
-    /// builds), or "appstore". Testers get Pro without buying it.
+    /// builds), or "appstore". Testers get Pro without buying it. With it,
+    /// the build this Apple ID first downloaded from the App Store: those who
+    /// started before Hence sold anything are founding members.
     @objc func environment(_ call: CAPPluginCall) {
         Task {
             if #available(iOS 16.0, *),
                let result = try? await AppTransaction.shared,
                case .verified(let transaction) = result {
-                call.resolve(["environment": transaction.environment == .production ? "appstore" : "testflight"])
+                call.resolve([
+                    "environment": transaction.environment == .production ? "appstore" : "testflight",
+                    "originalBuild": transaction.originalAppVersion
+                ])
                 return
             }
             // Before iOS 16, or when the App Store cannot say: TestFlight
