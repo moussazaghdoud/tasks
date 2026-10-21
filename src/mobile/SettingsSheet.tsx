@@ -1,4 +1,4 @@
-import { ArrowUpRight, Ban, CalendarCheck, ChevronRight, Cloud, Download, ImagePlus, Moon, Sparkles, Sun, Upload, Users } from 'lucide-react';
+import { ArrowUpRight, Ban, CalendarCheck, ChevronRight, Cloud, Download, ImagePlus, Lock, Moon, Sparkles, Sun, Upload, Users } from 'lucide-react';
 import { usePeopleBook } from '@/lib/share/people';
 import { ARTS, myPhotoUrl, PHOTOS, pickMyPhoto, setBackdrop, useBackdrop, type Backdrop } from './backdrop';
 import { FREE_OPEN_LIMIT, openCount, openPro } from '@/lib/pro/limits';
@@ -302,7 +302,11 @@ function ProRow() {
  * art, the photographs it ships with, or one of the person's own.
  */
 function BackdropPicker() {
-  const chosen = useBackdrop();
+  const picked = useBackdrop();
+  const pro = usePro();
+  // Without Pro no background is shown, so none is what is ticked; the
+  // choice is kept for when Pro comes back.
+  const chosen: Backdrop = pro ? picked : { kind: 'none' };
   const [mine, setMine] = useState<string | null>(null);
   const version = chosen.kind === 'mine' ? chosen.version : 0;
   useEffect(() => {
@@ -315,7 +319,12 @@ function BackdropPicker() {
 
   const tile = (on: boolean) =>
     cn('relative block h-[104px] w-[64px] shrink-0 overflow-hidden rounded-[16px] border-2', on ? 'border-accent' : 'border-line');
-  const pro = usePro();
+  // A small lock on each picture: part of Pro, opened from here.
+  const lock = !pro && (
+    <span className="absolute end-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-black/45 text-white">
+      <Lock className="size-3.5" strokeWidth={2.2} />
+    </span>
+  );
   // Backgrounds are Pro; "none" is always there.
   const choose = (next: Backdrop) => {
     haptic('light');
@@ -337,6 +346,7 @@ function BackdropPicker() {
         return (
           <button key={photo.id} role="radio" aria-checked={on} aria-label={`${t('backdrop_section')} ${i + 1}`} onClick={() => choose({ kind: 'photo', id: photo.id })} className={tile(on)}>
             <img src={photo.src} alt="" className="absolute inset-0 size-full object-cover" />
+            {lock}
           </button>
         );
       })}
@@ -345,6 +355,7 @@ function BackdropPicker() {
         return (
           <button key={id} role="radio" aria-checked={on} aria-label={`${t('backdrop_section')} ${PHOTOS.length + i + 1}`} onClick={() => choose({ kind: 'art', id })} className={tile(on)}>
             <span className={`backdrop-art-${id} absolute inset-0`} />
+            {lock}
           </button>
         );
       })}
@@ -366,6 +377,7 @@ function BackdropPicker() {
               {t('backdrop_mine')}
             </span>
           )}
+          {lock}
         </button>
       )}
     </div>
