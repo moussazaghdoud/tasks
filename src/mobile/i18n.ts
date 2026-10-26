@@ -922,5 +922,6 @@ export function repeatLabel(freq: 'daily' | 'weekdays' | 'weekly' | 'monthly' | 
 
 export const timeIn = (d: Date): string => d.toLocaleTimeString(localeOf(), { hour: '2-digit', minute: '2-digit' });
 
+/** "Mon 3 Nov, 09:00": the day, its date and the time, so no week is ambiguous. */
 export const dayTimeIn = (d: Date): string =>
-  d.toLocaleString(localeOf(), { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+  d.toLocaleString(localeOf(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });

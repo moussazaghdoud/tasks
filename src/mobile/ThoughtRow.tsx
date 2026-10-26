@@ -13,7 +13,7 @@ import { haptic } from '@/lib/native/bridge';
 import { toast } from '@/store/toast';
 import { ws } from '@/store/workspace';
 import { ACTION_WIDTH, useSwipe } from '@/hooks/useSwipe';
-import { isRtl, relativeIn, repeatLabel, t, timeIn } from './i18n';
+import { dayTimeIn, isRtl, relativeIn, repeatLabel, t, timeIn } from './i18n';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -57,7 +57,8 @@ function reminderLabel(iso: string): string {
   if (days === 0) return time;
   if (days === 1) return t('tomorrow_at', { time });
   if (days < 0) return relativeIn(iso);
-  return `${at.toLocaleDateString(undefined, { weekday: 'short' })} ${time}`;
+  // Further off, the day of the week alone could be any week: the date too.
+  return dayTimeIn(at);
 }
 
 /**
