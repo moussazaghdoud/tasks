@@ -2,7 +2,7 @@ import { CalendarX, Mail, XCircle } from 'lucide-react';
 import { confirmAction, haptic } from '@/lib/native/bridge';
 import { toast } from '@/store/toast';
 import { answerable, respondToMeeting, type Meeting, type MeetingAction } from './calendar';
-import { dayTimeIn, localeOf, t } from './i18n';
+import { dayTimeIn, t, timeIn } from './i18n';
 import { Sheet, SheetAction, SheetDivider } from './Sheet';
 
 /**
@@ -26,7 +26,7 @@ export function MeetingSheet({
   if (!meeting) return null;
   const m = meeting;
   const organizer = m.organizerName || m.organizerEmail;
-  const clock = (iso: string) => new Date(iso).toLocaleTimeString(localeOf(), { hour: '2-digit', minute: '2-digit' });
+  const clock = (iso: string) => timeIn(new Date(iso));
 
   const answer = async (action: MeetingAction) => {
     const ok = await confirmAction(

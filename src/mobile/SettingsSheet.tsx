@@ -20,7 +20,7 @@ import { readVersion, WEB_VERSION } from '@/lib/version';
 import { describe, useLastRace } from '@/lib/voice/lastRace';
 import { setAiConsent, useAiConsent } from './aiConsent';
 import { AI_SERVICE_ENABLED } from '@/lib/voice/analyze';
-import { LANGUAGES, localeOf, setLang, t, useLang } from './i18n';
+import { LANGUAGES, setLang, t, timeIn, useLang } from './i18n';
 import { toast } from '@/store/toast';
 import {
   calendarConfigured,
@@ -456,7 +456,7 @@ function CloudLine() {
   if (!isNative() || cloud.kind === 'unknown') return null;
   const text =
     cloud.kind === 'saved'
-      ? t('icloud_saved', { time: new Date(cloud.at).toLocaleTimeString(localeOf(), { hour: '2-digit', minute: '2-digit' }) })
+      ? t('icloud_saved', { time: timeIn(new Date(cloud.at)) })
       : cloud.kind === 'saving'
         ? t('icloud_saving')
         : cloud.kind === 'off'

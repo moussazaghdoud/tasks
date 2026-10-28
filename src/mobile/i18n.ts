@@ -920,8 +920,18 @@ export function repeatLabel(freq: 'daily' | 'weekdays' | 'weekly' | 'monthly' | 
   return t(key);
 }
 
-export const timeIn = (d: Date): string => d.toLocaleTimeString(localeOf(), { hour: '2-digit', minute: '2-digit' });
+/**
+ * Hour and minute as the language writes them: "09:00" on a 24-hour clock,
+ * "9:00 AM" on a 12-hour one — a two-digit hour there reads "09:00 AM",
+ * which no one writes.
+ */
+export const clockOptions = (): Intl.DateTimeFormatOptions =>
+  new Intl.DateTimeFormat(localeOf(), { hour: 'numeric' }).resolvedOptions().hour12
+    ? { hour: 'numeric', minute: '2-digit' }
+    : { hour: '2-digit', minute: '2-digit' };
+
+export const timeIn = (d: Date): string => d.toLocaleTimeString(localeOf(), clockOptions());
 
 /** "Mon 3 Nov, 09:00": the day, its date and the time, so no week is ambiguous. */
 export const dayTimeIn = (d: Date): string =>
-  d.toLocaleString(localeOf(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  d.toLocaleString(localeOf(), { weekday: 'short', day: 'numeric', month: 'short', ...clockOptions() });

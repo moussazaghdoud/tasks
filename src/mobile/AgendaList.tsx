@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { toKey } from '@/lib/dates';
 import { haptic } from '@/lib/native/bridge';
 import { cn } from '@/lib/platform';
-import { localeOf, t } from './i18n';
+import { localeOf, t, timeIn } from './i18n';
 import { MeetingSheet } from './MeetingSheet';
 import {
   allChecked,
@@ -52,7 +52,7 @@ function duration(start: string, end: string): string {
   return m ? `${h} h ${m}` : `${h} h`;
 }
 
-const clock = (iso: string) => new Date(iso).toLocaleTimeString(localeOf(), { hour: '2-digit', minute: '2-digit' });
+const clock = (iso: string) => timeIn(new Date(iso));
 
 /**
  * The week ahead, starting from now.
