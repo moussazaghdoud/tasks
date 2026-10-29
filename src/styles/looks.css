@@ -13,6 +13,74 @@
    Unlayered, so these win over Tailwind's utilities without !important.
    ------------------------------------------------------------------------ */
 
+/* ======================= Classic cards ======================= */
+
+/* Colour that means something: red is important, blue has a reminder, amber
+   holds a photo, white is a plain thought. A thin edge on the left carries
+   the colour, so the list reads at a glance and over any background. A
+   thought someone sent keeps its own indigo (ThoughtRow). */
+:root:not([data-look]) {
+  --kind-plain: #ffffff;
+  --kind-plain-line: #ebe7df;
+  --kind-plain-edge: #7d8794;
+  --kind-reminder: #e8effd;
+  --kind-reminder-edge: #6f93e6;
+  --kind-reminder-ink: #2f4f9e;
+  --kind-photo: #fcf1dc;
+  --kind-photo-edge: #dda64a;
+  --kind-important: #fde6e1;
+  --kind-important-edge: #e0624a;
+  --kind-chip: #ffffff;
+}
+:root:not([data-look])[data-theme='dark'] {
+  --kind-plain: #2a2a2e;
+  --kind-plain-line: #36363b;
+  --kind-plain-edge: #8b95a3;
+  --kind-reminder: #1f2a40;
+  --kind-reminder-edge: #6f93e6;
+  --kind-reminder-ink: #a9c0f5;
+  --kind-photo: #33291a;
+  --kind-photo-edge: #dda64a;
+  --kind-important: #3a221e;
+  --kind-important-edge: #e0624a;
+  --kind-chip: rgb(255 255 255 / 0.08);
+}
+
+:root:not([data-look]) .thought-card[data-shared='false'] {
+  border-radius: 10px;
+  border-color: transparent;
+}
+:root:not([data-look]) .thought-card[data-shared='false'] img {
+  border-radius: 6px;
+}
+:root:not([data-look]) .thought-card[data-shared='false'][data-kind='plain'] {
+  background: var(--kind-plain);
+  border-color: var(--kind-plain-line);
+  box-shadow: inset 3px 0 0 var(--kind-plain-edge);
+}
+:root:not([data-look]) .thought-card[data-shared='false'][data-kind='reminder'] {
+  background: var(--kind-reminder);
+  box-shadow: inset 3px 0 0 var(--kind-reminder-edge);
+}
+:root:not([data-look]) .thought-card[data-shared='false'][data-kind='photo'] {
+  background: var(--kind-photo);
+  box-shadow: inset 3px 0 0 var(--kind-photo-edge);
+}
+:root:not([data-look]) .thought-card[data-shared='false'][data-kind='important'] {
+  background: var(--kind-important);
+  box-shadow: inset 3px 0 0 var(--kind-important-edge);
+}
+
+/* The reminder as a small pill, so its time stands out from the words. */
+:root:not([data-look]) .thought-card .thought-reminder {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--kind-chip);
+}
+:root:not([data-look]) .thought-card .thought-reminder[data-overdue='false'] {
+  color: var(--kind-reminder-ink);
+}
+
 /* ======================= Pinboard ======================= */
 
 :root[data-look='pinboard']:not([data-theme='dark']) {
