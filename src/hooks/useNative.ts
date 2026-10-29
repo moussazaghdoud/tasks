@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { initNative } from '@/lib/native/bridge';
 import { initNotifications, syncReminders } from '@/lib/native/notifications';
 import { readUnreadPhotos, sweepPhotos } from '@/lib/native/photos';
+import { startDiagnostics } from '@/mobile/diagnostics';
 import { initICloud } from '@/mobile/icloud';
 import { addFromText, initSharing } from '@/mobile/sharing';
 import { initStore } from '@/lib/pro/store';
@@ -18,7 +19,10 @@ export function useNative(): void {
   const ready = useWorkspace((s) => s.ready);
 
   useEffect(() => {
-    if (!ready || !isNative()) return;
+    if (!ready) return;
+    // First, so that whatever the startup below does is in the diary.
+    startDiagnostics();
+    if (!isNative()) return;
 
     void initNative(
       // Back in the foreground: the day may have rolled over, and reminders

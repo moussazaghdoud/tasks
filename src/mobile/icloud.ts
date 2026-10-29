@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react';
 import { isNative } from '@/lib/native/platform';
 import { onOutboxChange, restoreSent, waitingFor, type Sent } from '@/lib/share/outbox';
 import { exportBook, onBookChange, people, restoreBook, type Book } from '@/lib/share/people';
+import { log } from '@/lib/log';
 import { toast } from '@/store/toast';
 import { useWorkspace, ws } from '@/store/workspace';
 import { mergeSnapshots, readBackup } from './backup';
@@ -107,6 +108,7 @@ async function restoreIfEmpty(): Promise<void> {
       if (task.photo) await ICloud.fetchPhoto({ name: task.photo }).catch(() => undefined);
     }
     const { merged, added } = mergeSnapshots(ws().exportSnapshot(), copy.snapshot);
+    log('icloud', `restore at launch · ${copy.snapshot.tasks.length} in the copy · ${added} added`);
     if (added) {
       await ws().importSnapshot(merged);
       toast(t('icloud_restored', { n: added }));

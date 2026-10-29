@@ -201,6 +201,8 @@ export const AR: Record<Key, string> = {
   about: 'حول',
   privacy_policy: 'سياسة الخصوصية',
   support: 'الدعم',
+  diag_send: 'إرسال سجل التشخيص',
+  diag_note: 'ما فعله التطبيق مؤخرًا — دون نصوص أفكارك أبدًا. أنت من يختار لمن ترسله.',
   repeat_daily: 'كل يوم',
   repeat_weekdays: 'أيام العمل',
   repeat_weekly: 'كل أسبوع',

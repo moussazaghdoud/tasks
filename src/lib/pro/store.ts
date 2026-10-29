@@ -1,5 +1,6 @@
 import { registerPlugin } from '@capacitor/core';
 import { useSyncExternalStore } from 'react';
+import { log } from '@/lib/log';
 import { isNative } from '@/lib/native/platform';
 
 /**
@@ -96,6 +97,7 @@ function recompute(): void {
     return;
   }
   pro = next;
+  log('pro', `pro ${next} · owned ${owned} · founder ${founder} · tester ${tester} · tries free ${tryFree}`);
   listeners.forEach((l) => l());
 }
 
@@ -173,12 +175,14 @@ export type BuyResult = 'purchased' | 'pending' | 'cancelled' | 'failed';
 export async function buy(id: string): Promise<BuyResult> {
   try {
     const result = await Store.purchase({ id });
+    log('pro', `buy ${id.split('.').pop()} → ${result.status}`);
     if (result.active) settle(result.active);
     if (result.status === 'purchased') return 'purchased';
     if (result.status === 'pending') return 'pending';
     if (result.status === 'cancelled') return 'cancelled';
     return 'failed';
-  } catch {
+  } catch (error) {
+    log('pro', `buy ${id.split('.').pop()} → error ${error instanceof Error ? error.message : ''}`);
     return 'failed';
   }
 }
@@ -201,9 +205,11 @@ export async function redeemCode(): Promise<boolean> {
 export async function restorePurchases(): Promise<boolean | null> {
   try {
     settle((await Store.restore()).active);
+    log('pro', `restore → owned ${owned}`);
     // A purchase found, not the Pro testers are given.
     return owned;
-  } catch {
+  } catch (error) {
+    log('pro', `restore → error ${error instanceof Error ? error.message : ''}`);
     return null;
   }
 }

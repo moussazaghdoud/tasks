@@ -361,6 +361,8 @@ const EN = {
   about: 'About',
   privacy_policy: 'Privacy policy',
   support: 'Support',
+  diag_send: 'Send diagnostics',
+  diag_note: 'What the app did lately — never the words of your thoughts. You choose whom to send it to.',
 
   // Spoken by VoiceOver, never shown.
   repeat_daily: 'Every day',
@@ -604,6 +606,8 @@ const FR: Record<Key, string> = {
   about: 'À propos',
   privacy_policy: 'Politique de confidentialité',
   support: 'Assistance',
+  diag_send: 'Envoyer le journal de diagnostic',
+  diag_note: 'Ce que l’app a fait récemment, jamais le texte de vos pensées. C’est vous qui choisissez à qui l’envoyer.',
 
   repeat_daily: 'Chaque jour',
   repeat_weekdays: 'En semaine',
@@ -845,6 +849,8 @@ const ZH: Record<Key, string> = {
   about: '关于',
   privacy_policy: '隐私政策',
   support: '支持',
+  diag_send: '发送诊断日志',
+  diag_note: '应用最近的操作记录——绝不包含你想法的文字。由你决定发送给谁。',
 
   repeat_daily: '每天',
   repeat_weekdays: '工作日',

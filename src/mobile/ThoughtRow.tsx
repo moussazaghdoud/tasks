@@ -8,7 +8,9 @@ import { isFresh } from '@/lib/fresh';
 import { photoUrl } from '@/lib/native/photos';
 import { isNative } from '@/lib/native/platform';
 import { cn } from '@/lib/platform';
-import { registerCompletionAnimator, toggleComplete } from '@/actions/taskActions';
+import { registerCompletionAnimator } from '@/actions/taskActions';
+import { toggleDone } from './thoughtActions';
+import { log, ref } from '@/lib/log';
 import { haptic } from '@/lib/native/bridge';
 import { toast } from '@/store/toast';
 import { ws } from '@/store/workspace';
@@ -124,9 +126,17 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
 
   // Mirrored in Arabic: complete toward the end of the line, delete from it.
   const rtl = isRtl();
-  const swipe = useSwipe({ enabled: !done, flip: rtl, onRight: () => toggleComplete(task.id) });
+  const swipe = useSwipe({
+    enabled: !done,
+    flip: rtl,
+    onRight: () => {
+      log('tap', `swipe done ${ref(task.id)}`);
+      toggleDone(task.id);
+    },
+  });
 
   const remove = () => {
+    log('tap', `swipe delete ${ref(task.id)}`);
     swipe.close();
     const undo = ws().transact(() => ws().remove([task.id]));
     haptic('medium');
@@ -134,6 +144,9 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
   };
 
   const checked = done || completing;
+  // What the card's colour says in Classic (looks.css): urgent first, then a
+  // promise to come back, then a picture; the rest stay plain.
+  const kind = checked ? 'plain' : important ? 'important' : task.reminderAt ? 'reminder' : task.photo ? 'photo' : 'plain';
 
   return (
     <div className="collapse-row" data-collapsed={collapsed}>
@@ -181,6 +194,7 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           // thought-card, thought-title, thought-check: what a look (looks.css) re-dresses.
           data-important={important && !checked}
           data-shared={!!task.sharedBy}
+          data-kind={kind}
           className={cn(
             'thought-card relative flex items-start gap-3.5 rounded-[15px] border px-4 py-3.5 transition-colors duration-200',
             // Important thoughts carry the red themselves rather than wearing a
@@ -197,7 +211,10 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
           )}
         >
           <button
-            onClick={() => toggleComplete(task.id)}
+            onClick={() => {
+              log('tap', `check ${ref(task.id)} · was ${task.status}`);
+              toggleDone(task.id);
+            }}
             role="checkbox"
             aria-checked={checked}
             aria-label={checked ? t('a11y_reopen', { title: task.title }) : t('a11y_complete', { title: task.title })}
@@ -250,7 +267,10 @@ export const ThoughtRow = memo(function ThoughtRow({ task, onOpen }: { task: Tas
                 {/* Delegated and kept here: to whom, then what came back (Pro). */}
                 {task.delegated && <DelegatedLine delegated={task.delegated} />}
                 {task.reminderAt && (
-                  <span className={cn('flex items-center gap-1.5', overdue ? 'text-ember' : 'text-accent')}>
+                  <span
+                    data-overdue={overdue}
+                    className={cn('thought-reminder flex items-center gap-1.5', overdue ? 'text-ember' : 'text-accent')}
+                  >
                     <Bell className="size-3" strokeWidth={2.1} />
                     {reminderLabel(task.reminderAt)}
                   </span>

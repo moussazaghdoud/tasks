@@ -1,4 +1,4 @@
-import { ArrowUpRight, Ban, CalendarCheck, ChevronRight, Cloud, Download, ImagePlus, Lock, Moon, Sparkles, Sun, Upload, Users } from 'lucide-react';
+import { ArrowUpRight, Ban, CalendarCheck, ChevronRight, Cloud, Download, FileText, ImagePlus, Lock, Moon, Sparkles, Sun, Upload, Users } from 'lucide-react';
 import { usePeopleBook } from '@/lib/share/people';
 import { ARTS, myPhotoUrl, PHOTOS, pickMyPhoto, setBackdrop, useBackdrop, type Backdrop } from './backdrop';
 import { FREE_OPEN_LIMIT, openCount, openPro } from '@/lib/pro/limits';
@@ -17,6 +17,7 @@ import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
 import { apiBase, isNative } from '@/lib/native/platform';
 import { readVersion, WEB_VERSION } from '@/lib/version';
+import { sendDiagnostics } from './diagnostics';
 import { describe, useLastRace } from '@/lib/voice/lastRace';
 import { setAiConsent, useAiConsent } from './aiConsent';
 import { AI_SERVICE_ENABLED } from '@/lib/voice/analyze';
@@ -502,6 +503,18 @@ function AboutSection() {
           ))}
         </div>
       )}
+      {/* For "something went wrong and I can't say what": the diary of what
+          the app did, sent by the person, never by the app. */}
+      <div className="border-t border-line">
+        <button
+          onClick={() => void sendDiagnostics().catch(() => toast(t('backup_failed')))}
+          className="flex h-[58px] w-full items-center gap-4 px-6 text-start text-[17px] text-ink transition-colors active:bg-wash-strong"
+        >
+          <span className="flex-1">{t('diag_send')}</span>
+          <FileText className="size-[18px] shrink-0 text-ink-4" strokeWidth={1.8} />
+        </button>
+      </div>
+      <p className="px-6 pt-2 text-[12.5px] leading-[18px] text-ink-3">{t('diag_note')}</p>
       <p className="px-6 pt-3 text-[12.5px] text-ink-4 tabular-nums">Hence {version}</p>
     </>
   );

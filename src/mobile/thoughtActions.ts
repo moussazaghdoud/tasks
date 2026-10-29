@@ -8,6 +8,7 @@
 import type { Task } from '@/domain/types';
 import { todayKey } from '@/lib/dates';
 import { afterFirstLine, firstLine } from '@/lib/lines';
+import { toggleComplete } from '@/actions/taskActions';
 import { exportFile } from '@/lib/native/bridge';
 import { isNative } from '@/lib/native/platform';
 import { ws } from '@/store/workspace';
@@ -29,6 +30,9 @@ function body(task: Task): string {
  * `mailto:` is deliberate: it opens the account the person already uses, with
  * their signature, and nothing leaves the device until they press send.
  */
+/** Done, or open again; the toast in the language on screen. */
+export const toggleDone = (id: string): void => toggleComplete(id, { done: t('act_done'), undo: t('undo') });
+
 export function openEmail(task: Task): void {
   const url = `mailto:?subject=${encodeURIComponent(firstLine(task.title))}&body=${encodeURIComponent(body(task))}`;
   window.location.href = url;

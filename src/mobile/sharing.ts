@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { log } from '@/lib/log';
 import { haptic } from '@/lib/native/bridge';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
 import { isNative } from '@/lib/native/platform';
@@ -168,6 +169,7 @@ export async function send(task: Task, to: Person[], mode: 'copy' | 'transfer', 
       sentAt: new Date().toISOString(),
     })),
   );
+  log('share', `${mode} to ${reached.length} ${reached.length === 1 ? 'person' : 'people'}`);
   haptic('success');
   if (mode === 'transfer') {
     const undo = ws().transact(() => ws().remove([task.id]));
@@ -221,6 +223,7 @@ export function acceptThought(item: Incoming): void {
     reminderAt: thought.reminderAt && Date.parse(thought.reminderAt) > Date.now() ? thought.reminderAt : null,
   });
   settleThought(item.id);
+  log('share', `accepted a thought${thought.team ? ' sent to a team' : ''}`);
   haptic('success');
   toast(st('accepted'));
   // Sent to a team: tell the sender and the others that it is taken, so

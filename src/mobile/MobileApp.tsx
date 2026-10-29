@@ -2,6 +2,7 @@ import { Check, Mic, Search, Settings2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Space, Task } from '@/domain/types';
 import { isOnDay, todayKey } from '@/lib/dates';
+import { log } from '@/lib/log';
 import { cn } from '@/lib/platform';
 import { useWorkspace, ws } from '@/store/workspace';
 import { toast } from '@/store/toast';
@@ -275,6 +276,7 @@ export function MobileApp() {
                         cancel: t('cancel'),
                       });
                       if (!ok) return;
+                      log('tap', `clear done · ${ids.length}`);
                       const undo = ws().transact(() => ws().remove(ids));
                       haptic('medium');
                       toast(t('deleted_many', { n: ids.length }), { action: { label: t('undo'), run: undo } });

@@ -201,6 +201,8 @@ export const DE: Record<Key, string> = {
   about: 'Über',
   privacy_policy: 'Datenschutzerklärung',
   support: 'Hilfe',
+  diag_send: 'Diagnoseprotokoll senden',
+  diag_note: 'Was die App zuletzt getan hat — nie der Text deiner Gedanken. Du entscheidest, an wen es geht.',
   repeat_daily: 'Jeden Tag',
   repeat_weekdays: 'Werktags',
   repeat_weekly: 'Jede Woche',

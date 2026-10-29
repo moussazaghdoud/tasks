@@ -16,11 +16,11 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { log, ref } from '@/lib/log';
 import { copyText, haptic } from '@/lib/native/bridge';
 import { isNative } from '@/lib/native/platform';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
 import { headlineOf, photoUrl } from '@/lib/native/photos';
-import { toggleComplete } from '@/actions/taskActions';
 import { toast } from '@/store/toast';
 import { useWorkspace, ws } from '@/store/workspace';
 import type { Space, Task } from '@/domain/types';
@@ -30,7 +30,7 @@ import { Sheet, SheetAction, SheetDivider } from './Sheet';
 import { st } from './shareI18n';
 import { dayTimeIn, relativeIn, repeatLabel, t, timeIn } from './i18n';
 import { spaceOf } from './space';
-import { addToCalendar, openEmail, reminderChoices, setReminder, shareThought } from './thoughtActions';
+import { addToCalendar, openEmail, reminderChoices, setReminder, shareThought, toggleDone } from './thoughtActions';
 
 /**
  * Everything you can do with a thought, and nothing you can do to it before
@@ -83,9 +83,24 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
         <SheetDivider />
 
         {done ? (
-          <SheetAction icon={RotateCcw} label={t('act_reopen')} onClick={act(() => toggleComplete(task.id))} />
+          <SheetAction
+            icon={RotateCcw}
+            label={t('act_reopen')}
+            onClick={act(() => {
+              log('tap', `sheet reopen ${ref(task.id)}`);
+              toggleDone(task.id);
+            })}
+          />
         ) : (
-          <SheetAction icon={Check} label={t('act_done')} tone="accent" onClick={act(() => toggleComplete(task.id))} />
+          <SheetAction
+            icon={Check}
+            label={t('act_done')}
+            tone="accent"
+            onClick={act(() => {
+              log('tap', `sheet done ${ref(task.id)}`);
+              toggleDone(task.id);
+            })}
+          />
         )}
 
         <SheetAction
@@ -139,6 +154,7 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
           label={t('act_delete')}
           tone="danger"
           onClick={act(() => {
+            log('tap', `sheet delete ${ref(task.id)}`);
             const undo = ws().transact(() => ws().remove([task.id]));
             haptic('light');
             toast(t('deleted'), { action: { label: t('undo'), run: undo } });

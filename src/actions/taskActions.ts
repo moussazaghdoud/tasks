@@ -40,7 +40,11 @@ export function registerCompletionAnimator(id: ID, fn: Animator) {
   };
 }
 
-export async function completeTasks(ids: ID[]) {
+/**
+ * `words` lets the phone app say it in the person's language; the desktop
+ * app is English throughout and leaves it out.
+ */
+export async function completeTasks(ids: ID[], words?: { done: string; undo: string }) {
   const open = ids.filter((id) => ws().tasks[id] && ws().tasks[id].status !== 'done');
   if (!open.length) return;
   haptic('success');
@@ -52,17 +56,21 @@ export async function completeTasks(ids: ID[]) {
   const s = ui();
   if (s.selection.length) s.setSelection(s.selection.filter((id) => !open.includes(id)));
   const next = spawned[0];
+  if (words) {
+    toast(words.done, { detail: open.length === 1 ? ws().tasks[open[0]]?.title : undefined, action: { label: words.undo, run: undo } });
+    return;
+  }
   toast(open.length === 1 ? 'Completed' : `${open.length} tasks completed`, {
     detail: next ? `Repeats — next ${dueLabel(next.dueDate!).toLowerCase()}` : open.length === 1 ? ws().tasks[open[0]]?.title : undefined,
     action: { label: 'Undo', run: undo },
   });
 }
 
-export function toggleComplete(id: ID) {
+export function toggleComplete(id: ID, words?: { done: string; undo: string }) {
   const t = ws().tasks[id];
   if (!t) return;
   if (t.status === 'done') ws().reopen([id]);
-  else void completeTasks([id]);
+  else void completeTasks([id], words);
 }
 
 // ---- scheduling ---------------------------------------------------------------

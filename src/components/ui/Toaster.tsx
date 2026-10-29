@@ -1,6 +1,7 @@
 import { Bell, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useToasts, type Toast } from '@/store/toast';
+import { log } from '@/lib/log';
 import { cn } from '@/lib/platform';
 
 function ToastItem({ t }: { t: Toast }) {
@@ -19,7 +20,9 @@ function ToastItem({ t }: { t: Toast }) {
     };
   }, [paused, t.id, t.tone, dismiss]);
 
-  const run = (fn: () => void) => {
+  const run = (fn: () => void, label: string) => {
+    // The button only: a toast's message can quote a thought.
+    log('tap', `toast → ${label}`);
     fn();
     dismiss(t.id);
   };
@@ -41,7 +44,7 @@ function ToastItem({ t }: { t: Toast }) {
       </div>
       {t.secondary && (
         <button
-          onClick={() => run(t.secondary!.run)}
+          onClick={() => run(t.secondary!.run, t.secondary!.label)}
           className={cn(
             'shrink-0 rounded-[6px] px-2 py-1 font-medium transition-colors',
             t.tone === 'reminder' ? 'text-ink-2 hover:bg-wash-strong' : 'text-white/70 hover:bg-white/10 hover:text-white',
@@ -52,7 +55,7 @@ function ToastItem({ t }: { t: Toast }) {
       )}
       {t.action && (
         <button
-          onClick={() => run(t.action!.run)}
+          onClick={() => run(t.action!.run, t.action!.label)}
           className={cn(
             'shrink-0 rounded-[6px] px-2 py-1 font-medium transition-colors',
             t.tone === 'reminder' ? 'text-accent hover:bg-accent-soft' : 'text-[#9fd3cf] hover:bg-white/10',
