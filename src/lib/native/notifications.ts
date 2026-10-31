@@ -8,6 +8,7 @@
  */
 import { LocalNotifications, type PendingLocalNotificationSchema } from '@capacitor/local-notifications';
 import type { Task } from '@/domain/types';
+import { log, ref } from '@/lib/log';
 import { ui } from '@/store/ui';
 import { useWorkspace, ws } from '@/store/workspace';
 import { isNative } from './platform';
@@ -72,6 +73,7 @@ export async function initNotifications(): Promise<void> {
   if (!isNative()) return;
   await LocalNotifications.addListener('localNotificationActionPerformed', (event) => {
     const taskId = event.notification.extra?.taskId as string | undefined;
+    log('tap', `reminder notification ${taskId ? ref(taskId) : '(no thought)'}`);
     if (taskId && ws().tasks[taskId]) ui().openTask(taskId);
   });
 

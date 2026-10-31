@@ -2,8 +2,9 @@ import { Check, Mic, Search, Settings2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Space, Task } from '@/domain/types';
 import { isOnDay, todayKey } from '@/lib/dates';
-import { log } from '@/lib/log';
+import { log, ref } from '@/lib/log';
 import { cn } from '@/lib/platform';
+import { ui, useUi } from '@/store/ui';
 import { useWorkspace, ws } from '@/store/workspace';
 import { toast } from '@/store/toast';
 import { confirmAction, haptic, setStatusBarTheme } from '@/lib/native/bridge';
@@ -64,6 +65,23 @@ export function MobileApp() {
   const [showDone, setShowDone] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const view = useView();
+
+  // A reminder tapped, or a link to a thought: open that thought, on its own
+  // tab, rather than leaving you on the list wondering what it was about.
+  // Notifications and links ask through the shared ui store; this screen
+  // keeps its own open sheet, so the request is handed over here.
+  const requested = useUi((s) => s.openTaskId);
+  useEffect(() => {
+    if (!requested) return;
+    ui().openTask(null);
+    const task = ws().tasks[requested];
+    log('tap', `opened from outside ${ref(requested)}${task ? '' : ' · not found'}`);
+    if (!task) return;
+    setQuery(null);
+    setView(spaceOf(task));
+    if (task.status === 'done') setShowDone(true);
+    setOpenId(task.id);
+  }, [requested]);
   // The agenda holds no thoughts; the lists below still need a space, and
   // Business is where a thought captured from there would land.
   const space: Space = view === 'agenda' ? 'business' : view;
