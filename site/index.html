@@ -76,9 +76,9 @@
     .store img { height: 54px; display: block; }
     .hero-note { margin-top: 18px; font-size: 14.5px; color: var(--ink-3); }
     .duo { position: relative; height: 640px; }
-    .duo .phone { position: absolute; width: 290px; }
-    .duo .phone:first-child { left: 4%; top: 0; transform: rotate(-4deg); z-index: 2; }
-    .duo .phone:last-child { right: 4%; top: 60px; transform: rotate(5deg); }
+    .duo .phone { position: absolute; width: 262px; }
+    .duo .phone:first-child { left: 0; top: 0; transform: rotate(-3deg); z-index: 2; }
+    .duo .phone:last-child { right: 0; top: 56px; transform: rotate(4deg); }
     @media (max-width: 900px) {
       .hero { padding-top: 48px; }
       .hero .wrap { grid-template-columns: 1fr; }
@@ -187,7 +187,7 @@
         </div>
         <div class="duo" aria-hidden="true">
           <div class="phone"><img src="assets/colours-business.webp" alt=""></div>
-          <div class="phone"><img src="assets/colours-private.webp" alt=""></div>
+          <div class="phone"><img data-img="agenda" src="assets/agenda-en.webp" alt=""></div>
         </div>
       </div>
     </section>
@@ -244,7 +244,7 @@
           <h2 data-t="agenda_title">Your meetings, beside your thoughts.</h2>
           <p class="lead" data-t="agenda_lead">Connect Outlook or Google Calendar and see today and tomorrow at a glance. Tap a meeting to cancel it, decline it or email the organiser — and turn any thought into an event.</p>
         </div>
-        <div class="phone"><img data-img="agenda" src="assets/agenda-en.webp" alt="The Hence agenda with today's and tomorrow's meetings"></div>
+        <div class="phone"><img data-img="agenda-dark" src="assets/agenda-dark-en.webp" alt="The Hence agenda with today's and tomorrow's meetings"></div>
       </div>
     </section>
 
