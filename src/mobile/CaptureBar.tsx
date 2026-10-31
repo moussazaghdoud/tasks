@@ -19,7 +19,7 @@ import { refreshProvider } from './aiProvider';
 import { dayTimeIn, speechLocale, speechLocales, t } from './i18n';
 import { currentSpace, setView, spaceOf } from './space';
 import { setReminder } from './thoughtActions';
-import { Aurora, LiveTranscript, VoiceOrb } from './VoiceVisual';
+import { LiveTranscript, VoiceOrb } from './VoiceVisual';
 import { Composer } from './Composer';
 import type { Space } from '@/domain/types';
 import { mayCapture, openCount, openPro } from '@/lib/pro/limits';
@@ -417,8 +417,6 @@ export function CaptureBar() {
       <div className="fixed inset-x-0 bottom-0 z-50">
         {busy ? (
           <div className="relative animate-sheet-up overflow-hidden rounded-t-[28px] border-t border-line bg-raised px-5 pt-5 pb-[max(18px,env(safe-area-inset-bottom))] shadow-float">
-            {/* Colour that breathes with the voice, behind everything else. */}
-            {phase === 'listening' && <Aurora level={level} />}
             <div className="relative z-10 flex items-start justify-between">
               <p className="pt-1 text-[11px] font-semibold tracking-[0.16em] text-accent uppercase">
                 {phase === 'listening' ? t('listening') : t('thinking')}

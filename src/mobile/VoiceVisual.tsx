@@ -1,4 +1,4 @@
-import { Bell, CornerDownLeft } from 'lucide-react';
+import { Bell, CornerDownLeft, Mic } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
 import { ME } from '@/domain/factories';
 import { cn } from '@/lib/platform';
@@ -9,11 +9,11 @@ import { understand } from './understood';
 /**
  * Listening, made visible.
  *
- * Three layers, each answering one question. The aurora behind the sheet:
- * is it hearing me? — it breathes with the voice. The orb: how loud? — it
- * swells and turns. The words: what did it get? — each arrives lit and
- * settles, and what the app has understood keeps its colour: the reminder,
- * a name from the list, a spoken new line shown as one.
+ * Two layers, each answering one question. The halo: is it hearing me, and
+ * how loud? — rings leave the microphone with the voice. The words: what did
+ * it get? — each arrives lit and settles, and what the app has understood
+ * keeps its colour: the reminder, a name from the list, a spoken new line
+ * shown as one.
  */
 
 type Level = { level: number };
@@ -25,40 +25,30 @@ type Level = { level: number };
 const levelStyle = (level: number) =>
   ({ '--level': Math.min(1, Math.sqrt(Math.max(0, level)) * 1.3).toFixed(3) }) as React.CSSProperties;
 
-/** Soft colour drifting behind the sheet, brighter as the voice rises. */
-export function Aurora({ level }: Level) {
-  return (
-    <div className="voice-aurora" style={levelStyle(level)} aria-hidden>
-      <span />
-      <span />
-      <span />
-    </div>
-  );
-}
-
 /**
- * A turning sphere of colour that swells with the voice, rippling outwards,
- * with three crisp waves running through it.
+ * The halo: a microphone in a disc, a soft glow around it, and rings that
+ * leave it while you speak — more often and wider as the voice rises, few
+ * and faint in a pause. Calm enough to sit beside the words, and nobody has
+ * to be told it is listening.
  */
 export function VoiceOrb({ level }: Level) {
   return (
-    <div className="voice-orb-wrap" style={levelStyle(level)} aria-hidden>
-      <VoiceWaves level={level} />
-      <span className="voice-orb-ring" />
-      <span className="voice-orb-ring voice-orb-ring-late" />
-      <span className="voice-orb" />
+    <div className="voice-halo" style={levelStyle(level)} aria-hidden>
+      <HaloRings level={level} />
+      <span className="voice-halo-glow" />
+      <span className="voice-halo-disc">
+        <Mic className="size-[22px]" strokeWidth={2.2} />
+      </span>
     </div>
   );
 }
 
 /**
- * Three sine waves in the palette — teal, indigo, rose — drawn sharp on a
- * canvas every frame. Their height follows the voice (eased, so they flow
- * rather than jump); at rest they still breathe a little, so silence reads as
- * listening, not as frozen. With Reduce Motion they stand still and only
- * their height answers.
+ * The rings, drawn on a canvas: each one is born at the disc with the
+ * strength of the voice at that moment and widens as it fades. With Reduce
+ * Motion no rings leave; the glow alone answers the voice.
  */
-function VoiceWaves({ level }: Level) {
+function HaloRings({ level }: Level) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const target = useRef(0);
   target.current = Math.min(1, Math.sqrt(Math.max(0, level)) * 1.3);
@@ -68,13 +58,15 @@ function VoiceWaves({ level }: Level) {
     const ctx = el?.getContext('2d');
     if (!el || !ctx) return;
     const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-    const css = getComputedStyle(document.documentElement);
-    const colours = ['--color-accent', '--color-tomorrow', '--color-day-6'].map((v) => css.getPropertyValue(v).trim() || '#1e676c');
-    let amp = 0.08;
-    let phase = 0;
+    const colour = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim() || '#1e676c';
+    const LIFE = 1400;
+    const DISC = 23;
+    let rings: Array<{ born: number; strength: number }> = [];
+    let eased = 0;
+    let last = 0;
     let frame = 0;
 
-    const draw = () => {
+    const draw = (now: number) => {
       const dpr = window.devicePixelRatio || 1;
       const w = el.clientWidth;
       const h = el.clientHeight;
@@ -84,27 +76,22 @@ function VoiceWaves({ level }: Level) {
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
-      // Ease toward the voice; never quite flat.
-      amp += (Math.max(0.08, target.current) - amp) * 0.18;
-      if (!still) phase += 0.07 + amp * 0.12;
-      const mid = h / 2;
-      colours.forEach((colour, i) => {
-        const height = (mid - 3) * amp * (1 - i * 0.18);
-        const k = (Math.PI * 2 * (1.4 + i * 0.35)) / w;
+      eased += (target.current - eased) * 0.2;
+      // A louder voice sends rings more often.
+      if (!still && now - last > 380 - eased * 200) {
+        rings.push({ born: now, strength: eased });
+        last = now;
+      }
+      rings = rings.filter((r) => now - r.born < LIFE);
+      ctx.strokeStyle = colour;
+      ctx.lineWidth = 2;
+      for (const ring of rings) {
+        const k = (now - ring.born) / LIFE;
+        ctx.globalAlpha = (1 - k) * (0.15 + 0.5 * ring.strength);
         ctx.beginPath();
-        for (let x = 0; x <= w; x += 2) {
-          // Tapered at both ends, full in the middle.
-          const env = Math.sin((Math.PI * x) / w) ** 2;
-          const y = mid + height * env * Math.sin(k * x + phase * (1 + i * 0.4) + i * 1.7);
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = colour;
-        ctx.globalAlpha = 0.95 - i * 0.15;
-        ctx.lineWidth = 3 - i * 0.5;
-        ctx.lineCap = 'round';
+        ctx.arc(w / 2, h / 2, DISC + k * (18 + 40 * (0.3 + ring.strength)), 0, Math.PI * 2);
         ctx.stroke();
-      });
+      }
       ctx.globalAlpha = 1;
       frame = requestAnimationFrame(draw);
     };
@@ -112,7 +99,7 @@ function VoiceWaves({ level }: Level) {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  return <canvas ref={canvas} className="voice-waves" />;
+  return <canvas ref={canvas} className="voice-halo-rings" />;
 }
 
 /** The names the person talks about: people and live projects on the list. */
