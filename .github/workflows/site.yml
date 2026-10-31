@@ -1,0 +1,39 @@
+# Publishes ihence.app — the one-page site in site/, with the privacy and
+# support pages copied from public/ so there is one copy of each — to GitHub
+# Pages, whenever any of them changes on main.
+name: Site
+
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', 'public/privacy.html', 'public/support.html', '.github/workflows/site.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble the site
+        run: |
+          cp public/privacy.html site/privacy.html
+          cp public/support.html site/support.html
+          rm -f site/README.md
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
