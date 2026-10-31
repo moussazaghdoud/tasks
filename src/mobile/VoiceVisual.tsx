@@ -9,8 +9,8 @@ import { understand } from './understood';
 /**
  * Listening, made visible.
  *
- * Two layers, each answering one question. The halo: is it hearing me, and
- * how loud? — rings leave the microphone with the voice. The words: what did
+ * Two layers, each answering one question. The pulse: is it hearing me, and
+ * how loud? — circles swell around the microphone with the voice. The words: what did
  * it get? — each arrives lit and settles, and what the app has understood
  * keeps its colour: the reminder, a name from the list, a spoken new line
  * shown as one.
@@ -26,17 +26,16 @@ const levelStyle = (level: number) =>
   ({ '--level': Math.min(1, Math.sqrt(Math.max(0, level)) * 1.3).toFixed(3) }) as React.CSSProperties;
 
 /**
- * The halo: a microphone in a disc, a soft glow around it, and rings that
- * leave it while you speak — more often and wider as the voice rises, few
- * and faint in a pause. Calm enough to sit beside the words, and nobody has
- * to be told it is listening.
+ * The pulse: a microphone in a disc, with two soft filled circles around it
+ * that swell with the voice and breathe a little in the pauses — like a call
+ * on the iPhone. The disc and the circles share one centre by construction:
+ * the disc is placed at the middle of the very box the canvas fills.
  */
 export function VoiceOrb({ level }: Level) {
   return (
-    <div className="voice-halo" style={levelStyle(level)} aria-hidden>
-      <HaloRings level={level} />
-      <span className="voice-halo-glow" />
-      <span className="voice-halo-disc">
+    <div className="voice-pulse" style={levelStyle(level)} aria-hidden>
+      <PulseCircles level={level} />
+      <span className="voice-pulse-disc">
         <Mic className="size-[22px]" strokeWidth={2.2} />
       </span>
     </div>
@@ -44,11 +43,11 @@ export function VoiceOrb({ level }: Level) {
 }
 
 /**
- * The rings, drawn on a canvas: each one is born at the disc with the
- * strength of the voice at that moment and widens as it fades. With Reduce
- * Motion no rings leave; the glow alone answers the voice.
+ * The circles, drawn on a canvas each frame, eased toward the voice so they
+ * swell rather than jump. With Reduce Motion they do not breathe; only the
+ * voice moves them.
  */
-function HaloRings({ level }: Level) {
+function PulseCircles({ level }: Level) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const target = useRef(0);
   target.current = Math.min(1, Math.sqrt(Math.max(0, level)) * 1.3);
@@ -59,11 +58,9 @@ function HaloRings({ level }: Level) {
     if (!el || !ctx) return;
     const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     const colour = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim() || '#1e676c';
-    const LIFE = 1400;
-    const DISC = 23;
-    let rings: Array<{ born: number; strength: number }> = [];
+    // The disc's radius; the circles start just outside it.
+    const DISC = 28;
     let eased = 0;
-    let last = 0;
     let frame = 0;
 
     const draw = (now: number) => {
@@ -76,21 +73,19 @@ function HaloRings({ level }: Level) {
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
-      eased += (target.current - eased) * 0.2;
-      // A louder voice sends rings more often.
-      if (!still && now - last > 380 - eased * 200) {
-        rings.push({ born: now, strength: eased });
-        last = now;
-      }
-      rings = rings.filter((r) => now - r.born < LIFE);
-      ctx.strokeStyle = colour;
-      ctx.lineWidth = 2;
-      for (const ring of rings) {
-        const k = (now - ring.born) / LIFE;
-        ctx.globalAlpha = (1 - k) * (0.15 + 0.5 * ring.strength);
+      eased += (target.current - eased) * 0.15;
+      const breathe = still ? 0 : 0.5 + 0.5 * Math.sin(now / 700);
+      // Outer first, then inner, both filled; the outer one reaches furthest.
+      const circles: Array<[number, number]> = [
+        [DISC + 12 + eased * 28 + breathe * 3, 0.14],
+        [DISC + 6 + eased * 15 + breathe * 2, 0.22],
+      ];
+      ctx.fillStyle = colour;
+      for (const [radius, alpha] of circles) {
+        ctx.globalAlpha = alpha + eased * 0.1;
         ctx.beginPath();
-        ctx.arc(w / 2, h / 2, DISC + k * (18 + 40 * (0.3 + ring.strength)), 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.arc(w / 2, h / 2, radius, 0, Math.PI * 2);
+        ctx.fill();
       }
       ctx.globalAlpha = 1;
       frame = requestAnimationFrame(draw);
@@ -99,7 +94,7 @@ function HaloRings({ level }: Level) {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  return <canvas ref={canvas} className="voice-halo-rings" />;
+  return <canvas ref={canvas} className="voice-pulse-circles" />;
 }
 
 /** The names the person talks about: people and live projects on the list. */

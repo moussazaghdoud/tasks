@@ -247,44 +247,34 @@
 
 /* ---- Listening, made visible (VoiceVisual.tsx) ----
    Everything here follows --level, 0 to 1, set from the microphone. With
-   Reduce Motion on, no rings leave the microphone; the glow still answers. */
+   Reduce Motion on, the circles stop breathing; the voice still moves them. */
 
-/* The halo: a microphone in a disc, a glow that swells with the voice, and
-   rings (drawn on a canvas) leaving it as you speak. */
-.voice-halo {
+/* The pulse: a microphone in a disc, with soft circles (drawn on a canvas)
+   swelling around it. The disc sits at the exact middle of the box the canvas
+   fills, so both share one centre; the box is tall enough that the circles
+   are never cut. */
+.voice-pulse {
   position: relative;
-  display: grid;
-  place-items: center;
-  height: 96px;
+  height: 150px;
 }
-.voice-halo-rings {
+.voice-pulse-circles {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
-.voice-halo-glow,
-.voice-halo-disc {
-  grid-area: 1 / 1;
-  border-radius: 50%;
-}
-.voice-halo-glow {
-  width: 106px;
-  height: 106px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) calc(18% + var(--level) * 25%), transparent), transparent 70%);
-  transition: background 120ms ease-out;
-}
-.voice-halo-disc {
-  position: relative;
+.voice-pulse-disc {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
   background: var(--color-accent);
   color: var(--color-on-accent);
-  scale: calc(1 + var(--level) * 0.13);
-  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--color-accent) 70%, transparent);
-  transition: scale 90ms ease-out;
+  translate: -50% -50%;
 }
 
 /* Words arriving: lit in the accent and a little blurred, settling into
