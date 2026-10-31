@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>iHence — Thoughts slip. Hence catches them.</title>
+  <meta name="description" content="Say it, it's noted. iHence turns what you say into a clear to-do in a second — reminders, photos and your day included. No account, no ads, no tracking.">
+  <meta property="og:title" content="iHence — Thoughts slip. Hence catches them.">
+  <meta property="og:description" content="Say it, it's noted. Voice to-dos, natural reminders, photos that read. Private by default.">
+  <meta property="og:image" content="assets/colours-business.webp">
+  <meta name="apple-itunes-app" content="app-id=6813187827">
+  <link rel="icon" href="assets/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #faf9f6;
+      --sunk: #f1eee8;
+      --card: #ffffff;
+      --line: #e7e3da;
+      --ink: #1d1c1a;
+      --ink-2: #4a4741;
+      --ink-3: #77736b;
+      --accent: #1e676c;
+      --on-accent: #ffffff;
+      --red: #e0624a;   --red-soft: #fde6e1;
+      --blue: #6f93e6;  --blue-soft: #e8effd;
+      --amber: #dda64a; --amber-soft: #fcf1dc;
+      --indigo: #7b7fd6; --indigo-soft: #ecebfa;
+      --slate: #7d8794;
+      --glow: radial-gradient(70% 60% at 50% 0%, #e6e0f7 0%, rgba(250, 249, 246, 0) 70%);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #18181b; --sunk: #222226; --card: #26262a; --line: #33333a;
+        --ink: #f2f0ec; --ink-2: #c9c5bd; --ink-3: #9a968e;
+        --accent: #56b0b5; --on-accent: #0f1f20;
+        --red-soft: #3a221e; --blue-soft: #1f2a40; --amber-soft: #33291a; --indigo-soft: #26254a;
+        --glow: radial-gradient(70% 60% at 50% 0%, #2c2846 0%, rgba(24, 24, 27, 0) 70%);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; background: var(--paper); color: var(--ink);
+      font: 400 17px/1.55 Figtree, system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, .brand { font-family: Sora, Figtree, system-ui, sans-serif; letter-spacing: -0.03em; }
+    h1 { font-size: clamp(40px, 7vw, 74px); line-height: 1.02; font-weight: 700; margin: 0; }
+    h2 { font-size: clamp(30px, 4.6vw, 46px); line-height: 1.08; font-weight: 700; margin: 0 0 14px; }
+    h3 { font-size: 20px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.02em; }
+    p { margin: 0; }
+    a { color: inherit; }
+    .wrap { width: min(1120px, 100% - 32px); margin: 0 auto; }
+    .muted { color: var(--ink-3); }
+    .lead { font-size: clamp(18px, 2.2vw, 21px); color: var(--ink-2); max-width: 34em; }
+    .eyebrow { font: 600 13px/1 Figtree, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+
+    /* ---- top bar ---- */
+    header.bar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--paper) 86%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+    .bar .wrap { display: flex; align-items: center; gap: 16px; height: 64px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; text-decoration: none; margin-right: auto; }
+    .brand img { width: 34px; height: 34px; border-radius: 9px; }
+    .lang { display: flex; background: var(--sunk); border-radius: 999px; padding: 3px; }
+    .lang button { border: 0; background: none; color: var(--ink-3); font: 600 13px Figtree, sans-serif; padding: 6px 11px; border-radius: 999px; cursor: pointer; }
+    .lang button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 42px; padding: 0 18px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 600; text-decoration: none; white-space: nowrap; }
+    .bar .btn { height: 38px; font-size: 15px; }
+    @media (max-width: 520px) { .bar .btn { display: none; } }
+
+    /* ---- hero ---- */
+    .hero { background: var(--glow); padding: 72px 0 40px; overflow: hidden; }
+    .hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; }
+    .hero .lead { margin: 22px 0 30px; }
+    .store img { height: 54px; display: block; }
+    .hero-note { margin-top: 18px; font-size: 14.5px; color: var(--ink-3); }
+    .duo { position: relative; height: 640px; }
+    .duo .phone { position: absolute; width: 290px; }
+    .duo .phone:first-child { left: 4%; top: 0; transform: rotate(-4deg); z-index: 2; }
+    .duo .phone:last-child { right: 4%; top: 60px; transform: rotate(5deg); }
+    @media (max-width: 900px) {
+      .hero { padding-top: 48px; }
+      .hero .wrap { grid-template-columns: 1fr; }
+      .duo { height: 520px; }
+      .duo .phone { width: 230px; }
+      .duo .phone:first-child { left: calc(50% - 215px); }
+      .duo .phone:last-child { right: calc(50% - 215px); }
+    }
+    @media (max-width: 460px) {
+      .duo { height: 430px; }
+      .duo .phone { width: 190px; }
+      .duo .phone:first-child { left: calc(50% - 178px); }
+      .duo .phone:last-child { right: calc(50% - 178px); }
+    }
+
+    /* ---- the phone frame ---- */
+    .phone { border-radius: 46px; padding: 9px; background: #111114; box-shadow: 0 30px 70px rgb(30 25 50 / .28), 0 0 0 1px rgb(255 255 255 / .06) inset; }
+    .phone img, .phone video { display: block; width: 100%; border-radius: 38px; aspect-ratio: 1320 / 2868; object-fit: cover; background: #f6f4ef; }
+
+    /* ---- sections ---- */
+    section { padding: 96px 0; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    .split.flip > :first-child { order: 2; }
+    .split .phone { width: min(320px, 78vw); margin: 0 auto; }
+    .split .copy p + p { margin-top: 14px; }
+    @media (max-width: 860px) {
+      section { padding: 64px 0; }
+      .split, .split.flip { grid-template-columns: 1fr; gap: 40px; }
+      .split.flip > :first-child { order: 0; }
+    }
+    .tint { background: var(--sunk); }
+
+    /* ---- feature cards, dressed like the app's own ---- */
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px 22px 22px 25px; box-shadow: inset 3px 0 0 var(--edge, var(--slate)); }
+    .card p { color: var(--ink-2); font-size: 16px; }
+    .card .ico { font-size: 24px; margin-bottom: 10px; }
+
+    /* ---- colours legend ---- */
+    .legend { display: grid; gap: 10px; margin-top: 26px; }
+    .chip { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 10px; background: var(--bg); box-shadow: inset 3px 0 0 var(--edge); font-weight: 500; }
+    .chip small { display: block; font-weight: 400; color: var(--ink-3); font-size: 14.5px; }
+    .chip.red { --bg: var(--red-soft); --edge: var(--red); }
+    .chip.blue { --bg: var(--blue-soft); --edge: var(--blue); }
+    .chip.amber { --bg: var(--amber-soft); --edge: var(--amber); }
+    .chip.white { --bg: var(--card); --edge: var(--slate); border: 1px solid var(--line); }
+    .chip.indigo { --bg: var(--indigo-soft); --edge: var(--indigo); }
+
+    /* ---- privacy ---- */
+    .promises { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 36px; }
+    @media (max-width: 860px) { .promises { grid-template-columns: repeat(2, 1fr); } }
+    .promise { padding: 22px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
+    .promise b { display: block; font-family: Sora, sans-serif; font-size: 18px; letter-spacing: -0.02em; margin-bottom: 4px; }
+    .promise span { color: var(--ink-2); font-size: 15.5px; }
+
+    /* ---- pricing ---- */
+    .plans { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 40px; }
+    @media (max-width: 960px) { .plans { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) { .plans { grid-template-columns: 1fr; } }
+    .plan { position: relative; padding: 26px 22px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+    .plan.best { border: 2px solid var(--accent); }
+    .plan .tag { position: absolute; top: -12px; left: 20px; background: var(--accent); color: var(--on-accent); font: 600 12px Figtree, sans-serif; letter-spacing: .06em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; }
+    .plan h3 { font-size: 18px; }
+    .price { font: 700 34px/1.1 Sora, sans-serif; letter-spacing: -0.03em; margin: 8px 0 2px; }
+    .price small { font: 500 15px Figtree, sans-serif; color: var(--ink-3); letter-spacing: 0; }
+    .plan ul { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 8px; font-size: 15.5px; color: var(--ink-2); }
+    .plan li::before { content: "✓"; color: var(--accent); font-weight: 700; margin-right: 8px; }
+    .founders { margin-top: 26px; padding: 18px 20px; border-radius: 12px; background: var(--indigo-soft); box-shadow: inset 3px 0 0 var(--indigo); }
+
+    /* ---- closing ---- */
+    .cta { text-align: center; background: var(--glow); }
+    .cta .lead { margin: 16px auto 30px; }
+    .cta .store { display: inline-block; }
+    footer { padding: 40px 0 56px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 15px; }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
+    footer nav { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-left: auto; }
+    footer a { text-decoration: none; }
+    footer a:hover { color: var(--ink); }
+  </style>
+</head>
+<body>
+  <header class="bar">
+    <div class="wrap">
+      <a class="brand" href="#top"><img src="assets/logo.png" alt="">iHence</a>
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="fr">FR</button>
+      </div>
+      <a class="btn" href="https://apps.apple.com/app/id6813187827" data-t="download">Download</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap">
+        <div>
+          <div class="eyebrow" data-t="hero_eyebrow">For iPhone · Free</div>
+          <h1 data-t="hero_title">Thoughts slip.<br>Hence catches them.</h1>
+          <p class="lead" data-t="hero_lead">Tap the mic and say what's on your mind. Hence writes it as one clear line, sets the reminder you mention, and keeps work and life apart.</p>
+          <a class="store" href="https://apps.apple.com/app/id6813187827" aria-label="Download on the App Store">
+            <img data-badge src="assets/appstore-badge-en.svg" alt="Download on the App Store">
+          </a>
+          <p class="hero-note" data-t="hero_note">No account. No ads. No tracking.</p>
+        </div>
+        <div class="duo" aria-hidden="true">
+          <div class="phone"><img src="assets/colours-business.webp" alt=""></div>
+          <div class="phone"><img src="assets/colours-private.webp" alt=""></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="voice">
+      <div class="wrap split">
+        <div class="copy">
+          <div class="eyebrow" data-t="voice_eyebrow">Voice</div>
+          <h2 data-t="voice_title">Say it. It's noted.</h2>
+          <p class="lead" data-t="voice_lead">Walking out of a meeting with five things to do? Say them. Hence turns each one into a clean line — no typing, no forms, no folders.</p>
+          <p class="lead" data-t="voice_lead2">Say “tomorrow at ten” or “Friday at 3:30” and the reminder sets itself while you speak. In English, French, Italian, Spanish, German and Chinese.</p>
+        </div>
+        <div class="phone">
+          <video data-video autoplay muted loop playsinline poster="assets/preview-en-poster.webp" aria-label="Hence in use">
+            <source data-video-src src="assets/preview-en.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </section>
+
+    <section id="colours" class="tint">
+      <div class="wrap split flip">
+        <div class="copy">
+          <div class="eyebrow" data-t="colours_eyebrow">At a glance</div>
+          <h2 data-t="colours_title">Your list speaks for itself.</h2>
+          <p class="lead" data-t="colours_lead">Every thought wears a colour that means something, so you see what matters before you read a word.</p>
+          <div class="legend">
+            <div class="chip red"><span><span data-t="c_red">Important</span><small data-t="c_red_s">The things that can't wait</small></span></div>
+            <div class="chip blue"><span><span data-t="c_blue">Has a reminder</span><small data-t="c_blue_s">Hence will tap you on the shoulder</small></span></div>
+            <div class="chip amber"><span><span data-t="c_amber">Has a photo</span><small data-t="c_amber_s">A whiteboard, a list, a business card</small></span></div>
+            <div class="chip indigo"><span><span data-t="c_indigo">Sent to you</span><small data-t="c_indigo_s">A thought someone handed over</small></span></div>
+            <div class="chip white"><span><span data-t="c_white">Everything else</span><small data-t="c_white_s">Calm and out of the way</small></span></div>
+          </div>
+        </div>
+        <div class="phone"><img data-img="colours-business" src="assets/colours-business-dark.webp" alt="A Hence list with red, amber, blue, indigo and white thoughts"></div>
+      </div>
+    </section>
+
+    <section id="photos">
+      <div class="wrap split">
+        <div class="copy">
+          <div class="eyebrow" data-t="photo_eyebrow">Photos</div>
+          <h2 data-t="photo_title">Snap it. The text is read.</h2>
+          <p class="lead" data-t="photo_lead">Photograph a whiteboard, a shopping list or a business card. Hence reads the words right on your iPhone — copy them in one tap, fix them with the pencil, and find the photo again by searching any word.</p>
+        </div>
+        <div class="phone"><img data-img="photo-open" src="assets/photo-open-en.webp" alt="A photo of a shopping list with its text read below"></div>
+      </div>
+    </section>
+
+    <section id="agenda" class="tint">
+      <div class="wrap split flip">
+        <div class="copy">
+          <div class="eyebrow" data-t="agenda_eyebrow">Your day</div>
+          <h2 data-t="agenda_title">Your meetings, beside your thoughts.</h2>
+          <p class="lead" data-t="agenda_lead">Connect Outlook or Google Calendar and see today and tomorrow at a glance. Tap a meeting to cancel it, decline it or email the organiser — and turn any thought into an event.</p>
+        </div>
+        <div class="phone"><img data-img="agenda" src="assets/agenda-en.webp" alt="The Hence agenda with today's and tomorrow's meetings"></div>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="wrap">
+        <div class="eyebrow" data-t="more_eyebrow">And also</div>
+        <h2 data-t="more_title">Small app. Everything you need.</h2>
+        <div class="grid">
+          <div class="card" style="--edge: var(--red)"><div class="ico">🗂️</div><h3 data-t="f1">Work and life, apart</h3><p data-t="f1_s">Two lists, one swipe away. Move a thought from one to the other with a tap.</p></div>
+          <div class="card" style="--edge: var(--blue)"><div class="ico">✉️</div><h3 data-t="f2">One tap to act</h3><p data-t="f2_s">Turn a thought into an email, a calendar event or a message.</p></div>
+          <div class="card" style="--edge: var(--indigo)"><div class="ico">🤝</div><h3 data-t="f3">Send a thought</h3><p data-t="f3_s">Hand it to someone or to a whole team, end-to-end encrypted — and see when it's done.</p></div>
+          <div class="card" style="--edge: var(--amber)"><div class="ico">🎨</div><h3 data-t="f4">Make it yours</h3><p data-t="f4_s">Light or dark, a choice of styles, and a background of your own.</p></div>
+          <div class="card" style="--edge: var(--slate)"><div class="ico">🔁</div><h3 data-t="f5">Repeat and undo</h3><p data-t="f5_s">Thoughts that come back every week, and an undo for every slip of the finger.</p></div>
+          <div class="card" style="--edge: var(--accent)"><div class="ico">☁️</div><h3 data-t="f6">Safe in your iCloud</h3><p data-t="f6_s">A copy in your own iCloud brings everything back on a new iPhone.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="privacy" class="tint">
+      <div class="wrap">
+        <div class="eyebrow" data-t="privacy_eyebrow">Private by default</div>
+        <h2 data-t="privacy_title">Your thoughts stay yours.</h2>
+        <p class="lead" data-t="privacy_lead">Hence works on your iPhone. What you say is turned into a clear line on the phone itself — nothing is sent to an AI service, and we never see your notes.</p>
+        <div class="promises">
+          <div class="promise"><b data-t="p1">No account</b><span data-t="p1_s">Open it and start. Nothing to sign up for.</span></div>
+          <div class="promise"><b data-t="p2">No ads</b><span data-t="p2_s">Not now, not later.</span></div>
+          <div class="promise"><b data-t="p3">No tracking</b><span data-t="p3_s">No analytics, no profiling, nothing sold.</span></div>
+          <div class="promise"><b data-t="p4">No AI service</b><span data-t="p4_s">Your words never leave for a chatbot.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing">
+      <div class="wrap">
+        <div class="eyebrow" data-t="pricing_eyebrow">Pricing</div>
+        <h2 data-t="pricing_title">Free to start. Pro when you need more.</h2>
+        <div class="plans">
+          <div class="plan">
+            <h3 data-t="plan_free">Free</h3>
+            <div class="price">0 €</div>
+            <ul><li data-t="free_1">Up to 30 open thoughts</li><li data-t="free_2">Voice, reminders, photos</li><li data-t="free_3">Agenda and calendar</li></ul>
+          </div>
+          <div class="plan best">
+            <span class="tag" data-t="best">Best value</span>
+            <h3 data-t="plan_year">Pro · Yearly</h3>
+            <div class="price">19,99 € <small data-t="per_year">/ year</small></div>
+            <p class="muted" data-t="trial_month">1 month free</p>
+            <ul><li data-t="pro_1">Unlimited open thoughts</li><li data-t="pro_2">Backgrounds</li><li data-t="pro_3">Send to people and teams</li><li data-t="pro_4">Know when it's done</li></ul>
+          </div>
+          <div class="plan">
+            <h3 data-t="plan_month">Pro · Monthly</h3>
+            <div class="price">2,99 € <small data-t="per_month">/ month</small></div>
+            <p class="muted" data-t="trial_week">1 week free</p>
+            <ul><li data-t="pro_all">Everything in Pro</li></ul>
+          </div>
+          <div class="plan">
+            <h3 data-t="plan_life">Pro · Lifetime</h3>
+            <div class="price">39,99 € <small data-t="once">once</small></div>
+            <p class="muted" data-t="life_note">Pay once, keep it forever</p>
+            <ul><li data-t="pro_all2">Everything in Pro</li></ul>
+          </div>
+        </div>
+        <p class="founders" data-t="founders">Founding members: if you downloaded Hence before version 1.1, Pro is yours for life. Thank you for being here from the start.</p>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="wrap">
+        <h2 data-t="cta_title">Empty your head. Keep everything.</h2>
+        <p class="lead" data-t="cta_lead">iHence is free on the App Store, for iPhone.</p>
+        <a class="store" href="https://apps.apple.com/app/id6813187827" aria-label="Download on the App Store">
+          <img data-badge src="assets/appstore-badge-en.svg" alt="Download on the App Store">
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>© 2026 iHence</span>
+      <nav>
+        <a href="/privacy" data-t="privacy_link">Privacy</a>
+        <a href="/support" data-t="support_link">Support</a>
+        <a href="mailto:iHenceteam@gmail.com" data-t="contact_link">Contact</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // Two languages, one page: the English is in the markup, French here.
+    const FR = {
+      download: 'Télécharger',
+      hero_eyebrow: 'Pour iPhone · Gratuit',
+      hero_title: 'Vos idées filent.<br>Hence les attrape.',
+      hero_lead: 'Touchez le micro et dites ce qui vous passe par la tête. Hence l’écrit en une ligne claire, règle le rappel que vous mentionnez, et garde le pro et le perso séparés.',
+      hero_note: 'Sans compte. Sans pub. Sans pistage.',
+      voice_eyebrow: 'La voix',
+      voice_title: 'Dites-le. C’est noté.',
+      voice_lead: 'Vous sortez d’une réunion avec cinq choses à faire ? Dites-les. Hence transforme chacune en une ligne nette — sans taper, sans formulaire, sans dossier.',
+      voice_lead2: 'Dites « demain à dix heures » ou « vendredi à 15 h 30 » : le rappel se règle pendant que vous parlez. En français, anglais, italien, espagnol, allemand et chinois.',
+      colours_eyebrow: 'D’un coup d’œil',
+      colours_title: 'Votre liste parle d’elle-même.',
+      colours_lead: 'Chaque pensée porte une couleur qui a du sens : vous voyez ce qui compte avant d’avoir lu un mot.',
+      c_red: 'Importante', c_red_s: 'Ce qui ne peut pas attendre',
+      c_blue: 'Avec un rappel', c_blue_s: 'Hence vous fera signe le moment venu',
+      c_amber: 'Avec une photo', c_amber_s: 'Un tableau, une liste, une carte de visite',
+      c_indigo: 'Reçue', c_indigo_s: 'Une pensée que quelqu’un vous a confiée',
+      c_white: 'Tout le reste', c_white_s: 'Calme, et à sa place',
+      photo_eyebrow: 'Les photos',
+      photo_title: 'Photographiez. Le texte est lu.',
+      photo_lead: 'Photographiez un tableau blanc, une liste de courses ou une carte de visite. Hence en lit le texte directement sur votre iPhone : copiez-le d’un geste, corrigez-le au crayon, et retrouvez la photo en cherchant n’importe quel mot.',
+      agenda_eyebrow: 'Votre journée',
+      agenda_title: 'Vos réunions, à côté de vos pensées.',
+      agenda_lead: 'Connectez Outlook ou Google Agenda et voyez aujourd’hui et demain d’un coup d’œil. Touchez une réunion pour l’annuler, la refuser ou écrire à l’organisateur — et faites de n’importe quelle pensée un événement.',
+      more_eyebrow: 'Et aussi',
+      more_title: 'Une petite app. Tout ce qu’il faut.',
+      f1: 'Pro et perso, séparés', f1_s: 'Deux listes, à un geste l’une de l’autre. Passez une pensée de l’une à l’autre d’un toucher.',
+      f2: 'Agir en un geste', f2_s: 'Faites d’une pensée un e-mail, un événement ou un message.',
+      f3: 'Envoyer une pensée', f3_s: 'Confiez-la à quelqu’un ou à toute une équipe, chiffrée de bout en bout — et voyez quand c’est fait.',
+      f4: 'À votre image', f4_s: 'Clair ou sombre, plusieurs styles, et l’arrière-plan de votre choix.',
+      f5: 'Répéter et annuler', f5_s: 'Des pensées qui reviennent chaque semaine, et une annulation pour chaque faux geste.',
+      f6: 'À l’abri dans votre iCloud', f6_s: 'Une copie dans votre propre iCloud vous rend tout sur un nouvel iPhone.',
+      privacy_eyebrow: 'Privé par défaut',
+      privacy_title: 'Vos pensées restent à vous.',
+      privacy_lead: 'Hence fonctionne sur votre iPhone. Ce que vous dites devient une ligne claire sur le téléphone lui-même — rien n’est envoyé à un service d’IA, et nous ne voyons jamais vos notes.',
+      p1: 'Sans compte', p1_s: 'Ouvrez, commencez. Rien à créer.',
+      p2: 'Sans pub', p2_s: 'Ni maintenant, ni plus tard.',
+      p3: 'Sans pistage', p3_s: 'Pas de statistiques, pas de profil, rien de vendu.',
+      p4: 'Sans IA', p4_s: 'Vos mots ne partent jamais vers un chatbot.',
+      pricing_eyebrow: 'Prix',
+      pricing_title: 'Gratuit pour commencer. Pro quand il vous en faut plus.',
+      plan_free: 'Gratuit', free_1: 'Jusqu’à 30 pensées ouvertes', free_2: 'Voix, rappels, photos', free_3: 'Agenda et calendrier',
+      best: 'Le meilleur choix',
+      plan_year: 'Pro · Annuel', per_year: '/ an', trial_month: '1 mois offert',
+      pro_1: 'Pensées ouvertes illimitées', pro_2: 'Arrière-plans', pro_3: 'Envoi à des personnes et des équipes', pro_4: 'Savoir quand c’est fait',
+      plan_month: 'Pro · Mensuel', per_month: '/ mois', trial_week: '1 semaine offerte', pro_all: 'Tout Pro',
+      plan_life: 'Pro · À vie', once: 'une fois', life_note: 'Payez une fois, gardez-le pour toujours', pro_all2: 'Tout Pro',
+      founders: 'Membres fondateurs : si vous avez téléchargé Hence avant la version 1.1, Pro vous est offert à vie. Merci d’être là depuis le début.',
+      cta_title: 'Videz votre tête. Gardez tout.',
+      cta_lead: 'iHence est gratuit sur l’App Store, pour iPhone.',
+      privacy_link: 'Confidentialité', support_link: 'Assistance', contact_link: 'Contact',
+    };
+    const EN = {};
+    document.querySelectorAll('[data-t]').forEach((el) => { EN[el.dataset.t] = el.innerHTML; });
+
+    function setLang(lang) {
+      const words = lang === 'fr' ? FR : EN;
+      document.documentElement.lang = lang;
+      document.querySelectorAll('[data-t]').forEach((el) => { if (words[el.dataset.t]) el.innerHTML = words[el.dataset.t]; });
+      document.querySelectorAll('[data-lang]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+      document.querySelectorAll('[data-badge]').forEach((img) => { img.alt = lang === 'fr' ? 'Télécharger dans l’App Store' : 'Download on the App Store'; });
+      // Screens in the visitor's language where we have them.
+      document.querySelectorAll('[data-img]').forEach((img) => {
+        const name = img.dataset.img;
+        if (name === 'colours-business') return;
+        img.src = `assets/${name}-${lang}.webp`;
+      });
+      const video = document.querySelector('[data-video]');
+      const source = document.querySelector('[data-video-src]');
+      if (video && !source.src.endsWith(`preview-${lang}.mp4`)) {
+        source.src = `assets/preview-${lang}.mp4`;
+        video.poster = `assets/preview-${lang}-poster.webp`;
+        video.load();
+        video.play().catch(() => {});
+      }
+      try { localStorage.setItem('ihence.lang', lang); } catch {}
+    }
+
+    let start = 'en';
+    try { start = localStorage.getItem('ihence.lang') || ''; } catch {}
+    if (!start) start = (navigator.language || 'en').toLowerCase().startsWith('fr') ? 'fr' : 'en';
+    document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.lang)));
+    setLang(start);
+  </script>
+</body>
+</html>
