@@ -14,6 +14,7 @@ import { isNative } from '@/lib/native/platform';
 import { ws } from '@/store/workspace';
 import { toast } from '@/store/toast';
 import { t } from './i18n';
+import { thoughtFinished } from './review';
 import { anyConnected, calendarConfigured, createEvent, refreshAccounts } from './calendar';
 
 /** Text the person can act on: the thought, plus whatever context we captured. */
@@ -31,7 +32,11 @@ function body(task: Task): string {
  * their signature, and nothing leaves the device until they press send.
  */
 /** Done, or open again; the toast in the language on screen. */
-export const toggleDone = (id: string): void => toggleComplete(id, { done: t('act_done'), undo: t('undo') });
+export const toggleDone = (id: string): void => {
+  // Only finishing counts toward asking for a rating, never reopening.
+  if (ws().tasks[id]?.status !== 'done') thoughtFinished();
+  toggleComplete(id, { done: t('act_done'), undo: t('undo') });
+};
 
 export function openEmail(task: Task): void {
   const url = `mailto:?subject=${encodeURIComponent(firstLine(task.title))}&body=${encodeURIComponent(body(task))}`;

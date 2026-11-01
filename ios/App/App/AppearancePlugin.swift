@@ -1,4 +1,5 @@
 import Capacitor
+import StoreKit
 import UIKit
 
 /**
@@ -15,8 +16,22 @@ public class AppearancePlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "Appearance"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "setStyle", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "requestReview", returnType: CAPPluginReturnPromise)
     ]
+
+    /// Apple's own "Enjoying iHence?" stars, in the app. iOS decides whether it
+    /// actually appears — at most three times a year, and never in TestFlight —
+    /// so this asks and never learns the answer.
+    @objc func requestReview(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            let scene = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first { $0.activationState == .foregroundActive }
+            if let scene { SKStoreReviewController.requestReview(in: scene) }
+            call.resolve()
+        }
+    }
 
     /// Hence's own page in the iPhone's Settings — where the camera and
     /// microphone are switched back on once they have been refused. iOS asks

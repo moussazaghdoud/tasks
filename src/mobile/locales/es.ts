@@ -201,6 +201,7 @@ export const ES: Record<Key, string> = {
   about: 'Acerca de',
   privacy_policy: 'Política de privacidad',
   support: 'Soporte',
+  rate_app: 'Valorar iHence',
   diag_send: 'Enviar registro de diagnóstico',
   diag_note: 'Lo que la app hizo últimamente, nunca el texto de tus ideas. Tú eliges a quién enviarlo.',
   repeat_daily: 'Cada día',

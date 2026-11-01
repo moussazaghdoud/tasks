@@ -1,4 +1,4 @@
-import { ArrowUpRight, Ban, CalendarCheck, ChevronRight, Cloud, Download, FileText, ImagePlus, Lock, Moon, Sparkles, Sun, Upload, Users } from 'lucide-react';
+import { ArrowUpRight, Ban, CalendarCheck, ChevronRight, Cloud, Download, FileText, ImagePlus, Lock, Moon, Sparkles, Star, Sun, Upload, Users } from 'lucide-react';
 import { usePeopleBook } from '@/lib/share/people';
 import { ARTS, myPhotoUrl, PHOTOS, pickMyPhoto, setBackdrop, useBackdrop, type Backdrop } from './backdrop';
 import { FREE_OPEN_LIMIT, openCount, openPro } from '@/lib/pro/limits';
@@ -503,6 +503,18 @@ function AboutSection() {
           ))}
         </div>
       )}
+      {/* The App Store's own page for writing a review, for those who want to. */}
+      <div className="border-t border-line">
+        <a
+          href="https://apps.apple.com/app/id6813187827?action=write-review"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-[58px] w-full items-center gap-4 px-6 text-[17px] text-ink transition-colors active:bg-wash-strong"
+        >
+          <span className="flex-1">{t('rate_app')}</span>
+          <Star className="size-[18px] shrink-0 text-ink-4" strokeWidth={1.8} />
+        </a>
+      </div>
       {/* For "something went wrong and I can't say what": the diary of what
           the app did, sent by the person, never by the app. */}
       <div className="border-t border-line">

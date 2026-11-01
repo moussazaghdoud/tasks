@@ -22,7 +22,18 @@ import { isIOS, isNative } from './platform';
 const Appearance = registerPlugin<{
   setStyle(options: { style: 'dark' | 'light' }): Promise<void>;
   openSettings(): Promise<void>;
+  requestReview(): Promise<void>;
 }>('Appearance');
+
+/** Apple's in-app rating sheet. iOS decides whether it shows; we never learn the answer. */
+export async function requestReview(): Promise<void> {
+  if (!isNative()) return;
+  try {
+    await Appearance.requestReview();
+  } catch {
+    /* an older build without the method: nothing to do */
+  }
+}
 
 /** Open Hence's page in the iPhone's Settings, where refused permissions are given back. */
 export async function openAppSettings(): Promise<void> {
