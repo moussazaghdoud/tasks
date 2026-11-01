@@ -111,6 +111,18 @@
     }
     .tint { background: var(--sunk); }
 
+    /* ---- the film ---- */
+    #film { padding-top: 72px; }
+    .film { position: relative; margin-top: 30px; border-radius: 22px; overflow: hidden; background: #faf9f6; box-shadow: 0 30px 70px rgb(30 25 50 / .16); }
+    .film video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #faf9f6; }
+    .sound { position: absolute; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 0; border-radius: 999px;
+      background: rgb(29 28 26 / .78); color: #fff; font: 600 14px Figtree, sans-serif; cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .sound svg { width: 18px; height: 18px; }
+    .sound [data-wave] { display: none; }
+    .sound[aria-pressed="true"] [data-wave] { display: inline; }
+    .sound[aria-pressed="true"] [data-mute] { display: none; }
+    @media (max-width: 520px) { .film { border-radius: 14px; } .sound { right: 10px; bottom: 10px; height: 34px; padding: 0 12px; font-size: 13px; } }
+
     /* ---- feature cards, dressed like the app's own ---- */
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
     @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
@@ -188,6 +200,22 @@
         <div class="duo" aria-hidden="true">
           <div class="phone"><img src="assets/colours-business.webp" alt=""></div>
           <div class="phone"><img data-img="agenda" src="assets/agenda-en.webp" alt=""></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="film" class="tint">
+      <div class="wrap">
+        <div class="eyebrow" data-t="film_eyebrow">See it in action</div>
+        <h2 data-t="film_title">Half a minute with Hence.</h2>
+        <div class="film">
+          <video data-film autoplay muted loop playsinline preload="metadata" poster="assets/film-en-poster.webp" aria-label="iHence in use: voice, reminders, photos, work and life, agenda">
+            <source data-film-src src="assets/film-en.mp4" type="video/mp4">
+          </video>
+          <button type="button" class="sound" data-sound aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path data-wave d="M15.5 8.5a5 5 0 0 1 0 7"/><path data-wave d="M19 5a10 10 0 0 1 0 14"/><path data-mute d="m22 9-6 6"/><path data-mute d="m16 9 6 6"/></svg>
+            <span data-t="sound_on">Sound on</span>
+          </button>
         </div>
       </div>
     </section>
@@ -341,6 +369,10 @@
       hero_title: 'Vos idées filent.<br>Hence les capture.',
       hero_lead: 'Touchez le micro et dites ce qui vous passe par la tête. Hence l’écrit en une ligne claire, règle le rappel que vous mentionnez, et garde le pro et le perso séparés.',
       hero_note: 'Sans compte. Sans pub. Sans pistage.',
+      film_eyebrow: 'En action',
+      film_title: 'Trente secondes avec Hence.',
+      sound_on: 'Activer le son',
+      sound_off: 'Couper le son',
       voice_eyebrow: 'La voix',
       voice_title: 'Dites-le. C’est noté.',
       voice_lead: 'Vous sortez d’une réunion avec cinq choses à faire ? Dites-les. Hence transforme chacune en une ligne nette — sans taper, sans formulaire, sans dossier.',
@@ -410,8 +442,35 @@
         video.load();
         video.play().catch(() => {});
       }
+      // The film in the visitor's language, keeping whether its sound is on.
+      const film = document.querySelector('[data-film]');
+      const filmSrc = document.querySelector('[data-film-src]');
+      if (film && !filmSrc.src.endsWith(`film-${lang}.mp4`)) {
+        filmSrc.src = `assets/film-${lang}.mp4`;
+        film.poster = `assets/film-${lang}-poster.webp`;
+        film.load();
+        film.play().catch(() => {});
+      }
+      soundLabel();
       try { localStorage.setItem('ihence.lang', lang); } catch {}
     }
+
+    // Sound: off to start (browsers only autoplay muted); one tap turns it on
+    // and plays the film from the top, so the music starts with the story.
+    const soundBtn = document.querySelector('[data-sound]');
+    function soundLabel() {
+      const on = soundBtn.getAttribute('aria-pressed') === 'true';
+      const words = document.documentElement.lang === 'fr' ? FR : EN;
+      soundBtn.querySelector('span').textContent = on ? (words.sound_off || 'Sound off') : (words.sound_on || 'Sound on');
+    }
+    soundBtn.addEventListener('click', () => {
+      const film = document.querySelector('[data-film]');
+      const on = soundBtn.getAttribute('aria-pressed') !== 'true';
+      soundBtn.setAttribute('aria-pressed', String(on));
+      film.muted = !on;
+      if (on) { film.currentTime = 0; film.play().catch(() => {}); }
+      soundLabel();
+    });
 
     let start = 'en';
     try { start = localStorage.getItem('ihence.lang') || ''; } catch {}
