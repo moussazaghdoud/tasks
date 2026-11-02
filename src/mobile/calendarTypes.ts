@@ -19,8 +19,21 @@ export interface Meeting {
   isOrganizer?: boolean;
   organizerName?: string;
   organizerEmail?: string;
+  /** Everyone invited besides the organiser; absent in an agenda stored by an older build. */
+  attendees?: Attendee[];
   /** Which calendar it came from; added on this side, the plugins do not send it. */
   provider?: ProviderId;
+}
+
+/** Someone invited, and what they said. Rooms and resources are left out. */
+export interface Attendee {
+  name: string;
+  email: string;
+  response: 'accepted' | 'declined' | 'tentative' | 'none';
+  /** Optional rather than required to come. */
+  optional?: boolean;
+  /** This is the person using the app. */
+  self?: boolean;
 }
 
 /** What can be done with a meeting from the agenda. */

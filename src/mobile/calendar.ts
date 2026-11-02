@@ -4,7 +4,7 @@ import type { Account, Meeting, MeetingAction, ProviderId } from './calendarType
 import * as google from './google';
 import * as microsoft from './microsoft';
 
-export type { Meeting, MeetingAction, Account, ProviderId } from './calendarTypes';
+export type { Attendee, Meeting, MeetingAction, Account, ProviderId } from './calendarTypes';
 
 /**
  * Every calendar the app can connect to, behind one door.

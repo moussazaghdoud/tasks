@@ -1,7 +1,9 @@
-import { CalendarX, Mail, XCircle } from 'lucide-react';
+import { CalendarX, Check, CircleHelp, Clock, Mail, Users, X, XCircle } from 'lucide-react';
 import { confirmAction, haptic } from '@/lib/native/bridge';
+import { cn } from '@/lib/platform';
 import { toast } from '@/store/toast';
-import { answerable, respondToMeeting, type Meeting, type MeetingAction } from './calendar';
+import { nameOf, others } from './attendees';
+import { answerable, respondToMeeting, type Attendee, type Meeting, type MeetingAction } from './calendar';
 import { dayTimeIn, t, timeIn } from './i18n';
 import { Sheet, SheetAction, SheetDivider } from './Sheet';
 
@@ -54,6 +56,18 @@ export function MeetingSheet({
     window.location.href = `mailto:${encodeURIComponent(m.organizerEmail)}?subject=${subject}`;
   };
 
+  const people = others(m.attendees);
+  // Everyone who is still coming, the organiser included, without you.
+  const everyone = [
+    ...(m.isOrganizer || !m.organizerEmail ? [] : [m.organizerEmail]),
+    ...people.filter((p) => p.response !== 'declined' && p.email).map((p) => p.email),
+  ];
+  const writeAll = () => {
+    onClose();
+    const subject = encodeURIComponent(`${t('meeting_mail_subject')} ${m.subject}`);
+    window.location.href = `mailto:${everyone.map(encodeURIComponent).join(',')}?subject=${subject}`;
+  };
+
   return (
     <Sheet open={open} onClose={onClose} label={m.subject}>
       <div className="px-6 pb-4">
@@ -64,6 +78,25 @@ export function MeetingSheet({
         <p className="mt-1 text-[13px] text-ink-3">
           {m.isOrganizer ? t('meeting_yours') : organizer ? t('meeting_organized_by', { name: organizer }) : ''}
         </p>
+        {/* Who else is coming, and what they said. */}
+        {people.length > 0 && (
+          <div className="mt-4">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-ink-4 uppercase">
+              {t('meeting_attendees', { n: people.length })}
+            </p>
+            <ul className="mt-2 max-h-[30dvh] space-y-1.5 overflow-y-auto">
+              {people.map((p) => (
+                <li key={p.email || p.name} className="flex items-center gap-2.5 text-[14px]">
+                  <ResponseMark response={p.response} />
+                  <span className={cn('min-w-0 flex-1 truncate', p.response === 'declined' ? 'text-ink-4 line-through' : 'text-ink-2')}>
+                    {nameOf(p)}
+                    {p.optional && <span className="text-ink-4"> · {t('meeting_optional')}</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <SheetDivider />
@@ -81,6 +114,23 @@ export function MeetingSheet({
           )}
         </>
       )}
+      {/* Everyone at once: the organiser and every attendee still coming. */}
+      {everyone.length > 1 && <SheetAction icon={Users} label={t('meeting_write_all')} onClick={writeAll} />}
     </Sheet>
+  );
+}
+
+/** What an attendee said, as a small round mark: yes, maybe, not yet, no. */
+function ResponseMark({ response }: { response: Attendee['response'] }) {
+  const look = {
+    accepted: { Icon: Check, cls: 'bg-accent-soft text-accent', label: t('meeting_accepted') },
+    tentative: { Icon: CircleHelp, cls: 'bg-wash-strong text-ink-3', label: t('meeting_tentative') },
+    none: { Icon: Clock, cls: 'bg-wash-strong text-ink-4', label: t('meeting_no_answer') },
+    declined: { Icon: X, cls: 'bg-ember-soft text-ember', label: t('meeting_declined_by') },
+  }[response];
+  return (
+    <span className={cn('grid size-5 shrink-0 place-items-center rounded-full', look.cls)} role="img" aria-label={look.label}>
+      <look.Icon className="size-3" strokeWidth={2.6} />
+    </span>
   );
 }

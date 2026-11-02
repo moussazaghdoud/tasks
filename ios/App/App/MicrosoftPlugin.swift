@@ -266,7 +266,7 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
                 // A week of a busy calendar runs past fifty; Graph pages at the
                 // limit and the rest would silently not appear.
                 URLQueryItem(name: "$top", value: "250"),
-                URLQueryItem(name: "$select", value: "id,subject,start,end,isAllDay,showAs,isOrganizer,organizer")
+                URLQueryItem(name: "$select", value: "id,subject,start,end,isAllDay,showAs,isOrganizer,organizer,attendees")
             ]
 
             // URLComponents leaves "+" alone, and a query string reads "+" as a
@@ -306,6 +306,29 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
                     // Who called the meeting: they are the one to write to
                     // with a question, and only they can cancel it.
                     let organizer = (item["organizer"] as? [String: Any])?["emailAddress"] as? [String: Any]
+                    let organizerEmail = ((organizer?["address"] as? String) ?? "").lowercased()
+                    // Who else is coming, and what they said. A room or a
+                    // projector is a "resource", not a person; the organiser
+                    // is shown on their own line already.
+                    let attendees: [[String: Any]] = ((item["attendees"] as? [[String: Any]]) ?? []).compactMap { a in
+                        if (a["type"] as? String) == "resource" { return nil }
+                        let address = (a["emailAddress"] as? [String: Any]) ?? [:]
+                        let email = (address["address"] as? String) ?? ""
+                        if !organizerEmail.isEmpty && email.lowercased() == organizerEmail { return nil }
+                        let response: String
+                        switch ((a["status"] as? [String: Any])?["response"] as? String) ?? "" {
+                        case "accepted", "organizer": response = "accepted"
+                        case "declined": response = "declined"
+                        case "tentativelyAccepted": response = "tentative"
+                        default: response = "none"
+                        }
+                        return [
+                            "name": (address["name"] as? String) ?? "",
+                            "email": email,
+                            "response": response,
+                            "optional": (a["type"] as? String) == "optional"
+                        ]
+                    }
                     return [
                         "id": (item["id"] as? String) ?? "",
                         "subject": (item["subject"] as? String) ?? "(no title)",
@@ -315,7 +338,8 @@ public class MicrosoftPlugin: CAPPlugin, CAPBridgedPlugin {
                         "showAs": (item["showAs"] as? String) ?? "",
                         "isOrganizer": (item["isOrganizer"] as? Bool) ?? false,
                         "organizerName": (organizer?["name"] as? String) ?? "",
-                        "organizerEmail": (organizer?["address"] as? String) ?? ""
+                        "organizerEmail": (organizer?["address"] as? String) ?? "",
+                        "attendees": attendees
                     ]
                 }
                 call.resolve(["events": events])

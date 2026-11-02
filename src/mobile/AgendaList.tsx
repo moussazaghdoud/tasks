@@ -1,9 +1,10 @@
-import { CalendarCheck, RefreshCw } from 'lucide-react';
+import { CalendarCheck, RefreshCw, Users } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toKey } from '@/lib/dates';
 import { haptic } from '@/lib/native/bridge';
 import { cn } from '@/lib/platform';
 import { localeOf, t, timeIn } from './i18n';
+import { summary } from './attendees';
 import { MeetingSheet } from './MeetingSheet';
 import {
   allChecked,
@@ -372,6 +373,7 @@ function MeetingRow({
   const end = new Date(meeting.end).getTime();
   const happening = today && !meeting.allDay && start <= now && now < end;
   const length = duration(meeting.start, meeting.end);
+  const with_ = summary(meeting.attendees);
 
   return (
     <li className="mb-2">
@@ -392,6 +394,13 @@ function MeetingRow({
           {!meeting.allDay && length && (
             <span className="mt-1 block text-[12px] text-ink-3 tabular-nums">
               {happening ? `${clock(meeting.start)} – ${clock(meeting.end)}` : length}
+            </span>
+          )}
+          {/* With whom, in a few first names: "Claire, Paul +3". */}
+          {with_ && (
+            <span className="mt-1 flex items-center gap-1.5 text-[12px] text-ink-3">
+              <Users className="size-3 shrink-0" strokeWidth={2.1} />
+              <span className="truncate">{with_}</span>
             </span>
           )}
         </span>

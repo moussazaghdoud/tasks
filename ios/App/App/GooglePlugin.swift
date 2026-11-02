@@ -305,6 +305,25 @@ public class GooglePlugin: CAPPlugin, CAPBridgedPlugin {
                     let me = attendees.first { ($0["self"] as? Bool) == true }
                     if (me?["responseStatus"] as? String) == "declined" { return nil }
                     let organizer = item["organizer"] as? [String: Any]
+                    // Who else is coming, and what they said. Rooms are
+                    // "resource"; the organiser has a line of their own.
+                    let people: [[String: Any]] = attendees.compactMap { a in
+                        if (a["resource"] as? Bool) == true || (a["organizer"] as? Bool) == true { return nil }
+                        let response: String
+                        switch (a["responseStatus"] as? String) ?? "" {
+                        case "accepted": response = "accepted"
+                        case "declined": response = "declined"
+                        case "tentative": response = "tentative"
+                        default: response = "none"
+                        }
+                        return [
+                            "name": (a["displayName"] as? String) ?? "",
+                            "email": (a["email"] as? String) ?? "",
+                            "response": response,
+                            "optional": (a["optional"] as? Bool) ?? false,
+                            "self": (a["self"] as? Bool) ?? false
+                        ]
+                    }
                     let start = item["start"] as? [String: Any]
                     let end = item["end"] as? [String: Any]
                     let allDay = (start?["date"] as? String) != nil
@@ -326,7 +345,8 @@ public class GooglePlugin: CAPPlugin, CAPBridgedPlugin {
                         // Google marks the organiser that is you with "self".
                         "isOrganizer": (organizer?["self"] as? Bool) ?? false,
                         "organizerName": (organizer?["displayName"] as? String) ?? "",
-                        "organizerEmail": (organizer?["email"] as? String) ?? ""
+                        "organizerEmail": (organizer?["email"] as? String) ?? "",
+                        "attendees": people
                     ]
                 }
                 call.resolve(["events": events])
