@@ -1,5 +1,5 @@
 import { ArrowUpRight, Sparkles } from 'lucide-react';
-import { apiBase, isNative } from '@/lib/native/platform';
+import { SITE } from '@/lib/native/platform';
 import { useAiProvider } from './aiProvider';
 import { t } from './i18n';
 import { Sheet } from './Sheet';
@@ -33,7 +33,7 @@ export function AiConsentSheet({
     who: t(gemini ? 'ai_who_gemini' : 'ai_who_claude'),
     company: t(gemini ? 'ai_company_gemini' : 'ai_company_claude'),
   };
-  const policy = `${isNative() ? apiBase() : ''}/privacy`;
+  const policy = `${SITE}/privacy`;
 
   return (
     // Dismissing without choosing counts as "not this time": the note is

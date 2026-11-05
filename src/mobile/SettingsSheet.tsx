@@ -15,7 +15,7 @@ import { LOOKS, setLook, useLook, type Look } from './look';
 import type { Key } from './i18n';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
-import { apiBase, isNative } from '@/lib/native/platform';
+import { isNative, SITE } from '@/lib/native/platform';
 import { readVersion, WEB_VERSION } from '@/lib/version';
 import { sendDiagnostics } from './diagnostics';
 import { describe, useLastRace } from '@/lib/voice/lastRace';
@@ -477,32 +477,26 @@ function AboutSection() {
     void readVersion().then(setVersion);
   }, []);
 
-  // Same origin on the web; the deployed server inside the app.
-  const site = isNative() ? apiBase() : '';
-  const canLink = !isNative() || !!site;
-
   return (
     <>
       <p className="mt-7 px-6 pb-2 text-[11px] font-semibold tracking-[0.16em] text-ink-4 uppercase">{t('about')}</p>
-      {canLink && (
-        <div className="border-t border-line">
-          {[
-            { href: `${site}/privacy`, label: t('privacy_policy') },
-            { href: `${site}/support`, label: t('support') },
-          ].map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex h-[58px] w-full items-center gap-4 px-6 text-[17px] text-ink transition-colors active:bg-wash-strong"
-            >
-              <span className="flex-1">{link.label}</span>
-              <ArrowUpRight className="size-[18px] shrink-0 text-ink-4" strokeWidth={1.8} />
-            </a>
-          ))}
-        </div>
-      )}
+      <div className="border-t border-line">
+        {[
+          { href: `${SITE}/privacy`, label: t('privacy_policy') },
+          { href: `${SITE}/support`, label: t('support') },
+        ].map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-[58px] w-full items-center gap-4 px-6 text-[17px] text-ink transition-colors active:bg-wash-strong"
+          >
+            <span className="flex-1">{link.label}</span>
+            <ArrowUpRight className="size-[18px] shrink-0 text-ink-4" strokeWidth={1.8} />
+          </a>
+        ))}
+      </div>
       {/* The App Store's own page for writing a review, for those who want to. */}
       <div className="border-t border-line">
         <a
