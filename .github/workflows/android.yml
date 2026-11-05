@@ -1,0 +1,56 @@
+name: Android
+
+# Builds an installable test .apk on every push to the android branch. Nothing
+# is signed for the Play Store yet: download the apk from the run's page and
+# open it on an Android phone.
+
+on:
+  push:
+    branches: [android]
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    name: Build the test apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Build the web app
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ vars.API_BASE_URL }}
+          VITE_M365_CLIENT_ID: ${{ vars.M365_CLIENT_ID }}
+          VITE_M365_TENANT_ID: ${{ vars.M365_TENANT_ID }}
+          VITE_M365_WORK_CLIENT_ID: ${{ vars.M365_WORK_CLIENT_ID }}
+          VITE_M365_WORK_TENANT_ID: ${{ vars.M365_WORK_TENANT_ID }}
+          VITE_M365_WORK_DOMAIN: ${{ vars.M365_WORK_DOMAIN }}
+          # Google, one identifier: an installed app takes no secret.
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+      - name: Copy the web app into the native project
+        run: npx cap sync android
+      - name: Compile
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hence-android-${{ github.run_number }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
