@@ -4,6 +4,8 @@ import android.Manifest;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -38,6 +40,7 @@ import java.util.ArrayList;
 )
 public class SpeechPlugin extends Plugin {
 
+    private final Handler handler = new Handler(Looper.getMainLooper());
     private SpeechRecognizer recognizer;
     private Intent intent;
     private String locale = "en-US";
@@ -124,6 +127,7 @@ public class SpeechPlugin extends Plugin {
         }
 
         getActivity().runOnUiThread(() -> {
+            handler.removeCallbacksAndMessages(null);
             destroy();
             kept = "";
             current = "";
@@ -139,10 +143,17 @@ public class SpeechPlugin extends Plugin {
     @PluginMethod
     public void stop(PluginCall call) {
         getActivity().runOnUiThread(() -> {
-            if (listening && recognizer != null) {
+            if (listening) {
                 finishing = true;
-                // The recogniser answers with onResults, which ends the session.
-                recognizer.stopListening();
+                if (recognizer != null) {
+                    // The recogniser answers with onResults, which ends the session.
+                    recognizer.stopListening();
+                    // Some never answer after stopListening(): end with what was heard.
+                    handler.postDelayed(() -> finish(joined().isEmpty() ? "nospeech" : null), 2500);
+                } else {
+                    // Between two stretches: nothing is listening, end now.
+                    finish(joined().isEmpty() ? "nospeech" : null);
+                }
             }
             call.resolve();
         });
@@ -165,6 +176,10 @@ public class SpeechPlugin extends Plugin {
     private void finish(String errorCode) {
         if (!listening) return;
         listening = false;
+        handler.removeCallbacksAndMessages(null);
+        // Words already heard are never thrown away: a late error after them is
+        // the recogniser giving up, not a failure worth more than the text.
+        if (errorCode != null && !"permission".equals(errorCode) && !joined().isEmpty()) errorCode = null;
         if (errorCode != null) {
             JSObject data = new JSObject();
             data.put("code", errorCode);
@@ -176,11 +191,22 @@ public class SpeechPlugin extends Plugin {
         notifyListeners("end", new JSObject());
     }
 
-    /** The recogniser stopped by itself after a pause: keep the words, listen again. */
+    /**
+     * The recogniser stopped by itself after a pause: keep the words, listen
+     * again. Many phones refuse a second startListening() on the same
+     * recogniser, or one called from inside its own callback ("busy"), so
+     * each stretch gets a fresh one, a moment later.
+     */
     private void listenAgain() {
         if (!current.isEmpty()) kept = joined();
         current = "";
-        if (recognizer != null) recognizer.startListening(intent);
+        destroy();
+        handler.postDelayed(() -> {
+            if (!listening || finishing) return;
+            recognizer = SpeechRecognizer.createSpeechRecognizer(getContext());
+            recognizer.setRecognitionListener(listener);
+            recognizer.startListening(intent);
+        }, 150);
     }
 
     private void destroy() {

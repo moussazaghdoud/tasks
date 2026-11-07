@@ -7,6 +7,7 @@
  * the microphone level for the listening animation.
  */
 import { registerPlugin, type PluginListenerHandle } from '@capacitor/core';
+import { log } from '@/lib/log';
 import { speechHints } from './hints';
 import { rememberRace, type Candidate } from './lastRace';
 import type { SpeechCallbacks, SpeechErrorCode, SpeechSession } from './speechTypes';
@@ -68,11 +69,13 @@ export function startNativeSpeech(langs: string[], cb: SpeechCallbacks): SpeechS
   void (async () => {
     try {
       const granted = await Speech.requestPermissions();
+      log('speech.start', `${lang} mic=${granted.microphone}`);
       if (granted.speech !== 'granted' || granted.microphone !== 'granted') {
         cb.onError('not-allowed');
         return;
       }
       const { available } = await Speech.available({ locale: lang });
+      if (!available) log('speech.unavailable', lang);
       if (!available) {
         cb.onError('unsupported');
         return;
@@ -83,6 +86,7 @@ export function startNativeSpeech(langs: string[], cb: SpeechCallbacks): SpeechS
           // The native recognizer reports the whole utterance each time.
           if (isFinal) {
             finalText = text;
+            log('speech.final', `${text.length} chars`);
             if (locale) cb.onLanguage?.(locale);
             if (locale && candidates?.length) rememberRace(locale, candidates);
             cb.onText(text, '');
@@ -94,6 +98,7 @@ export function startNativeSpeech(langs: string[], cb: SpeechCallbacks): SpeechS
       handles.push(await Speech.addListener('level', ({ level }) => levelListener?.(level)));
       handles.push(
         await Speech.addListener('error', ({ code }) => {
+          log('speech.error', code);
           if (stopped) return;
           cb.onError(ERROR_MAP[code] ?? 'other');
         }),
@@ -111,6 +116,7 @@ export function startNativeSpeech(langs: string[], cb: SpeechCallbacks): SpeechS
     } catch (error) {
       cleanup();
       const code = (error as { code?: string })?.code;
+      log('speech.failed', code ?? String((error as { message?: string })?.message ?? error));
       cb.onError(ERROR_MAP[code ?? ''] ?? 'other');
     }
   })();
