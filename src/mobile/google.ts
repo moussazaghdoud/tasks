@@ -1,6 +1,6 @@
 import { registerPlugin } from '@capacitor/core';
 import type { Task } from '@/domain/types';
-import { isNative } from '@/lib/native/platform';
+import { can } from '@/lib/native/platform';
 import { afterFirstLine, firstLine } from '@/lib/lines';
 import type { Account, Meeting, MeetingAction } from './calendarTypes';
 
@@ -38,7 +38,7 @@ const Google = registerPlugin<GooglePlugin>('Google');
 // the literal name, and a computed one would ship empty.
 const CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim() ?? '';
 
-export const configured = (): boolean => isNative() && !!CLIENT_ID;
+export const configured = (): boolean => can.calendars() && !!CLIENT_ID;
 
 export async function signIn(email?: string): Promise<Account> {
   if (!configured()) throw Object.assign(new Error('No Google client configured'), { code: 'unconfigured' });

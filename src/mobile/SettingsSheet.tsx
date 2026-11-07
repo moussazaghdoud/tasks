@@ -15,7 +15,7 @@ import { LOOKS, setLook, useLook, type Look } from './look';
 import type { Key } from './i18n';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
-import { isNative, SITE } from '@/lib/native/platform';
+import { can, isNative, SITE } from '@/lib/native/platform';
 import { readVersion, WEB_VERSION } from '@/lib/version';
 import { sendDiagnostics } from './diagnostics';
 import { describe, useLastRace } from '@/lib/voice/lastRace';
@@ -278,7 +278,7 @@ function LookPicker({ dark }: { dark: boolean }) {
 function ProRow() {
   const pro = usePro();
   const open = useWorkspace((s) => openCount(s.tasks));
-  if (!isNative()) return null;
+  if (!can.store()) return null;
   return (
     <button
       onClick={() => openPro('settings')}
@@ -454,7 +454,7 @@ function BackupSection() {
 /** Where the copy in iCloud stands, in one line. */
 function CloudLine() {
   const cloud = useCloudState();
-  if (!isNative() || cloud.kind === 'unknown') return null;
+  if (!can.icloud() || cloud.kind === 'unknown') return null;
   const text =
     cloud.kind === 'saved'
       ? t('icloud_saved', { time: timeIn(new Date(cloud.at)) })
@@ -557,7 +557,7 @@ function RaceSection() {
 /** The people thoughts can be sent to: a door to their own sheet. */
 function PeopleSection({ onOpen }: { onOpen: () => void }) {
   const book = usePeopleBook();
-  if (!isNative()) return null;
+  if (!can.sharing()) return null;
   const n = Object.keys(book.people).length;
   return (
     <>

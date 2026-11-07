@@ -3,7 +3,7 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { createId } from '@/lib/id';
 import { ws } from '@/store/workspace';
-import { isNative } from './platform';
+import { can, isNative } from './platform';
 
 /**
  * Photographs kept with a thought.
@@ -112,7 +112,7 @@ export async function scanCode(from: 'camera' | 'library' = 'camera'): Promise<s
  * card, a label. Empty when there are none or the phone cannot read them.
  */
 export async function readPhotoText(name: string): Promise<string> {
-  if (!isNative()) return '';
+  if (!can.readText()) return '';
   try {
     const { text } = await TextReader.read({ name });
     return text.trim();
@@ -160,7 +160,7 @@ export function keepPhotoText(id: string, photoText: string): void {
  * background, so launching the app stays quick.
  */
 export async function readUnreadPhotos(): Promise<void> {
-  if (!isNative()) return;
+  if (!can.readText()) return;
   const unread = Object.values(ws().tasks).filter((task) => task.photo && task.photoText === undefined);
   for (const task of unread) keepPhotoText(task.id, await readPhotoText(task.photo!));
 }

@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { isNative } from '@/lib/native/platform';
+import { can, isNative } from '@/lib/native/platform';
 import type { Card } from './card';
 import { openAnonymous, openFrom, sealAnonymous, sealFor } from './crypto';
 import { identity } from './identity';
@@ -121,7 +121,7 @@ export function useInbox(): Inbox {
 
 /** Whether this iPhone can send and receive: the native app, signed in to iCloud. */
 export async function sharingAvailable(): Promise<boolean> {
-  if (!isNative()) return false;
+  if (!can.sharing()) return false;
   try {
     return (await ShareBox.available()).available;
   } catch {

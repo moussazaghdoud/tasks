@@ -18,7 +18,7 @@ import {
 import { useEffect, useState } from 'react';
 import { log, ref } from '@/lib/log';
 import { copyText, haptic } from '@/lib/native/bridge';
-import { isNative } from '@/lib/native/platform';
+import { can } from '@/lib/native/platform';
 import { ensureNotificationPermission } from '@/lib/native/notifications';
 import { headlineOf, photoUrl } from '@/lib/native/photos';
 import { toast } from '@/store/toast';
@@ -142,8 +142,8 @@ export function ThoughtSheet({ taskId, onClose }: { taskId: string | null; onClo
             toast(t('moved_to', { space: t(to) }), { action: { label: t('undo'), run: undo } });
           })}
         />
-        {/* To another Hence, through iCloud: the iPhone app only. */}
-        {isNative() && <SheetAction icon={Send} label={st('act_send_to')} onClick={() => setSendOpen(true)} />}
+        {/* To another Hence, through iCloud: where the phone can. */}
+        {can.sharing() && <SheetAction icon={Send} label={st('act_send_to')} onClick={() => setSendOpen(true)} />}
         <SheetAction icon={Mail} label={t('act_email')} onClick={act(() => openEmail(task))} />
         <SheetAction icon={CalendarPlus} label={t('act_calendar')} onClick={act(() => addToCalendar(task))} />
         <SheetAction icon={Share2} label={t('act_share')} onClick={act(() => shareThought(task))} />

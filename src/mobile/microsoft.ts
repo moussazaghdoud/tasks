@@ -1,6 +1,6 @@
 import { registerPlugin } from '@capacitor/core';
 import type { Task } from '@/domain/types';
-import { isNative } from '@/lib/native/platform';
+import { can } from '@/lib/native/platform';
 import { afterFirstLine, firstLine } from '@/lib/lines';
 import type { Account, Meeting, MeetingAction } from './calendarTypes';
 
@@ -69,7 +69,7 @@ export function registrationFor(email: string): Registration | null {
 }
 
 /** Whether this build was given any registration to talk to. */
-export const configured = (): boolean => isNative() && (usable(PUBLIC) || usable(WORK));
+export const configured = (): boolean => can.calendars() && (usable(PUBLIC) || usable(WORK));
 
 /**
  * Sign in with the registration that fits this address. The address also goes

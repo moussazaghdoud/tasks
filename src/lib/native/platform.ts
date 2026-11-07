@@ -10,6 +10,29 @@ export const isNative = (): boolean => Capacitor.isNativePlatform();
 export const isIOS = (): boolean => Capacitor.getPlatform() === 'ios';
 
 /**
+ * What the native side can do here. Each of these needs an app-specific
+ * plugin, and so far those exist in Swift only: Android gets each one as its
+ * Kotlin or Java twin lands. Until then the feature is hidden there, rather
+ * than offered and failing.
+ */
+export const can = {
+  /** Copy of the list in the person's own iCloud (ICloudPlugin). */
+  icloud: (): boolean => isIOS(),
+  /** Sending thoughts to other people (ShareBoxPlugin, CloudKit). */
+  sharing: (): boolean => isIOS(),
+  /**
+   * Buying Pro (StorePlugin). Where there is no store yet, Pro is simply on:
+   * a paywall nobody can pay is worse than none. Play Billing must land
+   * before an Android build reaches the Play Store.
+   */
+  store: (): boolean => isIOS(),
+  /** Outlook and Google calendars (MicrosoftPlugin, GooglePlugin). */
+  calendars: (): boolean => isIOS(),
+  /** Reading the text in photos and QR codes (TextReaderPlugin). */
+  readText: (): boolean => isIOS(),
+};
+
+/**
  * Tidy whatever was typed into the build variable.
  *
  * A host with no scheme ("example.railway.app") is the easy mistake to make,

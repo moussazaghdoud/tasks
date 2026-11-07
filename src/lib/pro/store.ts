@@ -1,7 +1,7 @@
 import { registerPlugin } from '@capacitor/core';
 import { useSyncExternalStore } from 'react';
 import { log } from '@/lib/log';
-import { isNative } from '@/lib/native/platform';
+import { can, isNative } from '@/lib/native/platform';
 
 /**
  * Hence Pro: what the person owns, and what they can buy.
@@ -83,7 +83,7 @@ const write = (key: string, on: boolean): void => {
 };
 
 /** Bought, as StoreKit last said. */
-let owned = !isNative() || read(KEY);
+let owned = !can.store() || read(KEY);
 let tester = isNative() && read(TESTER_KEY);
 let founder = isNative() && read(FOUNDER_KEY);
 let tryFree = read(TRY_FREE_KEY);
@@ -134,7 +134,7 @@ export function setTryFree(on: boolean): void {
 
 /** At launch: where the app came from, what is owned, and keep listening. */
 export async function initStore(): Promise<void> {
-  if (!isNative()) return;
+  if (!can.store()) return;
   try {
     const { environment, originalBuild } = await Store.environment();
     tester = environment === 'testflight';

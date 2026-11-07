@@ -1,6 +1,6 @@
 import { registerPlugin } from '@capacitor/core';
 import { useSyncExternalStore } from 'react';
-import { isNative } from '@/lib/native/platform';
+import { can } from '@/lib/native/platform';
 import { onOutboxChange, restoreSent, waitingFor, type Sent } from '@/lib/share/outbox';
 import { exportBook, onBookChange, people, restoreBook, type Book } from '@/lib/share/people';
 import { log } from '@/lib/log';
@@ -119,7 +119,7 @@ async function restoreIfEmpty(): Promise<void> {
 
 /** Write the thoughts to iCloud now. */
 export async function saveToICloud(): Promise<void> {
-  if (!isNative() || !ready) return;
+  if (!can.icloud() || !ready) return;
   if (saving) return saving;
   const snapshot = ws().exportSnapshot();
   // Never replace a copy with nothing: an emptied app is more often an
@@ -147,7 +147,7 @@ export async function saveToICloud(): Promise<void> {
 }
 
 export async function initICloud(): Promise<void> {
-  if (!isNative()) return;
+  if (!can.icloud()) return;
   await restoreIfEmpty();
   ready = true;
 

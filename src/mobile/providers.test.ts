@@ -15,7 +15,7 @@ async function load(env: Record<string, string>) {
   // A calendar is only offered in the native app; tests run as the web build,
   // where `isNative()` is false, so the platform is stubbed rather than faked
   // around.
-  vi.doMock('@/lib/native/platform', () => ({ isNative: () => true, apiBase: () => '' }));
+  vi.doMock('@/lib/native/platform', () => ({ isNative: () => true, isIOS: () => true, can: { calendars: () => true }, apiBase: () => '' }));
   for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
   return import('./calendar');
 }
