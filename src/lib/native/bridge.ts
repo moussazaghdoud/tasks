@@ -146,6 +146,8 @@ export const isOnline = () => online;
  */
 export async function initNative(onResume: () => void, onDeepLink: (url: string) => void): Promise<void> {
   if (!isNative()) return;
+  // For the few styles that must differ per phone (see "Android" in index.css).
+  document.documentElement.dataset.platform = isIOS() ? 'ios' : 'android';
 
   try {
     if (isIOS()) {

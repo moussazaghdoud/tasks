@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 import { voiceMiddleware } from './server/voice.ts';
+import { legacyColorsPlugin } from './vite-plugins/legacyColors.ts';
 
 const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
 
@@ -33,7 +34,8 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins: [react(), tailwindcss(), voiceApi()],
+    // legacyColorsPlugin: translucent colours that also work in old Android web views.
+    plugins: [react(), tailwindcss(), voiceApi(), legacyColorsPlugin()],
     // So a running copy can say which build it is — the native app reports its
     // own build number on top of this.
     define: {

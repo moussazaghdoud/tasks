@@ -13,5 +13,5 @@
     "strict": true,
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "server", "src/lib/voice/types.ts"]
+  "include": ["vite.config.ts", "server", "vite-plugins", "src/lib/voice/types.ts"]
 }

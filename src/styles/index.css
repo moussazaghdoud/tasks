@@ -536,3 +536,20 @@ li.reorderable {
   -webkit-user-select: none;
   user-select: none;
 }
+
+/* ------------------------------------------------------------------------
+   Android.
+
+   Blur behind the header and sheets is cheap on an iPhone and expensive on
+   most Android phones, where every scroll redraws it and the list stutters.
+   There the translucent surfaces simply go solid.
+   ------------------------------------------------------------------------ */
+:root[data-platform='android'] *,
+:root[data-platform='android'] *::before,
+:root[data-platform='android'] *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+:root[data-platform='android'] header {
+  background-color: var(--color-paper);
+}
