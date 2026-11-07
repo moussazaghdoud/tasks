@@ -26,6 +26,9 @@ export function normalizeBase(value: string | undefined): string {
   return `https://${raw.replace(/^\/+/, '')}`;
 }
 
+/** The public site: the privacy policy, support and legal notice live there. */
+export const SITE = 'https://ihence.app';
+
 /** Base URL for the analysis API: same origin on the web, the deployed server in the app. */
 export function apiBase(): string {
   if (!isNative()) return '';

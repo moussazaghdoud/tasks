@@ -1,7 +1,7 @@
 import { ArrowUpRight, Check, LoaderCircle, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { haptic } from '@/lib/native/bridge';
-import { apiBase, isNative } from '@/lib/native/platform';
+import { SITE } from '@/lib/native/platform';
 import { closePro, FREE_OPEN_LIMIT, useProSheet, type ProReason } from '@/lib/pro/limits';
 import {
   buy,
@@ -98,7 +98,7 @@ export function ProSheet() {
   };
 
   const why = REASON[reason];
-  const policy = `${isNative() ? apiBase() : ''}/privacy`;
+  const policy = `${SITE}/privacy`;
 
   return (
     <Sheet open={open} onClose={closePro} label={pt('pro_title')}>

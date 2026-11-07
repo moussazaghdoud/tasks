@@ -39,7 +39,7 @@ import { st } from './shareI18n';
  * between the mailbox, the people book and the list of thoughts.
  */
 
-const REPORT_TO = 'iHenceteam@gmail.com';
+const REPORT_TO = 'contact@ihence.app';
 
 /** Add the person on a card — scanned, or opened from a link — and say hello. */
 export async function addFromCard(card: Card): Promise<void> {
