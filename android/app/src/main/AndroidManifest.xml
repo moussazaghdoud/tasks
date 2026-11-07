@@ -38,4 +38,15 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Voice capture (SpeechPlugin). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Reminders (LocalNotifications): asked for at the first reminder, Android 13+. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Android 11+ hides other apps unless asked: the speech service is one. -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 </manifest>
