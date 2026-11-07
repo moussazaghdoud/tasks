@@ -32,6 +32,8 @@ interface SpeechPlugin {
   addListener(event: 'level', fn: (e: { level: number }) => void): Promise<PluginListenerHandle>;
   addListener(event: 'error', fn: (e: { code: string }) => void): Promise<PluginListenerHandle>;
   addListener(event: 'end', fn: () => void): Promise<PluginListenerHandle>;
+  /** Android only: the recogniser's steps, for the diagnostics log. */
+  addListener(event: 'trace', fn: (e: { step: string }) => void): Promise<PluginListenerHandle>;
 }
 
 const Speech = registerPlugin<SpeechPlugin>('Speech');
@@ -96,6 +98,7 @@ export function startNativeSpeech(langs: string[], cb: SpeechCallbacks): SpeechS
         }),
       );
       handles.push(await Speech.addListener('level', ({ level }) => levelListener?.(level)));
+      handles.push(await Speech.addListener('trace', ({ step }) => log('speech.step', step)));
       handles.push(
         await Speech.addListener('error', ({ code }) => {
           log('speech.error', code);

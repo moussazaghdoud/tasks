@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -51,6 +52,8 @@ public class SpeechPlugin extends Plugin {
     private boolean listening = false;
     /** Set by stop(): the next result is the last one. */
     private boolean finishing = false;
+    /** Highest microphone level of the session: tells "heard nothing" from "understood nothing". */
+    private float loudest = -100f;
 
     // ---- Availability & permissions
 
@@ -133,6 +136,9 @@ public class SpeechPlugin extends Plugin {
             current = "";
             finishing = false;
             listening = true;
+            loudest = -100f;
+            String service = Settings.Secure.getString(getContext().getContentResolver(), "voice_recognition_service");
+            trace("service " + (service == null ? "default" : service) + " sdk " + Build.VERSION.SDK_INT);
             recognizer = SpeechRecognizer.createSpeechRecognizer(getContext());
             recognizer.setRecognitionListener(listener);
             recognizer.startListening(intent);
@@ -157,6 +163,17 @@ public class SpeechPlugin extends Plugin {
             }
             call.resolve();
         });
+    }
+
+    /**
+     * One step of the recogniser's life, for the diagnostics log: Android
+     * phones differ more than iPhones, and "it heard nothing" has many causes.
+     * Never the words themselves.
+     */
+    private void trace(String step) {
+        JSObject data = new JSObject();
+        data.put("step", step);
+        notifyListeners("trace", data);
     }
 
     private String joined() {
@@ -224,13 +241,18 @@ public class SpeechPlugin extends Plugin {
 
     private final RecognitionListener listener = new RecognitionListener() {
         @Override
-        public void onReadyForSpeech(Bundle params) {}
+        public void onReadyForSpeech(Bundle params) {
+            trace("ready");
+        }
 
         @Override
-        public void onBeginningOfSpeech() {}
+        public void onBeginningOfSpeech() {
+            trace("speech begins");
+        }
 
         @Override
         public void onRmsChanged(float rmsdB) {
+            loudest = Math.max(loudest, rmsdB);
             // Roughly -2 (silence) to 10 (loud speech) on most phones.
             float level = Math.max(0f, Math.min(1f, (rmsdB + 2f) / 12f));
             JSObject data = new JSObject();
@@ -255,6 +277,7 @@ public class SpeechPlugin extends Plugin {
         @Override
         public void onResults(Bundle results) {
             String text = first(results);
+            trace("results " + text.length() + " chars, loudest " + Math.round(loudest));
             if (!text.isEmpty()) current = text;
             if (finishing) {
                 finish(joined().isEmpty() ? "nospeech" : null);
@@ -266,6 +289,7 @@ public class SpeechPlugin extends Plugin {
 
         @Override
         public void onError(int error) {
+            trace("error " + error + (finishing ? " after done" : "") + ", loudest " + Math.round(loudest));
             switch (error) {
                 case SpeechRecognizer.ERROR_NO_MATCH:
                 case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
