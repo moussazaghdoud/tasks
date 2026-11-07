@@ -44,6 +44,7 @@ const ERROR_MAP: Record<string, SpeechErrorCode> = {
   audio: 'audio-capture',
   recognition: 'other',
   nospeech: 'no-speech',
+  nomatch: 'no-match',
   network: 'network',
   // Capacitor's own code when nothing answers on the native side. It means the
   // build is wrong, not the device or the language, so keep it distinguishable

@@ -128,6 +128,7 @@ export const AR: Record<Key, string> = {
   err_unsupported: 'الصوت غير متاح على هذا الجهاز.',
   err_network: 'يحتاج التفريغ النصي إلى اتصال.',
   err_no_speech: 'لم ألتقط ما قلت.',
+  err_no_match: 'سمعتك، لكن ليس بال{lang}. هل تتحدث لغة أخرى؟ اضغط {short} في الأعلى.',
   err_other: 'قاطع شيء ما التسجيل.',
   perm_mic_title: 'لا يستطيع Hence سماعك',
   perm_mic_body: 'الميكروفون أو التعرّف على الكلام متوقف لـ Hence. شغّلهما من إعدادات iPhone لتُملي أفكارك.',

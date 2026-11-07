@@ -16,7 +16,7 @@ import { ui, useUi } from '@/store/ui';
 import { AiConsentSheet } from './AiConsentSheet';
 import { aiConsent, setAiConsent } from './aiConsent';
 import { refreshProvider } from './aiProvider';
-import { dayTimeIn, speechLocale, speechLocales, t } from './i18n';
+import { currentLang, dayTimeIn, LANGUAGES, localeOf, speechLang, speechLocale, speechLocales, t } from './i18n';
 import { currentSpace, setView, spaceOf } from './space';
 import { setReminder } from './thoughtActions';
 import { LiveTranscript, VoiceOrb } from './VoiceVisual';
@@ -28,6 +28,15 @@ import { isPro } from '@/lib/pro/store';
 /** Stop on a long pause, so putting the phone down still captures the thought. */
 const SILENCE_MS = 3200;
 
+/** "anglais" in French, "English" in English: the language named in the interface's own. */
+function languageName(id: string): string | undefined {
+  try {
+    return new Intl.DisplayNames([localeOf(currentLang())], { type: 'language' }).of(id);
+  } catch {
+    return undefined;
+  }
+}
+
 const errorText = (code: SpeechErrorCode): string => {
   switch (code) {
     case 'not-allowed':
@@ -38,6 +47,11 @@ const errorText = (code: SpeechErrorCode): string => {
       return t('err_unsupported');
     case 'network':
       return t('err_network');
+    case 'no-match': {
+      // Name the language listened in, as the header's chip shows it.
+      const lang = LANGUAGES.find((l) => l.id === speechLang())!;
+      return t('err_no_match', { lang: languageName(lang.id) ?? lang.native, short: lang.short });
+    }
     case 'no-speech':
       return t('err_no_speech');
     default:

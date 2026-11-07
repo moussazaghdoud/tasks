@@ -23,6 +23,7 @@ const SILENCE_MS = 2600;
 const ERRORS: Record<SpeechErrorCode, { title: string; body: string }> = {
   'not-allowed': { title: 'Microphone access is blocked.', body: 'Allow the microphone for this site in your browser’s address bar, then try again.' },
   'no-speech': { title: 'I didn’t catch anything.', body: 'Check your microphone, then try again and start speaking right away.' },
+  'no-match': { title: 'I heard you, but didn’t understand.', body: 'Check that the voice language matches the one you speak, then try again.' },
   'audio-capture': { title: 'No microphone found.', body: 'Connect a microphone, or type your memo instead.' },
   network: { title: 'Voice recognition needs a connection.', body: 'Your browser transcribes speech online. Type your memo instead, or try again.' },
   unsupported: { title: 'Voice isn’t available in this browser.', body: 'Use Chrome, Edge or Safari for voice. You can type or paste your memo meanwhile.' },

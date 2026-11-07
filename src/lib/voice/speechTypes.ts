@@ -1,6 +1,8 @@
 export type SpeechErrorCode =
   | 'not-allowed'
   | 'no-speech'
+  /** A voice was heard but no word in the chosen language: likely another language. */
+  | 'no-match'
   | 'audio-capture'
   | 'network'
   | 'unsupported'

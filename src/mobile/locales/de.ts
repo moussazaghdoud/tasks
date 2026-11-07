@@ -128,6 +128,7 @@ export const DE: Record<Key, string> = {
   err_unsupported: 'Sprache ist auf diesem Gerät nicht verfügbar.',
   err_network: 'Die Transkription braucht eine Verbindung.',
   err_no_speech: 'Das habe ich nicht verstanden.',
+  err_no_match: 'Ich habe dich gehört, aber nicht auf {lang}. Sprichst du eine andere Sprache? Tippe oben auf {short}.',
   err_other: 'Etwas hat die Aufnahme unterbrochen.',
   perm_mic_title: 'Hence kann dich nicht hören',
   perm_mic_body: 'Mikrofon oder Spracherkennung sind für Hence ausgeschaltet. Schalte sie in den iPhone-Einstellungen ein, um deine Gedanken zu diktieren.',

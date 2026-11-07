@@ -32,7 +32,7 @@ import java.util.ArrayList;
  * Events emitted to the web layer:
  *   - result { text, isFinal, locale }  the whole utterance so far
  *   - level  { level }                  0–1 microphone level
- *   - error  { code }                   permission | unavailable | audio | recognition | nospeech | network
+ *   - error  { code }                   permission | unavailable | audio | recognition | nospeech | nomatch | network
  *   - end    {}                         recognition finished or was stopped
  */
 @CapacitorPlugin(
@@ -54,6 +54,8 @@ public class SpeechPlugin extends Plugin {
     private boolean finishing = false;
     /** Highest microphone level of the session: tells "heard nothing" from "understood nothing". */
     private float loudest = -100f;
+    /** The recogniser noticed a voice at some point: silence and a foreign language are told apart. */
+    private boolean heardVoice = false;
 
     // ---- Availability & permissions
 
@@ -137,6 +139,7 @@ public class SpeechPlugin extends Plugin {
             finishing = false;
             listening = true;
             loudest = -100f;
+            heardVoice = false;
             String service = Settings.Secure.getString(getContext().getContentResolver(), "voice_recognition_service");
             trace("service " + (service == null ? "default" : service) + " sdk " + Build.VERSION.SDK_INT);
             recognizer = SpeechRecognizer.createSpeechRecognizer(getContext());
@@ -197,6 +200,8 @@ public class SpeechPlugin extends Plugin {
         // Words already heard are never thrown away: a late error after them is
         // the recogniser giving up, not a failure worth more than the text.
         if (errorCode != null && !"permission".equals(errorCode) && !joined().isEmpty()) errorCode = null;
+        // A voice with no word understood: most often another language than the one chosen.
+        if ("nospeech".equals(errorCode) && heardVoice) errorCode = "nomatch";
         if (errorCode != null) {
             JSObject data = new JSObject();
             data.put("code", errorCode);
@@ -247,6 +252,7 @@ public class SpeechPlugin extends Plugin {
 
         @Override
         public void onBeginningOfSpeech() {
+            heardVoice = true;
             trace("speech begins");
         }
 
