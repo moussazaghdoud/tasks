@@ -57,11 +57,14 @@ export async function openAppSettings(): Promise<void> {
  * opened a white date picker in the middle of a dark sheet.
  */
 export async function setStatusBarTheme(theme: 'dark' | 'light'): Promise<void> {
-  if (!isNative() || !isIOS()) return;
-  try {
-    await StatusBar.setStyle({ style: theme === 'dark' ? Style.Dark : Style.Light });
-  } catch {
-    /* best effort */
+  if (!isNative()) return;
+  // Android paints its bars in the Appearance plugin below, colour and icons together.
+  if (isIOS()) {
+    try {
+      await StatusBar.setStyle({ style: theme === 'dark' ? Style.Dark : Style.Light });
+    } catch {
+      /* best effort */
+    }
   }
   try {
     await Appearance.setStyle({ style: theme });

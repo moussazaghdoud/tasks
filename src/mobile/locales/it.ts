@@ -8,6 +8,7 @@ export const IT: Record<Key, string> = {
   backup_save: 'Salva i miei pensieri',
   backup_restore: 'Ripristina da un backup',
   backup_note: 'Con iCloud attivo, una copia dei tuoi pensieri è conservata nel tuo iCloud e torna se reinstalli l’app o cambi iPhone — noi non la vediamo mai. Un file di backup è una seconda copia, foto comprese, che conservi tu. Il ripristino aggiunge ciò che manca e non cancella mai nulla.',
+  backup_note_file: 'Un file di backup è una copia dei tuoi pensieri, foto comprese, che conservi tu. Il ripristino aggiunge ciò che manca e non cancella mai nulla.',
   icloud_saved: 'Salvato nel tuo iCloud alle {time}',
   icloud_saving: 'Salvataggio nel tuo iCloud…',
   icloud_off: 'iCloud è disattivato su questo iPhone — conserva un file di backup',

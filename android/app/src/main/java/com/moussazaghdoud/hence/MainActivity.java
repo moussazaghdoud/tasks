@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // The app's own plugins, the Android twins of the Swift ones in ios/App/App.
         registerPlugin(SpeechPlugin.class);
+        registerPlugin(AppearancePlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

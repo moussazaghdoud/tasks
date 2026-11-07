@@ -15,7 +15,7 @@ import { LOOKS, setLook, useLook, type Look } from './look';
 import type { Key } from './i18n';
 import { cn } from '@/lib/platform';
 import { haptic } from '@/lib/native/bridge';
-import { can, isNative, SITE } from '@/lib/native/platform';
+import { can, isIOS, isNative, SITE } from '@/lib/native/platform';
 import { readVersion, WEB_VERSION } from '@/lib/version';
 import { sendDiagnostics } from './diagnostics';
 import { describe, useLastRace } from '@/lib/voice/lastRace';
@@ -446,7 +446,7 @@ function BackupSection() {
         />
       </div>
       <CloudLine />
-      <p className="px-6 pt-2 text-[12.5px] leading-[18px] text-ink-3">{t('backup_note')}</p>
+      <p className="px-6 pt-2 text-[12.5px] leading-[18px] text-ink-3">{t(can.icloud() ? 'backup_note' : 'backup_note_file')}</p>
     </>
   );
 }
@@ -497,18 +497,21 @@ function AboutSection() {
           </a>
         ))}
       </div>
-      {/* The App Store's own page for writing a review, for those who want to. */}
-      <div className="border-t border-line">
-        <a
-          href="https://apps.apple.com/app/id6813187827?action=write-review"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex h-[58px] w-full items-center gap-4 px-6 text-[17px] text-ink transition-colors active:bg-wash-strong"
-        >
-          <span className="flex-1">{t('rate_app')}</span>
-          <Star className="size-[18px] shrink-0 text-ink-4" strokeWidth={1.8} />
-        </a>
-      </div>
+      {/* The App Store's own page for writing a review, for those who want to.
+          The iPhone only until the app is on Google Play. */}
+      {isIOS() && (
+        <div className="border-t border-line">
+          <a
+            href="https://apps.apple.com/app/id6813187827?action=write-review"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-[58px] w-full items-center gap-4 px-6 text-[17px] text-ink transition-colors active:bg-wash-strong"
+          >
+            <span className="flex-1">{t('rate_app')}</span>
+            <Star className="size-[18px] shrink-0 text-ink-4" strokeWidth={1.8} />
+          </a>
+        </div>
+      )}
       {/* For "something went wrong and I can't say what": the diary of what
           the app did, sent by the person, never by the app. */}
       <div className="border-t border-line">

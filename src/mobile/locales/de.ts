@@ -8,6 +8,7 @@ export const DE: Record<Key, string> = {
   backup_save: 'Meine Gedanken sichern',
   backup_restore: 'Aus Sicherung wiederherstellen',
   backup_note: 'Mit iCloud wird eine Kopie deiner Gedanken in deiner eigenen iCloud aufbewahrt und kommt zurück, wenn du die App neu installierst oder das iPhone wechselst — wir sehen sie nie. Eine Sicherungsdatei ist eine zweite Kopie, mit Fotos, die du selbst aufbewahrst. Wiederherstellen fügt Fehlendes hinzu und löscht nie etwas.',
+  backup_note_file: 'Eine Sicherungsdatei ist eine Kopie deiner Gedanken, mit Fotos, die du selbst aufbewahrst. Wiederherstellen fügt Fehlendes hinzu und löscht nie etwas.',
   icloud_saved: 'In deiner iCloud gesichert um {time}',
   icloud_saving: 'Wird in deiner iCloud gesichert…',
   icloud_off: 'iCloud ist auf diesem iPhone aus — bewahre eine Sicherungsdatei auf',

@@ -8,6 +8,7 @@ export const ES: Record<Key, string> = {
   backup_save: 'Guardar mis ideas',
   backup_restore: 'Restaurar una copia',
   backup_note: 'Con iCloud activado, una copia de tus ideas se guarda en tu propio iCloud y vuelve si reinstalas la app o cambias de iPhone — nosotros nunca la vemos. Un archivo de copia es una segunda copia, fotos incluidas, que guardas tú. Restaurar añade lo que falta y nunca borra nada.',
+  backup_note_file: 'Un archivo de copia es una copia de tus ideas, fotos incluidas, que guardas tú. Restaurar añade lo que falta y nunca borra nada.',
   icloud_saved: 'Guardado en tu iCloud a las {time}',
   icloud_saving: 'Guardando en tu iCloud…',
   icloud_off: 'iCloud está desactivado en este iPhone — guarda un archivo de copia',
