@@ -51,6 +51,19 @@ jobs:
         with:
           path: ~/.android/debug.keystore
           key: hence-debug-keystore
+      # Gradle itself, kept apart from the dependency cache: that one is keyed on
+      # the build files and starts over at every change, and the download of
+      # Gradle from its servers sometimes fails (timeouts, 504).
+      - name: Keep Gradle itself
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-wrapper-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Fetch Gradle (with retries)
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          for i in 1 2 3; do ./gradlew --version --no-daemon > /dev/null && break; echo "Gradle download failed, retry $i"; sleep 20; done
       - name: Compile
         working-directory: android
         run: |
