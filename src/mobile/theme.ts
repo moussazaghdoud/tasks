@@ -3,8 +3,8 @@ import { useSyncExternalStore } from 'react';
 /**
  * Dark or light, chosen rather than inherited.
  *
- * The phone opens dark because that is the design the app was built around,
- * but a screen you look at in daylight is a different screen. Both palettes
+ * The app opens light, the way a page in daylight reads, until someone picks
+ * dark in Settings; that choice is kept. Both palettes
  * are the same token names, so nothing in the interface knows which one it is
  * wearing.
  */
@@ -14,9 +14,9 @@ const KEY = 'hence.theme';
 
 export function storedTheme(): Theme {
   try {
-    return localStorage.getItem(KEY) === 'light' ? 'light' : 'dark';
+    return localStorage.getItem(KEY) === 'dark' ? 'dark' : 'light';
   } catch {
-    return 'dark';
+    return 'light';
   }
 }
 
@@ -55,4 +55,4 @@ function subscribe(onChange: () => void): () => void {
   };
 }
 
-export const useTheme = (): Theme => useSyncExternalStore(subscribe, () => current, () => 'dark');
+export const useTheme = (): Theme => useSyncExternalStore(subscribe, () => current, () => 'light');

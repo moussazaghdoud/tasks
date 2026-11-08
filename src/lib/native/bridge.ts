@@ -151,7 +151,9 @@ export async function initNative(onResume: () => void, onDeepLink: (url: string)
 
   try {
     if (isIOS()) {
-      await StatusBar.setStyle({ style: Style.Dark }); // light text on our charcoal background
+      // Glyphs that read on the theme already painted (main.tsx applies it first): Style.Dark is light text.
+      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      await StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light });
       // Native, not Body: the whole web view shrinks when the keyboard opens,
       // so anything anchored to the bottom — the capture bar, every sheet —
       // rises above it. With Body only the document shrank, and `position:
