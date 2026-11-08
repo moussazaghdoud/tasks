@@ -69,7 +69,15 @@ jobs:
         run: |
           chmod +x gradlew
           # On failure, the reasons become annotations, readable without opening the log.
-          if ! ./gradlew assembleDebug --no-daemon > build.log 2>&1; then
+          # Downloads from GitHub's file servers sometimes fail with a 504: try
+          # again a little later before calling it a failure.
+          ok=no
+          for i in 1 2 3; do
+            if ./gradlew assembleDebug --no-daemon > build.log 2>&1; then ok=yes; break; fi
+            grep -q "status code 50[234]\|Could not GET\|Read timed out" build.log || break
+            echo "Download failed, retry $i"; sleep 45
+          done
+          if [ "$ok" != yes ]; then
             { grep -E "error:|What went wrong|Duplicate class|^e: |Could not|Exception|> " build.log || true; } | head -25 | while IFS= read -r line; do echo "::error::$line"; done
             tail -60 build.log
             exit 1
