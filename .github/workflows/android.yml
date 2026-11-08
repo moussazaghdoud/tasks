@@ -78,7 +78,7 @@ jobs:
             echo "Download failed, retry $i"; sleep 45
           done
           if [ "$ok" != yes ]; then
-            { grep -E "error:|What went wrong|Duplicate class|^e: |Could not|Exception|> " build.log || true; } | head -25 | while IFS= read -r line; do echo "::error::$line"; done
+            { grep -E "error:|What went wrong|Duplicate class|^e: |Could not|Exception|^   > |^  > |^> [^T]" build.log | grep -vE "^> Task|^> Configure|--scan|--info|--stacktrace" || true; } | head -10 | while IFS= read -r line; do echo "::error::$line"; done
             tail -60 build.log
             exit 1
           fi
