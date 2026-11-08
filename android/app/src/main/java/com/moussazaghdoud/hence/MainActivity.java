@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
         // The app's own plugins, the Android twins of the Swift ones in ios/App/App.
         registerPlugin(SpeechPlugin.class);
         registerPlugin(AppearancePlugin.class);
+        registerPlugin(TextReaderPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

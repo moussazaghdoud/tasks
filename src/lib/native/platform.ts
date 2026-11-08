@@ -28,8 +28,8 @@ export const can = {
   store: (): boolean => isIOS(),
   /** Outlook and Google calendars (MicrosoftPlugin, GooglePlugin). */
   calendars: (): boolean => isIOS(),
-  /** Reading the text in photos and QR codes (TextReaderPlugin). */
-  readText: (): boolean => isIOS(),
+  /** Reading the text in photos (TextReaderPlugin: Vision on iOS, ML Kit on Android). */
+  readText: (): boolean => isNative(),
 };
 
 /**
