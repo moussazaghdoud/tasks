@@ -1,7 +1,10 @@
 import type { Plugin } from 'vite';
 
 /**
- * Translucent colours for web views older than color-mix() (Chrome 111).
+ * CSS for Android web views that were never updated (seen: Chrome 104 on an
+ * Android 13 phone). Two things newer engines know and those do not:
+ *
+ * 1. Translucent colours, color-mix() (Chrome 111).
  *
  * Tailwind writes `bg-paper/88` as a fixed fallback colour, then the real
  * color-mix() inside `@supports`. The fallback is worked out once, from the
@@ -13,6 +16,10 @@ import type { Plugin } from 'vite';
  * `color-mix(in …, var(--color-x) N%, transparent)` gets a version before it
  * that old engines understand, `rgb(var(--rgb-x, r g b) / N%)`. Engines that
  * know color-mix() still use it.
+ *
+ * 2. Heights in dvh/svh/lvh (Chrome 108). An old engine drops `max-height: 86dvh`
+ *    altogether, so a sheet grew taller than the screen and its top, with the
+ *    first settings, was cut off. Each such value gets a `vh` version before it.
  */
 
 const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
@@ -26,7 +33,7 @@ function rgbOf(hex: string): string {
 /** color-mix(in <space>, var(--color-x) N%, transparent) */
 const MIX = /color-mix\(in [a-z]+, ?var\(--color-([a-z0-9-]+)\) ([\d.]+)%, ?transparent\)/g;
 
-export function legacyColors(css: string): string {
+export function legacyCss(css: string): string {
   // 1. A space-separated twin for every hex colour token, wherever it is set.
   let out = css.replace(/(--color-([a-z0-9-]+):\s*(#[0-9a-f]+))(?=\s*[;}])/gi, (all, _decl, name: string, hex: string) =>
     HEX.test(hex) ? `${all};--rgb-${name}:${rgbOf(hex)}` : all,
@@ -49,18 +56,24 @@ export function legacyColors(css: string): string {
     return `${lead}${prop}:${plain};${prop}:${value}`;
   });
 
+  // 4. Heights in the newer viewport units: the same in vh first, for engines that drop them.
+  out = out.replace(/([;{])([a-z-]+):([^;{}]*\d(?:dvh|svh|lvh)[^;{}]*)(?=[;}])/gi, (all, lead: string, prop: string, value: string) => {
+    if (prop.startsWith('--')) return all;
+    return `${lead}${prop}:${value.replace(/(\d)(?:dvh|svh|lvh)/gi, '$1vh')};${prop}:${value}`;
+  });
+
   return out;
 }
 
-/** Applies legacyColors() to the CSS of a production build. */
-export function legacyColorsPlugin(): Plugin {
+/** Applies legacyCss() to the CSS of a production build. */
+export function legacyCssPlugin(): Plugin {
   return {
-    name: 'hence-legacy-colors',
+    name: 'hence-legacy-css',
     apply: 'build',
     generateBundle(_options, bundle) {
       for (const file of Object.values(bundle)) {
         if (file.type === 'asset' && file.fileName.endsWith('.css') && typeof file.source === 'string') {
-          file.source = legacyColors(file.source);
+          file.source = legacyCss(file.source);
         }
       }
     },
