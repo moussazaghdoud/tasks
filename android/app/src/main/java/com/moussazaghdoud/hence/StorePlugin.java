@@ -247,7 +247,7 @@ public class StorePlugin extends Plugin {
             boolean anyPending = pending;
             active(list -> {
                 notifyEntitlements(list);
-                if (call != null) answer(call, list.isEmpty() && anyPending ? "pending" : "purchased", list);
+                if (call != null) answer(call, list.length() == 0 && anyPending ? "pending" : "purchased", list);
             });
             return;
         }
