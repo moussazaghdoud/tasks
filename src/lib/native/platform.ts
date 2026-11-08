@@ -22,8 +22,9 @@ export const can = {
   sharing: (): boolean => isIOS(),
   /**
    * Buying Pro (StorePlugin). Where there is no store yet, Pro is simply on:
-   * a paywall nobody can pay is worse than none. Play Billing must land
-   * before an Android build reaches the Play Store.
+   * a paywall nobody can pay is worse than none. Android's StorePlugin (Play
+   * Billing) is written; turn it on here once the three products exist in
+   * Play Console, before an Android build reaches the Play Store.
    */
   store: (): boolean => isIOS(),
   /** Outlook and Google calendars (MicrosoftPlugin, GooglePlugin). */
