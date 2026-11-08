@@ -1,0 +1,86 @@
+name: Android release
+
+# Builds the signed app bundle (.aab) the Play Store takes, from a tag like
+# android-v1.1.1 or from the Actions tab. Signed with the upload key kept in
+# the repository secrets: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+# ANDROID_KEY_ALIAS. Google Play then re-signs it with the app's own key.
+
+on:
+  push:
+    tags: ['android-v*']
+  workflow_dispatch:
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  bundle:
+    name: Build the signed app bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Build the web app
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ vars.API_BASE_URL }}
+          VITE_M365_CLIENT_ID: ${{ vars.M365_CLIENT_ID }}
+          VITE_M365_TENANT_ID: ${{ vars.M365_TENANT_ID }}
+          VITE_M365_WORK_CLIENT_ID: ${{ vars.M365_WORK_CLIENT_ID }}
+          VITE_M365_WORK_TENANT_ID: ${{ vars.M365_WORK_TENANT_ID }}
+          VITE_M365_WORK_DOMAIN: ${{ vars.M365_WORK_DOMAIN }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+      - name: Copy the web app into the native project
+        run: npx cap sync android
+      - name: Keep Gradle itself
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-wrapper-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Unpack the upload key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then echo "::error::The ANDROID_KEYSTORE_BASE64 secret is missing"; exit 1; fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+      - name: Build the bundle
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          chmod +x gradlew
+          ok=no
+          for i in 1 2 3; do
+            if ./gradlew bundleRelease --no-daemon > build.log 2>&1; then ok=yes; break; fi
+            grep -q "status code 50[234]\|Could not GET\|Read timed out" build.log || break
+            echo "Download failed, retry $i"; sleep 45
+          done
+          if [ "$ok" != yes ]; then
+            { grep -E "error:|What went wrong|^e: |Could not|Exception|> " build.log || true; } | head -25 | while IFS= read -r line; do echo "::error::$line"; done
+            tail -60 build.log
+            exit 1
+          fi
+          mv app/build/outputs/bundle/release/app-release.aab "hence-${{ github.run_number }}.aab"
+      - name: Forget the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hence-play-${{ github.run_number }}
+          path: android/hence-${{ github.run_number }}.aab
+          retention-days: 30
