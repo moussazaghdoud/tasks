@@ -8,6 +8,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import android.speech.RecognitionListener;
+import android.speech.RecognitionSupport;
+import android.speech.RecognitionSupportCallback;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import com.getcapacitor.JSObject;
@@ -142,6 +144,14 @@ public class SpeechPlugin extends Plugin {
             heardVoice = false;
             String service = Settings.Secure.getString(getContext().getContentResolver(), "voice_recognition_service");
             trace("service " + (service == null ? "default" : service) + " sdk " + Build.VERSION.SDK_INT);
+            // Every recogniser on the phone: a fallback may exist when the default one is weak.
+            StringBuilder all = new StringBuilder();
+            for (android.content.pm.ResolveInfo r : getContext().getPackageManager()
+                    .queryIntentServices(new Intent(android.speech.RecognitionService.SERVICE_INTERFACE), 0)) {
+                all.append(r.serviceInfo.packageName).append(' ');
+            }
+            trace("services " + all.toString().trim());
+            if (Build.VERSION.SDK_INT >= 33) checkLanguage(intent, locale);
             recognizer = SpeechRecognizer.createSpeechRecognizer(getContext());
             recognizer.setRecognitionListener(listener);
             recognizer.startListening(intent);
@@ -166,6 +176,52 @@ public class SpeechPlugin extends Plugin {
             }
             call.resolve();
         });
+    }
+
+    /**
+     * Whether the phone can recognise this language, and if its model is
+     * missing, ask for it. Most Android phones now recognise speech on the
+     * device, one downloaded model per language: the language of the region is
+     * there, another often is not, and then every sentence comes back as "no
+     * match". Android 13 can tell, and fetch the model in the background.
+     */
+    @androidx.annotation.RequiresApi(33)
+    private void checkLanguage(Intent forIntent, String wanted) {
+        SpeechRecognizer checker = SpeechRecognizer.createSpeechRecognizer(getContext());
+        try {
+            checker.checkRecognitionSupport(forIntent, getContext().getMainExecutor(), new RecognitionSupportCallback() {
+                @Override
+                public void onSupportResult(RecognitionSupport support) {
+                    boolean installed = contains(support.getInstalledOnDeviceLanguages(), wanted);
+                    boolean pending = contains(support.getPendingOnDeviceLanguages(), wanted);
+                    boolean onDevice = contains(support.getSupportedOnDeviceLanguages(), wanted);
+                    boolean online = contains(support.getOnlineLanguages(), wanted);
+                    trace("language " + wanted + ": installed " + installed + ", downloading " + pending
+                        + ", can download " + onDevice + ", online " + online
+                        + " · installed " + support.getInstalledOnDeviceLanguages());
+                    if (!installed && !pending && onDevice) {
+                        checker.triggerModelDownload(forIntent);
+                        trace("language " + wanted + ": download asked");
+                    }
+                    checker.destroy();
+                }
+
+                @Override
+                public void onError(int error) {
+                    trace("language check error " + error);
+                    checker.destroy();
+                }
+            });
+        } catch (Exception e) {
+            trace("language check failed " + e.getClass().getSimpleName());
+            checker.destroy();
+        }
+    }
+
+    private static boolean contains(java.util.List<String> list, String locale) {
+        if (list == null) return false;
+        for (String l : list) if (l != null && l.equalsIgnoreCase(locale)) return true;
+        return false;
     }
 
     /**
